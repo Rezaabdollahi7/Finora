@@ -295,3 +295,72 @@ export function formatRelativeDay(
 
   return `${toPersianDigits(-days)} روز پیش`;
 }
+
+/* -------------------------------------------------------------------------
+ * Jalali month arithmetic
+ *
+ * "This month" in a Persian household means the Jalali month, not the
+ * Gregorian one. Reporting on Gregorian months would split every Persian
+ * month across two report rows and put Nowruz in the middle of one.
+ * ---------------------------------------------------------------------- */
+
+/** A Jalali year and month, without a day. */
+export type JalaliMonth = { year: number; month: number };
+
+/** The Jalali month an instant falls in. */
+export function jalaliMonthOf(
+  instant: Date,
+  timeZone: string = TIME_ZONE,
+): JalaliMonth {
+  const { year, month } = toJalaliDate(instant, timeZone);
+  return { year, month };
+}
+
+/** Move a Jalali month by a whole number of months, in either direction. */
+export function addJalaliMonths(
+  { year, month }: JalaliMonth,
+  delta: number,
+): JalaliMonth {
+  // Work in absolute months so the year rolls over correctly in both
+  // directions, including past a negative remainder.
+  const absolute = year * 12 + (month - 1) + delta;
+
+  return { year: Math.floor(absolute / 12), month: (absolute % 12) + 1 };
+}
+
+/**
+ * The half-open UTC interval covering a Jalali month: `[start, end)`.
+ *
+ * Half-open rather than inclusive so consecutive months tile the timeline
+ * exactly — no instant belongs to two months, and none falls between them.
+ */
+export function jalaliMonthRange(
+  { year, month }: JalaliMonth,
+  timeZone: string = TIME_ZONE,
+): { start: Date; end: Date } {
+  const next = addJalaliMonths({ year, month }, 1);
+
+  return {
+    start: fromJalaliDate({ year, month, day: 1 }, timeZone),
+    end: fromJalaliDate({ year: next.year, month: next.month, day: 1 }, timeZone),
+  };
+}
+
+/** The last `count` Jalali months ending with `end`, oldest first. */
+export function recentJalaliMonths(end: JalaliMonth, count: number): JalaliMonth[] {
+  return Array.from({ length: count }, (_, index) =>
+    addJalaliMonths(end, index - (count - 1)),
+  );
+}
+
+/** A month label for a chart axis or a report header, e.g. شهریور ۱۴۰۵. */
+export function jalaliMonthLabel(
+  { year, month }: JalaliMonth,
+  {
+    digits = "persian",
+    withYear = true,
+  }: { digits?: DigitStyle; withYear?: boolean } = {},
+): string {
+  const name = JALALI_MONTHS[month - 1]!;
+  return withYear ? `${name} ${applyDigitStyle(String(year), digits)}` : name;
+}

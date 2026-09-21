@@ -457,7 +457,7 @@ without requiring the user to navigate through multiple pages.
 
 ---
 
-## 2.1 — Dashboard API
+## [x] 2.1 — Dashboard API
 
 Create aggregated endpoints/services for:
 

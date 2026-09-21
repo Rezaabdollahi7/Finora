@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addJalaliMonths,
   calendarDaysBetween,
   formatJalaliDate,
   formatJalaliMonth,
@@ -8,8 +9,12 @@ import {
   formatTime,
   fromJalaliDate,
   isValidJalaliDate,
+  jalaliMonthLabel,
   jalaliMonthLength,
+  jalaliMonthOf,
+  jalaliMonthRange,
   jalaliWeekday,
+  recentJalaliMonths,
   JALALI_WEEKDAYS,
   toJalaliDate,
   zonedTimeToUtc,
@@ -249,5 +254,89 @@ describe("formatRelativeDay", () => {
     // Matches the upcoming-payments widget in the roadmap (2.8).
     expect(formatRelativeDay(inDays(5), { now })).toBe("۵ روز دیگر");
     expect(formatRelativeDay(inDays(-3), { now })).toBe("۳ روز پیش");
+  });
+});
+
+describe("Jalali month arithmetic", () => {
+  it("reports the Jalali month an instant falls in", () => {
+    expect(jalaliMonthOf(new Date("2026-09-21T09:00:00Z"))).toEqual({
+      year: 1405,
+      month: 6,
+    });
+  });
+
+  it("adds and subtracts months, rolling the year over in both directions", () => {
+    expect(addJalaliMonths({ year: 1405, month: 6 }, 1)).toEqual({
+      year: 1405,
+      month: 7,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 12 }, 1)).toEqual({
+      year: 1406,
+      month: 1,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 1 }, -1)).toEqual({
+      year: 1404,
+      month: 12,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 6 }, -18)).toEqual({
+      year: 1403,
+      month: 12,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 6 }, 0)).toEqual({
+      year: 1405,
+      month: 6,
+    });
+  });
+
+  it("gives a month range that starts at midnight Tehran on the first", () => {
+    const { start, end } = jalaliMonthRange({ year: 1405, month: 7 });
+
+    // 1 Mehr 1405 is 2026-09-23; midnight Tehran is 20:30Z the day before.
+    expect(start.toISOString()).toBe("2026-09-22T20:30:00.000Z");
+    expect(toJalaliDate(start)).toEqual({ year: 1405, month: 7, day: 1 });
+    expect(toJalaliDate(end)).toEqual({ year: 1405, month: 8, day: 1 });
+  });
+
+  it("tiles consecutive months exactly, with no gap and no overlap", () => {
+    for (let month = 1; month <= 11; month += 1) {
+      const current = jalaliMonthRange({ year: 1405, month });
+      const next = jalaliMonthRange({ year: 1405, month: month + 1 });
+
+      expect(current.end.getTime(), `month ${month}`).toBe(next.start.getTime());
+    }
+  });
+
+  it("covers every day of the month and nothing outside it", () => {
+    const { start, end } = jalaliMonthRange({ year: 1405, month: 6 });
+    const lastDay = fromJalaliDate({ year: 1405, month: 6, day: 31 });
+    const firstOfNext = fromJalaliDate({ year: 1405, month: 7, day: 1 });
+
+    expect(lastDay.getTime()).toBeGreaterThanOrEqual(start.getTime());
+    expect(lastDay.getTime()).toBeLessThan(end.getTime());
+    expect(firstOfNext.getTime()).toBe(end.getTime());
+  });
+
+  it("spans the year boundary at Nowruz", () => {
+    const esfand = jalaliMonthRange({ year: 1404, month: 12 });
+    const farvardin = jalaliMonthRange({ year: 1405, month: 1 });
+
+    expect(esfand.end.getTime()).toBe(farvardin.start.getTime());
+    expect(toJalaliDate(farvardin.start)).toEqual({ year: 1405, month: 1, day: 1 });
+  });
+
+  it("lists recent months oldest first, including the end month", () => {
+    expect(recentJalaliMonths({ year: 1405, month: 2 }, 4)).toEqual([
+      { year: 1404, month: 11 },
+      { year: 1404, month: 12 },
+      { year: 1405, month: 1 },
+      { year: 1405, month: 2 },
+    ]);
+  });
+
+  it("labels a month with and without its year", () => {
+    expect(jalaliMonthLabel({ year: 1405, month: 6 })).toBe("شهریور ۱۴۰۵");
+    expect(jalaliMonthLabel({ year: 1405, month: 6 }, { withYear: false })).toBe(
+      "شهریور",
+    );
   });
 });
