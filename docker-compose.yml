@@ -46,10 +46,14 @@ services:
       - "${APP_PORT:-3000}:3000"
     volumes:
       - .:/app
-      # Anonymous volumes keep the image's node_modules and build cache from
-      # being shadowed by the host bind mount.
+      # Anonymous volumes keep paths that exist only inside the image from
+      # being shadowed by the host bind mount. src/generated holds the Prisma
+      # client, which is generated rather than committed, so the host has no
+      # copy of it — without this line the bind mount hides it and the app
+      # fails to resolve @/generated/prisma/client.
       - /app/node_modules
       - /app/.next
+      - /app/src/generated
 
 volumes:
   postgres-data:

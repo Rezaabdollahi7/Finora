@@ -15,4 +15,5 @@ npm-debug.log*
 docs
 .vscode
 .idea
+# src/generated is generated inside the image, so it must not be copied in
 src/generated

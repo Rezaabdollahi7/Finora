@@ -61,6 +61,33 @@ npm run acceptance     # in another
 It reads `BASE_URL` (default `http://localhost:3000`) and `CHROMIUM_PATH` if
 the Playwright browser lives outside the default location.
 
+## Troubleshooting
+
+**`port is already allocated`** — something else on the machine is using 5432
+or 3000, usually a locally installed PostgreSQL. Change the host port in
+`.env` and bring the stack back up; only the published port moves, and the app
+still reaches the database as `db:5432` over the compose network.
+
+```bash
+POSTGRES_PORT=5433
+APP_PORT=3001
+```
+
+**`Can't resolve '@/generated/prisma/client'` or `tsx: not found` in Docker** —
+the container start-up reconciles both of these, so the first fix is simply to
+recreate the container:
+
+```bash
+docker compose up --build --force-recreate
+```
+
+If it persists, the anonymous volumes are stale; `docker compose down -v`
+removes them along with the database, so re-run the migration and the seed
+afterwards.
+
+**Outside Docker**, the Prisma client is created by `npm install`'s
+postinstall hook. After pulling a schema change, run `npm run db:generate`.
+
 ## Documentation
 
 - [`SPRINTS.md`](./SPRINTS.md) — implementation roadmap
