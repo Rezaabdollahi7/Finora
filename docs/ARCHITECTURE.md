@@ -29,6 +29,59 @@ conversions.
 Because JSON cannot carry `bigint`, monetary values cross the wire as decimal
 strings and are parsed back at the boundary.
 
+## Quantities
+
+A quantity is not money, but it is multiplied by money — 18.5 grams of gold
+at 68,400,000 Rial a gram — so a float quantity would poison every value
+derived from it. Quantities follow the same rule as money.
+
+- **Storage / logic** — `BigInt` scaled by 10^8 (`utils/quantity`).
+- **Display** — the scale is divided out, trailing zeros dropped.
+
+Eight decimal places is set by the smallest thing a household can hold: one
+satoshi. Grams of gold, whole shares and units of foreign currency all fit
+inside it.
+
+`multiplyByQuantity` is the one place the two scales meet, so it is the one
+place rounding happens — half away from zero, the rule a person doing this by
+hand uses.
+
+## Values that change over time
+
+Anything whose value moves is stored as a series of facts, never as a current
+figure on the row:
+
+- An account has **no balance column**. The balance is
+  `initialBalance + sum(transactions)`.
+- An asset has **no current-value column**. Its value is the latest row in
+  `asset_valuations`, and re-pricing appends a row rather than updating one.
+
+The reason is the same in both cases. A stored current value is a second
+source of truth that goes wrong the moment something is back-dated, edited or
+filled in late, and reconciling it is a class of bug this application cannot
+afford. Deriving is safe precisely because the inputs are themselves dated: a
+transaction carries the day the money moved, and a valuation is a fact about
+one instant that nothing later touches.
+
+That is what makes history honest (rule G.4). Re-running the net-worth chart
+for last Farvardin gives what last Farvardin gave, because today's gold price
+was written as today's row and did not overwrite Farvardin's.
+
+Each valuation stores the quantity and the total it was taken against, so
+selling half a holding tomorrow cannot re-value yesterday.
+
+## Net worth
+
+```text
+net worth = assets + account balances − liabilities
+```
+
+Nothing is counted twice, and that is structural rather than a rule someone
+has to remember: `AssetType` has no cash or bank member, so money sitting in
+an account cannot also be registered as an asset. Foreign currency is an
+asset precisely because the ledger is Rial-only (see `Account.currency`) and
+it has nowhere else to live.
+
 ## Dates
 
 - **Storage** — `DateTime` in UTC (Gregorian).

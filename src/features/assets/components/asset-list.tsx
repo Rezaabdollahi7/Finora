@@ -92,11 +92,15 @@ export function AssetList({
           <span aria-hidden>·</span>
           <span>{totals.count.toLocaleString("fa-IR")} دارایی</span>
         </span>
-        <ProfitLoss
-          rial={totals.profitLoss}
-          ratio={totals.returnRatio}
-          className="mt-2"
-        />
+        {/* Nothing held is not a profit of zero; it is no profit at all. */}
+        {totals.count === 0 ? null : (
+          <ProfitLoss
+            rial={totals.profitLoss}
+            ratio={totals.returnRatio}
+            className="mt-2"
+            surface="ink"
+          />
+        )}
       </Card>
 
       {owner === "ALL" && summary.byType.length > 0 ? (

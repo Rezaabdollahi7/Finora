@@ -498,6 +498,86 @@ describe("assetValuesAt (3.10)", () => {
   });
 });
 
+describe("cost basis after an edit (3.6)", () => {
+  it("follows the holding, so buying more does not invent a profit", async () => {
+    const asset = await makeGold();
+
+    await recordValuation(
+      asset.id,
+      recordValuationSchema.parse({
+        unitPrice: "6,840,000",
+        asOf: new Date("2026-06-21T00:00:00.000Z"),
+      }),
+    );
+
+    // Four more grams at the same price the rest was bought at.
+    const updated = await updateAsset(
+      asset.id,
+      updateAssetSchema.parse({ quantity: "22.5" }),
+    );
+
+    // 22.5 grams at 6,840,000 Toman, bought and valued at the same price:
+    // more money in, no gain.
+    expect(updated.purchaseTotal).toBe(((68_400_000n * 225n) / 10n).toString());
+    expect(updated.currentValue).toBe(updated.purchaseTotal);
+    expect(updated.profitLoss).toBe("0");
+  });
+
+  it("re-prices the whole holding, not just the part first bought", async () => {
+    const asset = await makeGold();
+
+    await updateAsset(asset.id, updateAssetSchema.parse({ quantity: "37" }));
+    const updated = await recordValuation(
+      asset.id,
+      recordValuationSchema.parse({
+        unitPrice: "8,000,000",
+        asOf: new Date("2026-07-21T00:00:00.000Z"),
+      }),
+    );
+
+    expect(updated.quantity).toBe(parseQuantity("37")!.toString());
+    expect(updated.value).toBe((80_000_000n * 37n).toString());
+  });
+});
+
+describe("restoring an asset (3.2)", () => {
+  it("brings it back into the portfolio with its history intact", async () => {
+    const gold = await makeGold();
+    await recordValuation(
+      gold.id,
+      recordValuationSchema.parse({
+        unitPrice: "8,000,000",
+        asOf: new Date("2026-06-21T00:00:00.000Z"),
+      }),
+    );
+
+    await archiveAsset(gold.id);
+    expect((await getPortfolioSummary()).totalValue).toBe("0");
+    expect(await assetValueAsOf(new Date("2026-07-01T00:00:00.000Z"))).toBe(0n);
+
+    await restoreAsset(gold.id);
+
+    expect((await getPortfolioSummary()).totalValue).toBe("1480000000");
+    expect(await assetValueAsOf(new Date("2026-07-01T00:00:00.000Z"))).toBe(
+      1_480_000_000n,
+    );
+    expect(await listValuations(gold.id)).toHaveLength(2);
+  });
+});
+
+describe("several assets bought at different times (3.9)", () => {
+  it("each joins the total on its own purchase date", async () => {
+    await makeCar({ purchaseDate: new Date("2025-11-02T00:00:00.000Z") });
+    await makeGold(); // 2026-03-20
+
+    const before = new Date("2026-01-01T00:00:00.000Z");
+    const after = new Date("2026-04-01T00:00:00.000Z");
+
+    expect(await assetValueAsOf(before)).toBe(14_000_000_000n);
+    expect(await assetValueAsOf(after)).toBe(14_000_000_000n + 1_265_400_000n);
+  });
+});
+
 describe("database constraints", () => {
   it("rejects a valuation whose total does not match its own price and quantity", async () => {
     const asset = await makeGold();

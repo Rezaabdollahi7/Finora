@@ -609,7 +609,7 @@ Avoid loading all transactions into the browser just to calculate totals.
 
 ---
 
-# Sprint 3 — Assets & Net Worth
+# Sprint 3 — Assets & Net Worth  `[x]`
 
 ## Goal
 
@@ -617,7 +617,7 @@ Track everything the household owns and calculate real net worth.
 
 ---
 
-## 3.1 — Asset model
+## [x] 3.1 — Asset model
 
 Create an `Asset` model.
 
@@ -636,7 +636,7 @@ OTHER
 
 ---
 
-## 3.2 — Asset CRUD
+## [x] 3.2 — Asset CRUD
 
 Implement:
 
@@ -647,7 +647,7 @@ Implement:
 
 ---
 
-## 3.3 — Quantity-based assets
+## [x] 3.3 — Quantity-based assets
 
 Support assets such as:
 
@@ -670,7 +670,7 @@ currentPrice
 
 ---
 
-## 3.4 — Fixed-value assets
+## [x] 3.4 — Fixed-value assets
 
 Support assets such as:
 
@@ -689,7 +689,7 @@ currentValue
 
 ---
 
-## 3.5 — Asset valuation
+## [x] 3.5 — Asset valuation
 
 Calculate:
 
@@ -702,7 +702,7 @@ where applicable.
 
 ---
 
-## 3.6 — Profit & Loss
+## [x] 3.6 — Profit & Loss
 
 Calculate:
 
@@ -719,7 +719,7 @@ Display:
 
 ---
 
-## 3.7 — Asset portfolio UI
+## [x] 3.7 — Asset portfolio UI
 
 Create a modern portfolio page.
 
@@ -736,7 +736,7 @@ with visual distribution.
 
 ---
 
-## 3.8 — Asset history
+## [x] 3.8 — Asset history
 
 Support historical valuations.
 
@@ -744,7 +744,7 @@ The system must not overwrite historical values when the current price changes.
 
 ---
 
-## 3.9 — Net worth engine
+## [x] 3.9 — Net worth engine
 
 Calculate:
 
@@ -759,13 +759,13 @@ For example, money in a bank account must not also be registered as a separate a
 
 ---
 
-## 3.10 — Net worth history
+## [x] 3.10 — Net worth history
 
 Store or derive historical snapshots safely so the dashboard can show net worth over time.
 
 ---
 
-## 3.11 — Asset tests
+## [x] 3.11 — Asset tests
 
 Test:
 

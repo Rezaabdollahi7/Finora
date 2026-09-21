@@ -18,6 +18,7 @@ export function ProfitLoss({
   ratio,
   className,
   size = "default",
+  surface = "default",
 }: {
   /** Profit or loss in Rial; negative is a loss. */
   rial: string;
@@ -25,6 +26,14 @@ export function ProfitLoss({
   ratio: number | null;
   className?: string;
   size?: "default" | "large";
+  /**
+   * Which surface this sits on.
+   *
+   * Only the neither-up-nor-down case needs to know: it is the one drawn in
+   * a muted text colour, and the muted colour for a light card is nearly
+   * invisible on the dark ink card. Success and danger read on both.
+   */
+  surface?: "default" | "ink";
 }) {
   const value = BigInt(rial);
   const direction = value > 0n ? "up" : value < 0n ? "down" : "flat";
@@ -36,7 +45,8 @@ export function ProfitLoss({
         "inline-flex items-center gap-2",
         direction === "up" && "text-success",
         direction === "down" && "text-danger",
-        direction === "flat" && "text-muted-foreground",
+        direction === "flat" &&
+          (surface === "ink" ? "text-ink-surface-muted" : "text-muted-foreground"),
         className,
       )}
     >

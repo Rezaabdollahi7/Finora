@@ -64,6 +64,7 @@ export function AssetDetail({
           rial={asset.profitLoss}
           ratio={asset.returnRatio}
           className="mt-2"
+          surface="ink"
         />
       </Card>
 
