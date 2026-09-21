@@ -38,6 +38,8 @@ async function seed(accountCount: number, transactionsPerMonth: number) {
   await prisma.transaction.deleteMany();
   await prisma.category.deleteMany();
   await prisma.account.deleteMany();
+  await prisma.assetValuation.deleteMany();
+  await prisma.asset.deleteMany();
 
   const parent = await prisma.category.create({
     data: { name: "خوراک", kind: "EXPENSE" },
@@ -82,6 +84,48 @@ async function seed(accountCount: number, transactionsPerMonth: number) {
   return accounts;
 }
 
+/**
+ * Assets and their price history (tasks 3.9, 3.10).
+ *
+ * Both the count of assets and the count of prices per asset matter: the
+ * first is what a naive "latest valuation" lookup would query per row, the
+ * second is what a naive "value at this instant" would query per point.
+ */
+async function seedAssets(assetCount: number, pricesPerAsset: number) {
+  await prisma.assetValuation.deleteMany();
+  await prisma.asset.deleteMany();
+
+  for (let index = 0; index < assetCount; index += 1) {
+    const asset = await prisma.asset.create({
+      data: {
+        name: `دارایی ${index}`,
+        type: "GOLD",
+        kind: "QUANTITY",
+        owner: "SHARED",
+        quantity: 100_000_000n,
+        unit: "گرم",
+        purchaseUnitPrice: 1_000_000n,
+        purchaseDate: on({ year: 1405, month: 1 }, 1),
+      },
+    });
+
+    for (let price = 0; price < pricesPerAsset; price += 1) {
+      const unitPrice = BigInt(1_000_000 + price * 1_000);
+
+      await prisma.assetValuation.create({
+        data: {
+          assetId: asset.id,
+          unitPrice,
+          quantity: 100_000_000n,
+          value: unitPrice,
+          asOf: on({ year: 1405, month: 1 + (price % 6) }, 1 + (price % 20)),
+          source: price === 0 ? "INITIAL" : "MANUAL",
+        },
+      });
+    }
+  }
+}
+
 /** Run something and report how many queries it took. */
 async function queriesFor(work: () => Promise<unknown>): Promise<number> {
   resetQueryCount();
@@ -97,6 +141,8 @@ afterAll(async () => {
   await prisma.transaction.deleteMany();
   await prisma.category.deleteMany();
   await prisma.account.deleteMany();
+  await prisma.assetValuation.deleteMany();
+  await prisma.asset.deleteMany();
   await prisma.$disconnect();
 });
 
@@ -151,6 +197,29 @@ describe("bounded round trips", () => {
     expect(many).toBe(few);
 
     await seed(3, 8);
+  });
+
+  it("does not query per asset when valuing the portfolio", async () => {
+    await seedAssets(3, 2);
+    const few = await queriesFor(() => getDashboardSummary(MONTH));
+
+    await seedAssets(12, 8);
+    const many = await queriesFor(() => getDashboardSummary(MONTH));
+
+    expect(many).toBe(few);
+
+    await seedAssets(0, 0);
+  });
+
+  it("does not query per point when drawing net worth over assets", async () => {
+    await seedAssets(6, 6);
+
+    const three = await queriesFor(() => getNetWorthHistory("M3", on(MONTH, 20)));
+    const year = await queriesFor(() => getNetWorthHistory("YEAR", on(MONTH, 20)));
+
+    expect(year).toBe(three);
+
+    await seedAssets(0, 0);
   });
 
   it("does not query per category for the expense breakdown", async () => {

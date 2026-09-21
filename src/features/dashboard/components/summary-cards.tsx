@@ -1,7 +1,7 @@
 import {
   ArrowDownLeft,
   ArrowUpRight,
-  Landmark,
+  Gem,
   Minus,
   PiggyBank,
   Scale,
@@ -19,7 +19,7 @@ import { formatPercent } from "@/utils/number";
 import type { DashboardTotals } from "@/features/dashboard/types";
 
 /**
- * The six headline figures (task 2.2).
+ * The headline figures (task 2.2).
  *
  * A stat tile rather than a one-bar chart: a single current value with a
  * comparison is not chart-shaped. The value dominates, the comparison sits
@@ -80,6 +80,16 @@ function buildMetrics(current: DashboardTotals, previous: DashboardTotals): Metr
       tone: "neutral",
     },
     {
+      key: "assetValue",
+      label: "دارایی‌ها",
+      icon: Gem,
+      value: current.assetValue,
+      previous: previous.assetValue,
+      goodWhen: "up",
+      tone: "neutral",
+      hint: "طلا، ارز، خودرو و ملک — پول داخل حساب‌ها اینجا شمرده نمی‌شود",
+    },
+    {
       key: "netWorth",
       label: "ارزش خالص",
       icon: Scale,
@@ -87,18 +97,21 @@ function buildMetrics(current: DashboardTotals, previous: DashboardTotals): Metr
       previous: previous.netWorth,
       goodWhen: "up",
       tone: "neutral",
-      hint: "دارایی‌ها و بدهی‌ها در اسپرینت‌های بعد اضافه می‌شوند",
+      // Spelling out the formula is what stops the figure being read as a
+      // fourth independent number beside the three it is made of.
+      hint: "دارایی‌ها + موجودی حساب‌ها − بدهی‌ها",
     },
-    {
-      key: "liabilityValue",
-      label: "بدهی",
-      icon: Landmark,
-      value: current.liabilityValue,
-      previous: previous.liabilityValue,
-      goodWhen: "down",
-      tone: "neutral",
-      hint: "وام‌ها در اسپرینت ۴ اضافه می‌شوند",
-    },
+    /*
+     * There is no liability tile yet.
+     *
+     * It was here as a placeholder reading zero, which was the right call
+     * while net worth had nothing else in it. Now that assets are real, a
+     * seventh tile leaves a single card stranded on its own row — and four
+     * columns is too narrow for a thirteen-digit figure, which the browser
+     * check confirms. A constant zero is the one of the seven worth
+     * dropping; it returns in Sprint 4 with a number in it, alongside the
+     * loans page. The net-worth hint still names the term.
+     */
   ];
 }
 

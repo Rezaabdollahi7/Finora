@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { assetValueAsOf, assetValuesAt } from "@/features/assets/server/asset-service";
 import {
   addJalaliMonths,
   formatJalaliDate,
@@ -41,18 +42,13 @@ import type {
 /* -------------------------------------------------------------------------
  * Not yet modelled
  *
- * Assets arrive in Sprint 3, loans in Sprint 4, recurring payments in Sprint
- * 5 and budgets in Sprint 5. The dashboard's shape is complete now; these
- * four functions are the only places that change when those models land, and
- * the figures above them — net worth in particular — are already correct
- * arithmetic over whatever they return.
+ * Loans arrive in Sprint 4, recurring payments and budgets in Sprint 5. The
+ * dashboard's shape is complete; these three functions are the only places
+ * that change when those models land, and the figures above them — net worth
+ * in particular — are already correct arithmetic over whatever they return.
+ *
+ * Assets landed in Sprint 3 and now come from the asset service.
  * ---------------------------------------------------------------------- */
-
-/** Total value of assets held at an instant. Sprint 3. */
-async function loadAssetValue(asOf: Date): Promise<bigint> {
-  void asOf;
-  return 0n;
-}
 
 /** Outstanding debt at an instant. Sprint 4. */
 async function loadLiabilityValue(asOf: Date): Promise<bigint> {
@@ -158,10 +154,10 @@ async function totalsFor(month: JalaliMonth): Promise<DashboardTotals> {
 
   const [{ income, expenses }, balance, assets, liabilities] = await Promise.all([
     incomeAndExpenses(period),
-    // Balances are measured at the end of the period, so "last month" means
-    // where the household stood when that month closed.
+    // Balances and holdings are measured at the end of the period, so "last
+    // month" means where the household stood when that month closed.
     totalBalanceAsOf(period.end),
-    loadAssetValue(period.end),
+    assetValueAsOf(period.end),
     loadLiabilityValue(period.end),
   ]);
 
@@ -172,8 +168,15 @@ async function totalsFor(month: JalaliMonth): Promise<DashboardTotals> {
     monthlySavings: (income - expenses).toString(),
     assetValue: assets.toString(),
     liabilityValue: liabilities.toString(),
-    // Money in a bank account is counted once, as a balance. An asset is
-    // something held outside the accounts, so the two never overlap (3.9).
+    /*
+     * Net worth = assets + account balances − liabilities (task 3.9).
+     *
+     * Nothing is counted twice, and that is structural rather than a rule
+     * someone has to remember: AssetType has no cash or bank member, so
+     * money in an account cannot also be registered as an asset. Foreign
+     * currency is an asset precisely because the ledger is Rial-only, so it
+     * has nowhere else to live.
+     */
     netWorth: (assets + balance - liabilities).toString(),
   };
 }
@@ -494,16 +497,26 @@ function allTimeMonthCount(earliest: Date | null, current: JalaliMonth): number 
 }
 
 /**
- * Net worth at a series of instants (task 2.6).
+ * Net worth at a series of instants (tasks 2.6 and 3.10).
  *
- * Two queries regardless of how many points are asked for: one for the
- * accounts' opening position, one for the transactions inside the window.
- * The running total is then carried forward point by point, so asking for
- * twelve months costs the same as asking for three.
+ * The history is derived, not snapshotted. A stored snapshot would be a
+ * second source of truth that goes stale the moment a transaction is
+ * back-dated or a forgotten price is filled in, and reconciling it is a
+ * class of bug this application cannot afford — the same reasoning that
+ * keeps Account without a balance column. Deriving it is safe precisely
+ * because the inputs are themselves historical: transactions carry the date
+ * the money moved, and a valuation is a fact about one instant that later
+ * re-pricings never touch (task 3.8). Re-running this for last Farvardin
+ * gives what last Farvardin gave.
+ *
+ * Three queries regardless of how many points are asked for: the accounts'
+ * opening position, the transactions inside the window, and every valuation
+ * of every held asset. The running totals are carried forward point by
+ * point, so twelve months costs what three costs.
  *
  * Bucketing happens here rather than in SQL for the same reason as the
  * cash-flow chart: the boundaries are Jalali, which PostgreSQL cannot
- * express. Only five columns are read and the window is bounded.
+ * express. Only a few columns are read and the window is bounded.
  */
 export async function getNetWorthHistory(
   range: NetWorthRange = "M6",
@@ -514,22 +527,18 @@ export async function getNetWorthHistory(
     select: { id: true, initialBalance: true },
   });
 
-  if (accounts.length === 0) return [];
+  // Assets alone are still a net worth worth drawing: a household can own a
+  // flat before it opens an account here.
+  if (accounts.length === 0) return netWorthFromAssetsAlone(range, now);
 
   const ids = new Set(accounts.map((account) => account.id));
   const opening = accounts.reduce((sum, account) => sum + account.initialBalance, 0n);
 
-  const earliest =
-    range === "ALL"
-      ? ((
-          await prisma.transaction.aggregate({
-            where: {
-              OR: [{ accountId: { in: [...ids] } }, { toAccountId: { in: [...ids] } }],
-            },
-            _min: { date: true },
-          })
-        )._min.date ?? null)
-      : null;
+  // "All time" means the whole history the household has, which starts at
+  // whichever came first: the earliest movement of money, or the earliest
+  // thing it owned. Taking only the transaction would cut the line off after
+  // a flat bought years before the first transaction was recorded here.
+  const earliest = range === "ALL" ? await earliestRecord([...ids]) : null;
 
   const points = netWorthPointTimes(range, now, earliest);
   const first = points[0];
@@ -564,24 +573,91 @@ export async function getNetWorthHistory(
     return change;
   };
 
+  const assets = await assetValuesAt(points.map((point) => point.at));
+
   let running = opening;
   let cursor = 0;
 
-  return points.map((point) => {
+  return points.map((point, index) => {
     while (cursor < rows.length && rows[cursor]!.date <= point.at) {
       running += delta(rows[cursor]!);
       cursor += 1;
     }
 
-    // Assets and liabilities are not modelled yet (Sprints 3 and 4), so net
-    // worth is the balance for now. The arithmetic is already right.
+    const held = assets[index] ?? 0n;
+
+    // Liabilities are not modelled yet (Sprint 4). The arithmetic is already
+    // the one task 3.9 specifies; the third term is simply zero for now.
     return {
       at: point.at.toISOString(),
       label: point.label,
       balance: running.toString(),
-      assets: "0",
+      assets: held.toString(),
       liabilities: "0",
-      netWorth: running.toString(),
+      netWorth: (running + held).toString(),
+    };
+  });
+}
+
+/** The first instant the household has any record of, or null. */
+async function earliestRecord(accountIds: readonly string[]): Promise<Date | null> {
+  const [movement, valuation] = await Promise.all([
+    prisma.transaction.aggregate({
+      where: {
+        OR: [
+          { accountId: { in: [...accountIds] } },
+          { toAccountId: { in: [...accountIds] } },
+        ],
+      },
+      _min: { date: true },
+    }),
+    prisma.assetValuation.aggregate({
+      where: { asset: { isActive: true } },
+      _min: { asOf: true },
+    }),
+  ]);
+
+  const candidates = [movement._min.date, valuation._min.asOf].filter(
+    (value): value is Date => value !== null,
+  );
+
+  if (candidates.length === 0) return null;
+
+  return candidates.reduce((first, value) => (value < first ? value : first));
+}
+
+/**
+ * The same series for a household with no accounts.
+ *
+ * Returning nothing here would have hidden a portfolio behind the absence of
+ * a bank account — the chart would read as "no net worth" while the assets
+ * page showed a flat worth billions.
+ */
+async function netWorthFromAssetsAlone(
+  range: NetWorthRange,
+  now: Date,
+): Promise<NetWorthPoint[]> {
+  const earliest =
+    range === "ALL"
+      ? ((await prisma.assetValuation.aggregate({ _min: { asOf: true } }))._min.asOf ??
+        null)
+      : null;
+
+  const points = netWorthPointTimes(range, now, earliest);
+  const values = await assetValuesAt(points.map((point) => point.at));
+
+  if (values.every((value) => value === 0n)) return [];
+
+  return points.map((point, index) => {
+    const held = values[index] ?? 0n;
+
+    return {
+      at: point.at.toISOString(),
+      label: point.label,
+      balance: "0",
+      assets: held.toString(),
+      liabilities: "0",
+      netWorth: held.toString(),
     };
   });
 }
