@@ -39,7 +39,11 @@ function AccountDetail({ account }: { account: AccountDto }) {
           <Icon className="size-[18px]" />
           موجودی فعلی
         </span>
-        <Money rial={account.balance} className="text-display" unit={false} />
+        <Money
+          rial={account.balance}
+          className="text-h1 sm:text-display"
+          unit={false}
+        />
         <span className="text-caption text-ink-surface-subtle">تومان</span>
       </Card>
 

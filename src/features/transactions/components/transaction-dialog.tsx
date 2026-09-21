@@ -21,7 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -34,8 +33,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
-import { fromJalaliDate, toJalaliDate, type JalaliDate } from "@/utils/date";
-import { toLatinDigits } from "@/utils/digits";
+import {
+  JalaliDateField,
+  readJalaliFields,
+  toJalaliFields,
+  todayJalaliFields,
+} from "@/components/common/jalali-date-field";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import { OWNERS, OWNER_LABELS, type AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
@@ -46,7 +49,6 @@ import {
   type TransactionType,
 } from "@/features/transactions/types";
 
-/** A Jalali date as three text fields, which is how people type one. */
 const NO_CATEGORY = "__none__";
 
 type FormValues = {
@@ -62,12 +64,10 @@ type FormValues = {
   jalaliDay: string;
 };
 
-function todayJalali(): JalaliDate {
-  return toJalaliDate(new Date());
-}
-
 function defaultsFor(transaction: TransactionDto | undefined): FormValues {
-  const jalali = transaction ? toJalaliDate(new Date(transaction.date)) : todayJalali();
+  const jalali = transaction
+    ? toJalaliFields(new Date(transaction.date))
+    : todayJalaliFields();
 
   return {
     type: transaction?.type ?? "EXPENSE",
@@ -79,9 +79,9 @@ function defaultsFor(transaction: TransactionDto | undefined): FormValues {
     categoryId: transaction?.categoryId ?? NO_CATEGORY,
     owner: transaction?.owner ?? "SHARED",
     description: transaction?.description ?? "",
-    jalaliYear: String(jalali.year),
-    jalaliMonth: String(jalali.month),
-    jalaliDay: String(jalali.day),
+    jalaliYear: jalali.year,
+    jalaliMonth: jalali.month,
+    jalaliDay: jalali.day,
   };
 }
 
@@ -134,15 +134,13 @@ export function TransactionDialog({
   const relevantCategories = categories.filter((root) => root.kind === categoryKind);
 
   async function onSubmit(values: FormValues) {
-    const year = Number(toLatinDigits(values.jalaliYear));
-    const month = Number(toLatinDigits(values.jalaliMonth));
-    const day = Number(toLatinDigits(values.jalaliDay));
+    const date = readJalaliFields({
+      year: values.jalaliYear,
+      month: values.jalaliMonth,
+      day: values.jalaliDay,
+    });
 
-    let date: Date;
-
-    try {
-      date = fromJalaliDate({ year, month, day });
-    } catch {
+    if (!date) {
       form.setError("jalaliDay", { message: "تاریخ نامعتبر است." });
       return;
     }
@@ -379,36 +377,13 @@ export function TransactionDialog({
                 )}
               />
 
-              <div className="grid gap-2">
-                <Label htmlFor="jalali-day">تاریخ (شمسی)</Label>
-                <div className="flex gap-2" dir="ltr">
-                  <Input
-                    id="jalali-day"
-                    aria-label="روز"
-                    inputMode="numeric"
-                    className="text-center"
-                    {...form.register("jalaliDay", { required: true })}
-                  />
-                  <Input
-                    aria-label="ماه"
-                    inputMode="numeric"
-                    className="text-center"
-                    {...form.register("jalaliMonth", { required: true })}
-                  />
-                  <Input
-                    aria-label="سال"
-                    inputMode="numeric"
-                    className="text-center"
-                    {...form.register("jalaliYear", { required: true })}
-                  />
-                </div>
-                <p className="text-caption text-muted-foreground">روز / ماه / سال</p>
-                {form.formState.errors.jalaliDay ? (
-                  <p className="text-caption text-danger">
-                    {form.formState.errors.jalaliDay.message ?? "تاریخ نامعتبر است."}
-                  </p>
-                ) : null}
-              </div>
+              <JalaliDateField
+                id="jalali-day"
+                label="تاریخ (شمسی)"
+                register={form.register}
+                names={{ day: "jalaliDay", month: "jalaliMonth", year: "jalaliYear" }}
+                error={form.formState.errors.jalaliDay?.message}
+              />
             </div>
 
             <FormField

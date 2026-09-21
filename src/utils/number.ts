@@ -58,18 +58,30 @@ export function formatDecimal(
   }).format(value);
 }
 
-/** Format a ratio as a percentage, e.g. 0.742 -> "74.2%". */
+/**
+ * Format a ratio as a percentage, e.g. 0.742 -> "74.2%".
+ *
+ * `signDisplay` is passed through to Intl so a rate of return can show its
+ * "+" beside a signed amount; "exceptZero" is the useful one, since a change
+ * of exactly nothing reads better without a sign than with one.
+ */
 export function formatPercent(
   ratio: number,
   {
     digits = "latin",
     fractionDigits = 1,
-  }: { digits?: DigitStyle; fractionDigits?: number } = {},
+    signDisplay,
+  }: {
+    digits?: DigitStyle;
+    fractionDigits?: number;
+    signDisplay?: Intl.NumberFormatOptions["signDisplay"];
+  } = {},
 ): string {
   return new Intl.NumberFormat(numberLocale(digits), {
     style: "percent",
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
+    ...(signDisplay ? { signDisplay } : {}),
   }).format(ratio);
 }
 

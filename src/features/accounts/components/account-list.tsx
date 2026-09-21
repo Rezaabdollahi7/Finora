@@ -63,7 +63,7 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
         <span className="text-body text-ink-surface-muted">
           {owner === "ALL" ? "موجودی کل" : `موجودی ${OWNER_LABELS[owner]}`}
         </span>
-        <Money rial={total} className="text-display" unit={false} />
+        <Money rial={total} className="text-h1 sm:text-display" unit={false} />
         {/*
           Each part is its own element rather than one interpolated string.
           A neutral separator sitting between Persian text and a number is
