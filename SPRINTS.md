@@ -218,7 +218,7 @@ Before completing Sprint 0:
 
 ---
 
-# Sprint 1 — Accounts & Transactions
+# Sprint 1 — Accounts & Transactions  `[x]`
 
 ## Goal
 
@@ -428,7 +428,7 @@ Create a modern transaction interface with:
 
 ---
 
-## 1.10 — Transaction tests
+## [x] 1.10 — Transaction tests
 
 Test:
 
