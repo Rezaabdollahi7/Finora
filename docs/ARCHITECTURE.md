@@ -44,6 +44,7 @@ src/
 ├── app/            # routes, layouts, route handlers
 ├── components/
 │   ├── ui/         # shadcn/ui primitives
+│   ├── layout/     # application chrome (sidebar, header, theme)
 │   ├── charts/     # Recharts wrappers
 │   ├── forms/      # form building blocks
 │   └── common/     # shared composites
@@ -55,9 +56,36 @@ src/
 └── config/         # navigation, constants, runtime env
 ```
 
-A feature folder owns its own components, server logic and types. Features do
-not import from one another; anything shared moves up into `components/`,
-`lib/` or `utils/`.
+### Boundaries
+
+A feature folder owns its own components, server logic, schemas and types:
+
+```text
+features/<domain>/
+├── components/
+├── server/
+├── schemas.ts
+└── types.ts
+```
+
+Three rules keep the tree from collapsing into a ball of mud as the sprints
+add domains:
+
+1. **Features do not import from one another.** Something two domains both
+   need is not domain logic; it moves up into `components/`, `lib/`,
+   `utils/`, `hooks/` or `types/`.
+2. **Routes stay thin.** A file under `src/app/` resolves its params, calls
+   into a feature, and renders. Business logic never lives in a route file —
+   which is also what keeps it testable without a browser (rule G.11).
+3. **The dependency direction is one-way.** `app/` may use `features/`;
+   `features/` may use `components/`, `lib/`, `utils/`, `hooks/`, `types/`
+   and `config/`; those shared layers never reach back up.
+
+`src/generated/` holds the Prisma client and is not committed.
+
+The domains match the roadmap: dashboard, accounts, transactions, assets,
+loans, budgets, goals, calendar, reports. Each exists as a folder from
+Sprint 0 so later sprints add files rather than invent placement.
 
 ## Authentication
 

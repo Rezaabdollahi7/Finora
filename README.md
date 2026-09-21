@@ -42,6 +42,23 @@ npm run dev
 | `npm run typecheck` | TypeScript, no emit            |
 | `npm run format`    | Prettier                       |
 | `npm run test`      | Unit tests                     |
+| `npm run acceptance`| Foundation acceptance checks   |
+
+## Verifying the foundation
+
+`npm run acceptance` exercises the whole stack against a running build:
+compose configuration, the database migration, Prisma connectivity, all ten
+routes, RTL and the Persian font, the responsive breakpoints, both themes, and
+a clean browser console.
+
+```bash
+npm run build
+npm run start          # in one terminal
+npm run acceptance     # in another
+```
+
+It reads `BASE_URL` (default `http://localhost:3000`) and `CHROMIUM_PATH` if
+the Playwright browser lives outside the default location.
 
 ## Documentation
 

@@ -44,7 +44,7 @@ Claude Code should inspect the existing implementation, follow the project rules
 
 ---
 
-# Sprint 0 — Project Foundation & Tooling
+# Sprint 0 — Project Foundation & Tooling  `[x]`
 
 ## Goal
 
@@ -52,14 +52,14 @@ Create the technical foundation of the application.
 
 No financial business logic should be implemented yet.
 
-### 0.1 — Initialize React + TypeScript project
+### [x] 0.1 — Initialize React + TypeScript project
 
 - Create the React application with TypeScript.
 - Use a clean scalable project structure.
 - Configure development and production builds.
 - Verify the application starts successfully.
 
-### 0.2 — Docker development environment
+### [x] 0.2 — Docker development environment
 
 - Create `Dockerfile`.
 - Create `docker-compose.yml`.
@@ -68,14 +68,14 @@ No financial business logic should be implemented yet.
 - Configure environment variables.
 - Make sure the application can communicate with PostgreSQL through Docker networking.
 
-### 0.3 — Configure Tailwind CSS
+### [x] 0.3 — Configure Tailwind CSS
 
 - Install and configure Tailwind CSS.
 - Prepare the application for RTL.
 - Do not hardcode the final visual design.
 - Design tokens and visual identity will be provided separately.
 
-### 0.4 — Install and configure shadcn/ui
+### [x] 0.4 — Install and configure shadcn/ui
 
 - Initialize shadcn/ui.
 - Configure reusable components.
@@ -100,7 +100,7 @@ Expected base components:
 - Alert
 - Toast
 
-### 0.5 — Configure code quality
+### [x] 0.5 — Configure code quality
 
 Add:
 
@@ -116,7 +116,7 @@ npm run typecheck
 npm run build
 ```
 
-### 0.6 — Configure Prisma
+### [x] 0.6 — Configure Prisma
 
 - Install Prisma.
 - Connect Prisma to PostgreSQL.
@@ -124,7 +124,7 @@ npm run build
 - Configure migrations.
 - Add a reusable Prisma client.
 
-### 0.7 — Create application architecture
+### [x] 0.7 — Create application architecture
 
 Create a scalable feature-based structure.
 
@@ -155,7 +155,7 @@ src/
 └── config/
 ```
 
-### 0.8 — Configure routing
+### [x] 0.8 — Configure routing
 
 Create routes for the main application sections.
 
@@ -174,7 +174,7 @@ Initial routes:
 /settings
 ```
 
-### 0.9 — Create application shell
+### [x] 0.9 — Create application shell
 
 Create:
 
@@ -188,7 +188,7 @@ Create:
 
 The final visual styling should remain compatible with the external Design System.
 
-### 0.10 — RTL and localization foundation
+### [x] 0.10 — RTL and localization foundation
 
 The application must be RTL-first.
 
@@ -201,7 +201,7 @@ Configure:
 - Date formatting utilities
 - Number formatting utilities
 
-### 0.11 — Foundation acceptance test
+### [x] 0.11 — Foundation acceptance test
 
 Before completing Sprint 0:
 
