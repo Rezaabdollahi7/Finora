@@ -74,3 +74,46 @@ export type CategoryExpense = {
   /** Share of the period's total expenses, 0–1. */
   share: number;
 };
+
+/** One account's share of the household's liquid money. */
+export type AccountShare = {
+  accountId: string;
+  name: string;
+  type: string;
+  owner: string;
+  balance: string;
+  /** Share of the household's positive liquid total, 0–1. */
+  share: number;
+};
+
+/** The spans the net-worth chart can be asked for (task 2.6). */
+export const NET_WORTH_RANGES = ["MONTH", "M3", "M6", "YEAR", "ALL"] as const;
+
+export type NetWorthRange = (typeof NET_WORTH_RANGES)[number];
+
+export const NET_WORTH_RANGE_LABELS: Record<NetWorthRange, string> = {
+  MONTH: "این ماه",
+  M3: "۳ ماه",
+  M6: "۶ ماه",
+  YEAR: "۱ سال",
+  ALL: "همه",
+};
+
+/** One point on the net-worth line. */
+export type NetWorthPoint = {
+  /** ISO-8601 UTC instant the value is measured at. */
+  at: string;
+  label: string;
+  netWorth: string;
+  balance: string;
+  assets: string;
+  liabilities: string;
+};
+
+/** Upcoming payments, bucketed the way the widget reads them (task 2.8). */
+export type UpcomingBucket = {
+  key: "TODAY" | "TOMORROW" | "THIS_WEEK" | "NEXT_WEEK" | "THIS_MONTH" | "LATER";
+  label: string;
+  payments: UpcomingPayment[];
+  total: string;
+};

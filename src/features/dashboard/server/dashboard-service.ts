@@ -4,18 +4,23 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   addJalaliMonths,
+  formatJalaliDate,
   jalaliMonthLabel,
   jalaliMonthOf,
   jalaliMonthRange,
   recentJalaliMonths,
+  toJalaliDate,
   type JalaliMonth,
 } from "@/utils/date";
 import type {
+  AccountShare,
   BudgetStatus,
   CashFlowPoint,
   CategoryExpense,
   DashboardSummary,
   DashboardTotals,
+  NetWorthPoint,
+  NetWorthRange,
   UpcomingPayment,
 } from "@/features/dashboard/types";
 
@@ -339,4 +344,244 @@ export async function getExpensesByCategory(
       share: grandTotal === 0n ? 0 : Number(entry.amount) / Number(grandTotal),
     }))
     .sort((a, b) => (BigInt(b.amount) > BigInt(a.amount) ? 1 : -1));
+}
+
+/* -------------------------------------------------------------------------
+ * Account distribution (task 2.5)
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Where the household's liquid money currently sits.
+ *
+ * Active accounts only, largest first. Shares are taken against the sum of
+ * the *positive* balances rather than the net total: an overdrawn account
+ * would otherwise shrink the denominator and push every other share above
+ * 100%. An account in the red keeps its real balance and a share of zero,
+ * which is the honest reading — it holds none of the money.
+ */
+export async function getAccountDistribution(): Promise<AccountShare[]> {
+  const accounts = await prisma.account.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, type: true, owner: true, initialBalance: true },
+  });
+
+  if (accounts.length === 0) return [];
+
+  const activity = await accountDeltas(accounts.map((account) => account.id));
+
+  const balances = accounts.map((account) => ({
+    accountId: account.id,
+    name: account.name,
+    type: account.type as string,
+    owner: account.owner as string,
+    balance: account.initialBalance + (activity.get(account.id) ?? 0n),
+  }));
+
+  const positiveTotal = balances.reduce(
+    (sum, entry) => (entry.balance > 0n ? sum + entry.balance : sum),
+    0n,
+  );
+
+  return balances
+    .map((entry) => ({
+      accountId: entry.accountId,
+      name: entry.name,
+      type: entry.type,
+      owner: entry.owner,
+      balance: entry.balance.toString(),
+      share:
+        positiveTotal === 0n || entry.balance <= 0n
+          ? 0
+          : Number(entry.balance) / Number(positiveTotal),
+    }))
+    .sort((a, b) => (BigInt(b.balance) > BigInt(a.balance) ? 1 : -1));
+}
+
+/** Net movement per account, in two grouped queries. */
+async function accountDeltas(ids: readonly string[]): Promise<Map<string, bigint>> {
+  const deltas = new Map<string, bigint>();
+  if (ids.length === 0) return deltas;
+
+  const add = (id: string, amount: bigint) =>
+    deltas.set(id, (deltas.get(id) ?? 0n) + amount);
+
+  const [outgoing, incoming] = await Promise.all([
+    prisma.transaction.groupBy({
+      by: ["accountId", "type"],
+      where: { accountId: { in: [...ids] } },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.groupBy({
+      by: ["toAccountId"],
+      where: { type: "TRANSFER", toAccountId: { in: [...ids] } },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  for (const row of outgoing) {
+    const amount = row._sum.amount ?? 0n;
+    add(row.accountId, row.type === "INCOME" ? amount : -amount);
+  }
+
+  for (const row of incoming) {
+    if (row.toAccountId) add(row.toAccountId, row._sum.amount ?? 0n);
+  }
+
+  return deltas;
+}
+
+/* -------------------------------------------------------------------------
+ * Net worth history (task 2.6)
+ * ---------------------------------------------------------------------- */
+
+/** Where a range's points fall, and what to call them. */
+function netWorthPointTimes(
+  range: NetWorthRange,
+  now: Date,
+  earliest: Date | null,
+): { at: Date; label: string }[] {
+  if (range === "MONTH") {
+    // Within a single month, monthly points would be one dot. Step through
+    // the month a few days at a time instead, ending at now.
+    const { start } = jalaliMonthRange(jalaliMonthOf(now));
+    const times: Date[] = [];
+
+    for (let at = start.getTime(); at < now.getTime(); at += 5 * 86_400_000) {
+      times.push(new Date(at));
+    }
+    times.push(now);
+
+    return times.map((at) => ({
+      at,
+      label: formatJalaliDate(at, { style: "medium" }),
+    }));
+  }
+
+  const current = jalaliMonthOf(now);
+  const months =
+    range === "M3"
+      ? 3
+      : range === "M6"
+        ? 6
+        : range === "YEAR"
+          ? 12
+          : allTimeMonthCount(earliest, current);
+
+  return recentJalaliMonths(current, months).map((month, index, all) => ({
+    // Each month is measured at its close, except the current one, which is
+    // measured now — its month has not finished yet.
+    at: index === all.length - 1 ? now : jalaliMonthRange(month).end,
+    label: jalaliMonthLabel(month, { withYear: false }),
+  }));
+}
+
+/**
+ * How many months "all time" spans.
+ *
+ * Capped, because a chart cannot usefully draw two hundred points and the
+ * query window grows with it. Past the cap the range behaves as the longest
+ * one that stays readable.
+ */
+const ALL_TIME_MAX_MONTHS = 36;
+
+function allTimeMonthCount(earliest: Date | null, current: JalaliMonth): number {
+  if (!earliest) return 1;
+
+  const first = toJalaliDate(earliest);
+  const span = (current.year - first.year) * 12 + (current.month - first.month) + 1;
+
+  return Math.min(Math.max(span, 1), ALL_TIME_MAX_MONTHS);
+}
+
+/**
+ * Net worth at a series of instants (task 2.6).
+ *
+ * Two queries regardless of how many points are asked for: one for the
+ * accounts' opening position, one for the transactions inside the window.
+ * The running total is then carried forward point by point, so asking for
+ * twelve months costs the same as asking for three.
+ *
+ * Bucketing happens here rather than in SQL for the same reason as the
+ * cash-flow chart: the boundaries are Jalali, which PostgreSQL cannot
+ * express. Only five columns are read and the window is bounded.
+ */
+export async function getNetWorthHistory(
+  range: NetWorthRange = "M6",
+  now: Date = new Date(),
+): Promise<NetWorthPoint[]> {
+  const accounts = await prisma.account.findMany({
+    where: { isActive: true },
+    select: { id: true, initialBalance: true },
+  });
+
+  if (accounts.length === 0) return [];
+
+  const ids = new Set(accounts.map((account) => account.id));
+  const opening = accounts.reduce((sum, account) => sum + account.initialBalance, 0n);
+
+  const earliest =
+    range === "ALL"
+      ? ((
+          await prisma.transaction.aggregate({
+            where: {
+              OR: [{ accountId: { in: [...ids] } }, { toAccountId: { in: [...ids] } }],
+            },
+            _min: { date: true },
+          })
+        )._min.date ?? null)
+      : null;
+
+  const points = netWorthPointTimes(range, now, earliest);
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (!first || !last) return [];
+
+  const rows = await prisma.transaction.findMany({
+    where: {
+      date: { lte: last.at },
+      OR: [{ accountId: { in: [...ids] } }, { toAccountId: { in: [...ids] } }],
+    },
+    select: {
+      date: true,
+      type: true,
+      amount: true,
+      accountId: true,
+      toAccountId: true,
+    },
+    orderBy: { date: "asc" },
+  });
+
+  const delta = (row: (typeof rows)[number]): bigint => {
+    let change = 0n;
+
+    if (ids.has(row.accountId)) {
+      change += row.type === "INCOME" ? row.amount : -row.amount;
+    }
+    if (row.type === "TRANSFER" && row.toAccountId && ids.has(row.toAccountId)) {
+      change += row.amount;
+    }
+
+    return change;
+  };
+
+  let running = opening;
+  let cursor = 0;
+
+  return points.map((point) => {
+    while (cursor < rows.length && rows[cursor]!.date <= point.at) {
+      running += delta(rows[cursor]!);
+      cursor += 1;
+    }
+
+    // Assets and liabilities are not modelled yet (Sprints 3 and 4), so net
+    // worth is the balance for now. The arithmetic is already right.
+    return {
+      at: point.at.toISOString(),
+      label: point.label,
+      balance: running.toString(),
+      assets: "0",
+      liabilities: "0",
+      netWorth: running.toString(),
+    };
+  });
 }

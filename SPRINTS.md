@@ -443,7 +443,7 @@ Test:
 
 ---
 
-# Sprint 2 — Dashboard & Visualization
+# Sprint 2 — Dashboard & Visualization  `[x]`
 
 ## Goal
 
@@ -532,13 +532,13 @@ Support interactive tooltips.
 
 ---
 
-## 2.5 — Account distribution chart
+## [x] 2.5 — Account distribution chart
 
 Show how current liquid money is distributed between accounts.
 
 ---
 
-## 2.6 — Net worth chart
+## [x] 2.6 — Net worth chart
 
 Create a line chart showing net worth history over time.
 
@@ -554,7 +554,7 @@ All time
 
 ---
 
-## 2.7 — Recent transactions widget
+## [x] 2.7 — Recent transactions widget
 
 Show the latest transactions on Dashboard.
 
@@ -568,7 +568,7 @@ Each item should display:
 
 ---
 
-## 2.8 — Upcoming payments widget
+## [x] 2.8 — Upcoming payments widget
 
 Show the next financial obligations.
 
@@ -587,7 +587,7 @@ Claude          5.5M
 
 ---
 
-## 2.9 — Dashboard responsive design
+## [x] 2.9 — Dashboard responsive design
 
 Dashboard must work properly on:
 
@@ -601,7 +601,7 @@ The mobile layout should be intentionally designed.
 
 ---
 
-## 2.10 — Dashboard performance
+## [x] 2.10 — Dashboard performance
 
 Dashboard aggregation should be performed efficiently.
 

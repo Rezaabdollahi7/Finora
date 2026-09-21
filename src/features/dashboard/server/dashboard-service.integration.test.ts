@@ -7,9 +7,11 @@ import { createAccount } from "@/features/accounts/server/account-service";
 import { createCategorySchema } from "@/features/categories/schemas";
 import { createCategory } from "@/features/categories/server/category-service";
 import {
+  getAccountDistribution,
   getCashFlow,
   getDashboardSummary,
   getExpensesByCategory,
+  getNetWorthHistory,
   totalBalanceAsOf,
 } from "@/features/dashboard/server/dashboard-service";
 
@@ -431,5 +433,165 @@ describe("expenses by category", () => {
     });
 
     expect(await getExpensesByCategory(MONTH)).toEqual([]);
+  });
+});
+
+describe("account distribution", () => {
+  it("lists active accounts largest first, with shares summing to one", async () => {
+    await tx({
+      type: "INCOME",
+      amount: 3_000n,
+      accountId: wallet.id,
+      date: on(MONTH, 1),
+    });
+
+    const shares = await getAccountDistribution();
+
+    // Bank opened at 10,000,000 Rial, wallet at 0 plus 3,000 income.
+    expect(shares.map((entry) => entry.name)).toEqual(["بانک", "کیف پول"]);
+    expect(shares[0]?.balance).toBe("10000000");
+    expect(shares[1]?.balance).toBe("3000");
+    expect(shares.reduce((sum, entry) => sum + entry.share, 0)).toBeCloseTo(1, 10);
+  });
+
+  it("excludes archived accounts", async () => {
+    await prisma.account.update({
+      where: { id: wallet.id },
+      data: { isActive: false },
+    });
+
+    expect((await getAccountDistribution()).map((entry) => entry.name)).toEqual([
+      "بانک",
+    ]);
+  });
+
+  it("reflects transfers on both sides", async () => {
+    await tx({
+      type: "TRANSFER",
+      amount: 4_000n,
+      accountId: bank.id,
+      toAccountId: wallet.id,
+      date: on(MONTH, 2),
+    });
+
+    const shares = await getAccountDistribution();
+    const byName = new Map(shares.map((entry) => [entry.name, entry.balance]));
+
+    expect(byName.get("بانک")).toBe("9996000");
+    expect(byName.get("کیف پول")).toBe("4000");
+  });
+
+  it("gives an overdrawn account a zero share without distorting the others", async () => {
+    // A negative balance in the denominator would push every other share
+    // above 100%, so shares are taken against the positive total.
+    await tx({
+      type: "EXPENSE",
+      amount: 5_000n,
+      accountId: wallet.id,
+      date: on(MONTH, 3),
+    });
+
+    const shares = await getAccountDistribution();
+    const wallet_ = shares.find((entry) => entry.name === "کیف پول");
+
+    expect(wallet_?.balance).toBe("-5000");
+    expect(wallet_?.share).toBe(0);
+    expect(shares.find((entry) => entry.name === "بانک")?.share).toBe(1);
+  });
+
+  it("returns nothing when there are no accounts", async () => {
+    await prisma.transaction.deleteMany();
+    await prisma.account.deleteMany();
+
+    expect(await getAccountDistribution()).toEqual([]);
+  });
+});
+
+describe("net worth history", () => {
+  const NOW = on(MONTH, 20);
+
+  it("returns one point per month for a multi-month range, oldest first", async () => {
+    const points = await getNetWorthHistory("M3", NOW);
+
+    expect(points).toHaveLength(3);
+    expect(points.map((point) => point.label)).toEqual(["تیر", "مرداد", "شهریور"]);
+  });
+
+  it("carries the running balance forward across months", async () => {
+    await tx({
+      type: "INCOME",
+      amount: 500n,
+      accountId: bank.id,
+      date: on(PREVIOUS, 4),
+    });
+    await tx({ type: "EXPENSE", amount: 200n, accountId: bank.id, date: on(MONTH, 4) });
+
+    const points = await getNetWorthHistory("M3", NOW);
+
+    // Opening 10,000,000 across both accounts, then +500 last month and
+    // −200 this month.
+    expect(points[0]?.netWorth).toBe("10000000");
+    expect(points[1]?.netWorth).toBe("10000500");
+    expect(points[2]?.netWorth).toBe("10000300");
+  });
+
+  it("measures the current month at now, not at its close", async () => {
+    // A transaction later this month must not appear in the last point,
+    // because that point is today.
+    await tx({ type: "INCOME", amount: 700n, accountId: bank.id, date: on(MONTH, 28) });
+
+    const points = await getNetWorthHistory("M3", NOW);
+
+    expect(points[points.length - 1]?.netWorth).toBe("10000000");
+  });
+
+  it("is unmoved by a transfer between household accounts", async () => {
+    const before = (await getNetWorthHistory("M3", NOW)).map((p) => p.netWorth);
+
+    await tx({
+      type: "TRANSFER",
+      amount: 6_000n,
+      accountId: bank.id,
+      toAccountId: wallet.id,
+      date: on(MONTH, 2),
+    });
+
+    expect((await getNetWorthHistory("M3", NOW)).map((p) => p.netWorth)).toEqual(
+      before,
+    );
+  });
+
+  it("steps through the month for the single-month range", async () => {
+    const points = await getNetWorthHistory("MONTH", NOW);
+
+    expect(points.length).toBeGreaterThan(1);
+    expect(new Date(points[points.length - 1]!.at).getTime()).toBe(NOW.getTime());
+  });
+
+  it("supports every range the roadmap lists", async () => {
+    for (const range of ["MONTH", "M3", "M6", "YEAR", "ALL"] as const) {
+      expect((await getNetWorthHistory(range, NOW)).length, range).toBeGreaterThan(0);
+    }
+  });
+
+  it("spans from the first transaction for the all-time range", async () => {
+    await tx({
+      type: "INCOME",
+      amount: 100n,
+      accountId: bank.id,
+      date: on({ year: 1405, month: 1 }, 5),
+    });
+
+    const points = await getNetWorthHistory("ALL", NOW);
+
+    expect(points[0]?.label).toBe("فروردین");
+    expect(points).toHaveLength(6);
+  });
+
+  it("returns nothing when there are no accounts", async () => {
+    await prisma.transaction.deleteMany();
+    await prisma.account.deleteMany();
+
+    expect(await getNetWorthHistory("M6", NOW)).toEqual([]);
   });
 });
