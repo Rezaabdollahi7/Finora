@@ -34,6 +34,8 @@ CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]
 ###############################################################################
 FROM base AS builder
 ENV NODE_ENV=production
+# Opt in to the standalone server bundle; see next.config.ts.
+ENV BUILD_STANDALONE=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # `npm run build` runs `prisma generate` before `next build`.
