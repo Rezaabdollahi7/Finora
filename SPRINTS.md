@@ -356,7 +356,7 @@ Implement:
 
 ---
 
-## 1.7 — Categories
+## [x] 1.7 — Categories
 
 Create hierarchical categories.
 

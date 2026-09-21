@@ -42,6 +42,7 @@ npm run dev
 | `npm run typecheck` | TypeScript, no emit            |
 | `npm run format`    | Prettier                       |
 | `npm run test`      | Unit tests                     |
+| `npm run db:seed`   | Seed the default categories    |
 | `npm run acceptance`| Foundation acceptance checks   |
 
 ## Verifying the foundation

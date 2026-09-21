@@ -20,6 +20,9 @@ export type TransactionDto = {
   toAccountId: string | null;
   toAccountName: string | null;
   categoryId: string | null;
+  categoryName: string | null;
+  /** Icon key for the category; resolved through the icon map in the UI. */
+  categoryIcon: string | null;
   owner: Owner;
   description: string | null;
   /** ISO-8601 UTC. Rendered as Jalali at the presentation layer (rule G.5). */

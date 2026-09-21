@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
-import type { AccountModel, TransactionModel } from "@/generated/prisma/models";
+import type {
+  AccountModel,
+  CategoryModel,
+  TransactionModel,
+} from "@/generated/prisma/models";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import { formatToman } from "@/utils/money";
@@ -30,11 +34,13 @@ import type { TransactionDto } from "@/features/transactions/types";
 type WithAccounts = TransactionModel & {
   account: Pick<AccountModel, "name">;
   toAccount: Pick<AccountModel, "name"> | null;
+  category: Pick<CategoryModel, "name" | "icon"> | null;
 };
 
 const withAccounts = {
   account: { select: { name: true } },
   toAccount: { select: { name: true } },
+  category: { select: { name: true, icon: true } },
 } satisfies Prisma.TransactionInclude;
 
 function toDto(transaction: WithAccounts): TransactionDto {
@@ -47,6 +53,8 @@ function toDto(transaction: WithAccounts): TransactionDto {
     toAccountId: transaction.toAccountId,
     toAccountName: transaction.toAccount?.name ?? null,
     categoryId: transaction.categoryId,
+    categoryName: transaction.category?.name ?? null,
+    categoryIcon: transaction.category?.icon ?? null,
     owner: transaction.owner,
     description: transaction.description,
     date: transaction.date.toISOString(),
@@ -116,6 +124,42 @@ async function assertAccountsAccept(
   }
 }
 
+/**
+ * A category must match the transaction it is filed under.
+ *
+ * An expense filed under an income category would land on the wrong side of
+ * every report, and an archived category must not collect new transactions
+ * even though it keeps the old ones (rule G.4). Transfers carry no category
+ * at all, which the schema already rejects before reaching here.
+ */
+async function assertCategoryFits(
+  tx: Prisma.TransactionClient,
+  type: CreateTransactionInput["type"],
+  categoryId: string | null,
+): Promise<void> {
+  if (!categoryId) return;
+
+  const category = await tx.category.findUnique({ where: { id: categoryId } });
+
+  if (!category) throw new NotFoundError("دسته‌بندی انتخاب‌شده پیدا نشد.");
+
+  if (!category.isActive) {
+    throw new ConflictError(
+      `دسته «${category.name}» بایگانی شده است.`,
+      "CATEGORY_ARCHIVED",
+    );
+  }
+
+  const expected = type === "INCOME" ? "INCOME" : "EXPENSE";
+
+  if (category.kind !== expected) {
+    throw new ConflictError(
+      `دسته «${category.name}» برای ${expected === "INCOME" ? "درآمد" : "هزینه"} نیست.`,
+      "CATEGORY_KIND_MISMATCH",
+    );
+  }
+}
+
 /** One account's balance, read inside the caller's database transaction. */
 async function currentBalance(
   tx: Prisma.TransactionClient,
@@ -148,6 +192,7 @@ export async function createTransaction(
 ): Promise<TransactionDto> {
   const created = await prisma.$transaction(async (tx) => {
     await assertAccountsAccept(tx, toMovement(input), null);
+    await assertCategoryFits(tx, input.type, input.categoryId);
 
     return tx.transaction.create({
       data: {
@@ -181,6 +226,7 @@ export async function updateTransaction(
       accountId: existing.accountId,
       toAccountId: existing.toAccountId,
     });
+    await assertCategoryFits(tx, input.type, input.categoryId);
 
     return tx.transaction.update({
       where: { id },

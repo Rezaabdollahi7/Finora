@@ -130,9 +130,9 @@ model Transaction {
   /// Transfers only: the destination account.
   toAccountId String?
   toAccount   Account?        @relation("TransactionToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
-  /// The Category model arrives in task 1.7, which adds the foreign key.
-  /// Until then this holds nothing.
+  /// Transfers are never categorised; the database enforces that.
   categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   owner       Owner
   description String?
   /// When the money actually moved, in UTC. Displayed as Jalali (rule G.5).
@@ -145,5 +145,49 @@ model Transaction {
   @@index([toAccountId])
   @@index([type, date])
   @@index([owner])
+  @@index([categoryId])
   @@map("transactions")
+}
+
+/// Whether a category describes money coming in or going out.
+///
+/// A category belongs to exactly one side. "Salary" is never an expense and
+/// "Rent" is never income, and keeping them apart means a transaction form
+/// can only ever offer categories that make sense for its type.
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+
+/// A spending or income category, one level of nesting deep.
+///
+/// The tree is deliberately shallow: a parent groups, a child classifies.
+/// Arbitrary depth would make every report decide how far to roll up, and
+/// the roadmap's own examples are two levels. The depth limit and the rule
+/// that a child shares its parent's kind are enforced in the service.
+///
+/// Categories are archived, never deleted. Renaming or retiring one must not
+/// touch the transactions already filed under it (rule G.4), which the
+/// RESTRICT foreign key on Transaction guarantees.
+model Category {
+  id        String       @id @default(cuid())
+  name      String
+  kind      CategoryKind
+  /// Null for a top-level category.
+  parentId  String?
+  parent    Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Category[]   @relation("CategoryTree")
+  /// Key into the icon map in the UI, not a component or a path.
+  icon      String?
+  isActive  Boolean      @default(true)
+  /// Display order among siblings; ties fall back to the name.
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  transactions Transaction[]
+
+  @@index([kind, isActive])
+  @@index([parentId])
+  @@map("categories")
 }

@@ -69,7 +69,7 @@ const eslintConfig = defineConfig([
 
   // Command-line scripts report to the terminal; that is their output.
   {
-    files: ["scripts/**/*.{js,mjs,ts}"],
+    files: ["scripts/**/*.{js,mjs,ts}", "prisma/*.ts"],
     rules: { "no-console": "off" },
   },
 
