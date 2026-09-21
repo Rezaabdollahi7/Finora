@@ -50,7 +50,14 @@ function Money({
         className,
       )}
     >
-      <span aria-hidden>{formatted}</span>
+      {/*
+        dir="ltr" isolates the number as its own run. A leading sign is a
+        bidi-neutral character, so without the isolate it is reordered to the
+        far end and "−1,250,000" renders as "1,250,000−".
+      */}
+      <span aria-hidden dir="ltr" className="inline-block">
+        {formatted}
+      </span>
       {unit ? (
         <span
           aria-hidden

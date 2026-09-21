@@ -413,7 +413,7 @@ Support:
 
 ---
 
-## 1.9 — Transaction UI
+## [x] 1.9 — Transaction UI
 
 Create a modern transaction interface with:
 

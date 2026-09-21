@@ -79,11 +79,14 @@ export const CATEGORY_ICON_KEYS = Object.keys(CATEGORY_ICONS) as [
   ...CategoryIconKey[],
 ];
 
-/** Resolve a stored key, falling back to a generic tag for anything unknown. */
-export function categoryIcon(key: string | null | undefined): LucideIcon {
-  if (key && key in CATEGORY_ICONS) {
-    return CATEGORY_ICONS[key as CategoryIconKey];
-  }
-
-  return CATEGORY_ICONS.tag;
+/**
+ * Narrow a stored key to one this map knows, falling back to a generic tag.
+ *
+ * Returns the key rather than the component so callers can index
+ * CATEGORY_ICONS directly. Going through a function that returns a component
+ * reads to React's compiler like a component being created during render,
+ * even though the map is a module constant.
+ */
+export function resolveIconKey(key: string | null | undefined): CategoryIconKey {
+  return key && key in CATEGORY_ICONS ? (key as CategoryIconKey) : "tag";
 }
