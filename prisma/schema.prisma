@@ -33,3 +33,57 @@ model AppSetting {
 
   @@map("app_settings")
 }
+
+/// Who a financial record belongs to.
+///
+/// The household is two people plus everything they share, so ownership is a
+/// fixed set rather than a user table: Finora is a self-hosted deployment for
+/// one household (see docs/ARCHITECTURE.md). Sprint 7 builds the household
+/// views on top of this.
+enum Owner {
+  SHARED
+  REZA
+  YEGANEH
+}
+
+enum AccountType {
+  BANK
+  CASH
+  WALLET
+  INVESTMENT
+  BUSINESS
+  OTHER
+}
+
+/// A place money sits: a bank account, cash, a wallet, a business account.
+///
+/// There is deliberately no `balance` column. A stored balance is a second
+/// source of truth that drifts the moment a transaction is edited, deleted or
+/// back-dated, and reconciling it is a class of bug this application cannot
+/// afford. The current balance is derived as
+///
+///     initialBalance + sum(transactions affecting this account)
+///
+/// which is always correct by construction.
+model Account {
+  id             String      @id @default(cuid())
+  name           String
+  type           AccountType
+  owner          Owner
+  /// ISO 4217 code. Only IRR is supported: all monetary values in the
+  /// application are Rial, and mixing currencies would make household totals
+  /// silently wrong. Foreign holdings are modelled as assets in Sprint 3.
+  currency       String      @default("IRR")
+  /// Opening balance in whole Rial (rule G.2). May be negative, for an
+  /// account that was already overdrawn when it was added.
+  initialBalance BigInt      @default(0)
+  /// Archived accounts keep their history but are hidden from active lists
+  /// and cannot receive new transactions.
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([isActive])
+  @@index([owner])
+  @@map("accounts")
+}
