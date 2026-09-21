@@ -1,0 +1,52 @@
+# Development stack: Next.js with hot reload against a PostgreSQL container.
+# Production image: see docker-compose.prod.yml.
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: finora-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-finora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finora}
+      POSTGRES_DB: ${POSTGRES_DB:-finora}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finora} -d ${POSTGRES_DB:-finora}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      target: dev
+    container_name: finora-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # `db` resolves over the compose network, so the app never needs to know
+      # the database's host port.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-finora}:${POSTGRES_PASSWORD:-finora}@db:5432/${POSTGRES_DB:-finora}?schema=public
+      NODE_ENV: development
+      # Bind mounts do not deliver inotify events reliably across the Docker
+      # VM boundary; polling keeps hot reload working on macOS and Windows.
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      # Anonymous volumes keep the image's node_modules and build cache from
+      # being shadowed by the host bind mount.
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres-data:
