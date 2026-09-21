@@ -15,3 +15,4 @@ npm-debug.log*
 docs
 .vscode
 .idea
+src/generated

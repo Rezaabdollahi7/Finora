@@ -1,0 +1,35 @@
+// Finora database schema.
+//
+// Conventions that apply to every model added in later sprints:
+//
+//   Money  — stored as BigInt holding whole Rial, never Float or Decimal
+//            (rule G.2). Displayed in Toman at the presentation layer.
+//   Dates  — stored as DateTime in UTC. Jalali values are a display concern
+//            and never reach the database (rule G.5).
+//   Ids    — cuid(), so identifiers can be generated client-side without a
+//            round trip and carry no ordering information.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Application-level key/value settings.
+///
+/// This is deliberately the only model in Sprint 0: the sprint's goal is a
+/// working foundation with no financial business logic, but a migration needs
+/// something to create in order to prove the pipeline end to end. The domain
+/// models (Account, Transaction, Category, ...) arrive in Sprint 1.
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
+}

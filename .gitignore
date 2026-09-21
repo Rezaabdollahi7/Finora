@@ -43,3 +43,6 @@ next-env.d.ts
 # keep the documented environment template tracked
 !.env.example
 /coverage
+
+# Prisma client is generated, not committed
+/src/generated
