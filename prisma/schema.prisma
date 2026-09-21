@@ -83,7 +83,67 @@ model Account {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
+  /// Income, expenses, and transfers *out of* this account.
+  transactions      Transaction[] @relation("TransactionAccount")
+  /// Transfers *into* this account.
+  incomingTransfers Transaction[] @relation("TransactionToAccount")
+
   @@index([isActive])
   @@index([owner])
   @@map("accounts")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+/// A movement of money.
+///
+/// Each type uses the account fields differently:
+///
+///   INCOME    accountId receives the amount.       toAccountId is null.
+///   EXPENSE   accountId pays the amount.           toAccountId is null.
+///   TRANSFER  accountId pays, toAccountId receives. Both are required.
+///
+/// A transfer is one row rather than a matched pair of expense and income
+/// rows. A pair can be half-deleted or half-edited, and every aggregate then
+/// has to remember to exclude both halves or it double-counts household
+/// spending — exactly what rule G.3 forbids. One row cannot fall out of step
+/// with itself.
+///
+/// The invariants are enforced by database CHECK constraints as well as by
+/// the API, so a bad row cannot be written by any path: amounts are always
+/// positive (rule G.2 keeps the sign in `type`, never in the number), a
+/// transfer always has a destination that differs from its source, and a
+/// non-transfer never has one.
+model Transaction {
+  id          String          @id @default(cuid())
+  type        TransactionType
+  /// Always positive, in whole Rial. The direction lives in `type`.
+  amount      BigInt
+  /// Income: the receiving account. Expense: the paying account.
+  /// Transfer: the source account.
+  accountId   String
+  account     Account         @relation("TransactionAccount", fields: [accountId], references: [id], onDelete: Restrict)
+  /// Transfers only: the destination account.
+  toAccountId String?
+  toAccount   Account?        @relation("TransactionToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+  /// The Category model arrives in task 1.7, which adds the foreign key.
+  /// Until then this holds nothing.
+  categoryId  String?
+  owner       Owner
+  description String?
+  /// When the money actually moved, in UTC. Displayed as Jalali (rule G.5).
+  date        DateTime
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([date])
+  @@index([accountId, date])
+  @@index([toAccountId])
+  @@index([type, date])
+  @@index([owner])
+  @@map("transactions")
 }
