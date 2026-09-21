@@ -191,3 +191,121 @@ model Category {
   @@index([parentId])
   @@map("categories")
 }
+
+/// What an asset is.
+///
+/// Notably absent: cash and bank balances. Money sitting in an account is
+/// already counted as a balance, and registering it again as an asset would
+/// double it inside net worth — exactly what task 3.9 forbids. Foreign
+/// currency belongs here rather than in an Account because the ledger is
+/// Rial-only (see the comment on Account.currency).
+enum AssetType {
+  GOLD
+  USD
+  EUR
+  CAR
+  STOCK
+  CRYPTO
+  PROPERTY
+  OTHER
+}
+
+/// How an asset's value is arrived at.
+///
+///   QUANTITY  a holding priced per unit: grams of gold, dollars, shares.
+///             Value is quantity × current unit price (task 3.3).
+///   FIXED     a single thing with a value of its own: a car, a flat.
+///             Quantity is exactly 1, so the same multiplication still holds
+///             and every valuation takes one code path (task 3.4).
+///
+/// Derived from the type rather than chosen by the user — a car is never a
+/// per-unit holding — but stored, so the database can enforce the shape of
+/// each row instead of trusting whoever wrote it.
+enum AssetKind {
+  QUANTITY
+  FIXED
+}
+
+/// Where a recorded value came from.
+///
+/// Only manual entry exists today. The column is here so that an automatic
+/// price feed later cannot be mistaken for something the user typed, and so
+/// the opening valuation is distinguishable from a later correction.
+enum ValuationSource {
+  INITIAL
+  MANUAL
+}
+
+/// Something the household owns that is not money in an account.
+///
+/// The row holds what was true at acquisition — how much, of what, bought at
+/// what price. What it is worth *now* is deliberately not a column: it lives
+/// in AssetValuation, so changing today's price appends a fact instead of
+/// overwriting one (rule G.4, task 3.8).
+model Asset {
+  id       String    @id @default(cuid())
+  name     String
+  type     AssetType
+  kind     AssetKind
+  owner    Owner
+  /// Scaled by 10^8, the same way money is scaled to Rial: an exact integer
+  /// rather than a float, because this number is multiplied by money
+  /// (rule G.2, see utils/quantity). FIXED assets hold exactly 100000000.
+  quantity BigInt    @default(100000000)
+  /// What one unit is, for display: گرم, دلار, سهم. Null for FIXED assets,
+  /// which are not counted in units.
+  unit     String?
+  /// Rial paid per unit at acquisition. For a FIXED asset, quantity is 1, so
+  /// this is the purchase value itself (task 3.4).
+  purchaseUnitPrice BigInt
+  purchaseDate      DateTime
+  notes             String?
+  /// Archived assets keep their valuation history but leave net worth: the
+  /// household no longer owns them. Assets are never deleted (rule G.4).
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  valuations AssetValuation[]
+
+  @@index([isActive])
+  @@index([owner])
+  @@index([type])
+  @@map("assets")
+}
+
+/// What an asset was worth at one instant.
+///
+/// Rows are appended, never updated. That is the whole mechanism behind task
+/// 3.8: re-pricing gold today writes a new row for today, and last month's
+/// row still says what last month's portfolio was worth. The net-worth
+/// history in task 3.10 reads straight off this table, so it is a record of
+/// what actually happened rather than today's price projected backwards.
+///
+/// `quantity` and `value` are stored rather than recomputed from the asset.
+/// Selling half a holding tomorrow must not halve what the portfolio was
+/// worth yesterday.
+model AssetValuation {
+  id      String @id @default(cuid())
+  assetId String
+  /// Cascade because a valuation has no meaning without its asset. Assets
+  /// are archived rather than deleted, so this should never fire.
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  /// Rial per unit at `asOf`.
+  unitPrice BigInt
+  /// The holding at `asOf`, scaled like Asset.quantity.
+  quantity  BigInt
+  /// unitPrice × quantity in whole Rial, rounded once, at write time.
+  value     BigInt
+  /// When this valuation was true, in UTC. Displayed as Jalali (rule G.5).
+  asOf      DateTime
+  source    ValuationSource @default(MANUAL)
+  note      String?
+  createdAt DateTime        @default(now())
+
+  /// One valuation per asset per instant: re-pricing the same moment twice
+  /// is a correction, not a second data point.
+  @@unique([assetId, asOf])
+  @@index([assetId, asOf])
+  @@map("asset_valuations")
+}
