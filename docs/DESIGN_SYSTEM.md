@@ -1917,3 +1917,75 @@ Does it remain consistent with existing components?
 
 If the answer is no, revise the implementation before considering the feature complete.
 
+
+---
+
+# 57. Dark Theme
+
+The sections above define the light palette. The application also ships a dark
+theme, so the dark palette is derived from the same brand primitives rather
+than invented alongside them.
+
+Derivation rules:
+
+```text
+App background  → brand ink, darkened
+Card surface    → brand ink itself (#1f2033)
+Elevated / popover → brand ink, lightened
+Primary         → brand purple, lifted for contrast on a dark surface
+Borders         → white alpha, mirroring the ink alpha used in light mode
+```
+
+Resulting tokens:
+
+```text
+--background:  #14151f
+--card:        #1f2033
+--popover:     #262739
+--foreground:  #fdfeff
+
+--primary:     #6d62f3
+--secondary:   #9a97d8
+
+--success:     #3bb684
+--danger:      #ff6369
+--warning:     #e8ae3c
+
+--border:        rgba(253, 254, 255, 0.10)
+--border-strong: rgba(253, 254, 255, 0.16)
+```
+
+Text alphas mirror the light theme, measured against white instead of ink:
+
+```text
+Secondary: rgba(253, 254, 255, 0.65)
+Muted:     rgba(253, 254, 255, 0.45)
+Disabled:  rgba(253, 254, 255, 0.30)
+```
+
+The **dark feature card** of section 7 is unchanged by the theme. It is a
+brand element rather than a themed surface, so it keeps `#1f2033` with
+`#fdfeff` text in both themes, and is exposed as its own token pair
+(`--ink-surface` / `--ink-surface-foreground`).
+
+Purple keeps the same role it has in light mode: an accent that stays special.
+Dark mode must not turn every surface purple.
+
+---
+
+# 58. Token Implementation
+
+Tokens live in `src/app/globals.css` in two layers:
+
+```text
+Brand primitives   --brand-*        identical in every theme
+Semantic tokens    --background, --card, --border, ...   re-declared in .dark
+```
+
+Components consume the **semantic** layer only, through Tailwind utilities
+(`bg-card`, `text-muted-foreground`, `border-border`, `rounded-lg`,
+`shadow-md`). A raw hex value in component markup is a design-system
+violation.
+
+The 8px spacing scale of section 11 already matches Tailwind's default scale
+(`space-4` = 16px), so spacing is not redefined.
