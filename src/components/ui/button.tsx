@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const buttonVariants = cva(
   cn(
     "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
-    "rounded-md text-body font-medium outline-none transition-colors duration-150 ease-out",
+    "rounded-md text-body font-medium transition-colors duration-150 ease-out outline-none",
     "disabled:pointer-events-none disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:size-[18px] [&_svg]:shrink-0",
   ),
@@ -21,8 +21,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: "bg-primary text-primary-foreground hover:bg-primary/90",
-        secondary:
-          "border border-border bg-card text-foreground hover:bg-primary-soft",
+        secondary: "border border-border bg-card text-foreground hover:bg-primary-soft",
         ghost: "text-foreground hover:bg-primary-soft",
         outline:
           "border border-border-strong bg-transparent text-foreground hover:bg-primary-soft",

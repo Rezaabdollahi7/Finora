@@ -52,24 +52,24 @@ function SheetContent({
         data-slot="sheet-content"
         className={cn(
           "fixed z-50 flex flex-col gap-6 bg-popover p-6 text-popover-foreground shadow-floating",
-          "transition ease-out data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "transition ease-out data-[state=closed]:animate-out data-[state=open]:animate-in",
           side === "end" && [
             "inset-y-0 end-0 h-full w-3/4 max-w-sm rounded-s-xl",
-            "data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
-            "rtl:data-[state=open]:slide-in-from-left rtl:data-[state=closed]:slide-out-to-left",
+            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
+            "rtl:data-[state=closed]:slide-out-to-left rtl:data-[state=open]:slide-in-from-left",
           ],
           side === "start" && [
             "inset-y-0 start-0 h-full w-3/4 max-w-sm rounded-e-xl",
-            "data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left",
-            "rtl:data-[state=open]:slide-in-from-right rtl:data-[state=closed]:slide-out-to-right",
+            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
+            "rtl:data-[state=closed]:slide-out-to-right rtl:data-[state=open]:slide-in-from-right",
           ],
           side === "top" && [
             "inset-x-0 top-0 h-auto rounded-b-xl",
-            "data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top",
+            "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
           ],
           side === "bottom" && [
             "inset-x-0 bottom-0 h-auto rounded-t-xl",
-            "data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
+            "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
           ],
           className,
         )}
@@ -78,7 +78,7 @@ function SheetContent({
         {children}
         <SheetPrimitive.Close
           className={cn(
-            "absolute top-4 end-4 inline-flex size-9 items-center justify-center",
+            "absolute end-4 top-4 inline-flex size-9 items-center justify-center",
             "rounded-md text-muted-foreground transition-colors",
             "hover:bg-primary-soft hover:text-foreground",
           )}

@@ -14,7 +14,8 @@ const cardVariants = cva("flex flex-col", {
     variant: {
       default: "rounded-lg border border-border bg-card text-card-foreground shadow-sm",
       compact: "rounded-md border border-border bg-card text-card-foreground shadow-sm",
-      featured: "rounded-xl border border-border bg-card text-card-foreground shadow-md",
+      featured:
+        "rounded-xl border border-border bg-card text-card-foreground shadow-md",
       /** The dark feature card of §7 — identical in light and dark themes. */
       ink: "rounded-xl bg-ink-surface text-ink-surface-foreground shadow-md",
       /** The purple highlight panel of §8. */
@@ -78,11 +79,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      data-slot="card-action"
-      className={cn("shrink-0", className)}
-      {...props}
-    />
+    <div data-slot="card-action" className={cn("shrink-0", className)} {...props} />
   );
 }
 

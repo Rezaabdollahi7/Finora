@@ -21,8 +21,8 @@ const menuSurface = cn(
 );
 
 const menuItem = cn(
-  "relative flex h-10 cursor-default select-none items-center gap-2 rounded-sm px-3",
-  "text-body outline-none transition-colors",
+  "relative flex h-10 cursor-default items-center gap-2 rounded-sm px-3 select-none",
+  "text-body transition-colors outline-none",
   "focus:bg-primary-soft focus:text-accent-foreground",
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
   "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -77,7 +77,7 @@ function DropdownMenuCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       checked={checked}
-      className={cn(menuItem, "pe-8 ps-3", className)}
+      className={cn(menuItem, "ps-3 pe-8", className)}
       {...props}
     >
       {children}
@@ -98,7 +98,7 @@ function DropdownMenuRadioItem({
   return (
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
-      className={cn(menuItem, "pe-8 ps-3", className)}
+      className={cn(menuItem, "ps-3 pe-8", className)}
       {...props}
     >
       {children}
@@ -137,10 +137,7 @@ function DropdownMenuSeparator({
   );
 }
 
-function DropdownMenuShortcut({
-  className,
-  ...props
-}: React.ComponentProps<"span">) {
+function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
       data-slot="dropdown-menu-shortcut"

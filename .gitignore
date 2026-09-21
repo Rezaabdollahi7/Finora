@@ -42,3 +42,4 @@ next-env.d.ts
 
 # keep the documented environment template tracked
 !.env.example
+/coverage
