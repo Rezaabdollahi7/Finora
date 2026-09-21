@@ -473,7 +473,7 @@ Create aggregated endpoints/services for:
 
 ---
 
-## 2.2 — Financial summary cards
+## [x] 2.2 — Financial summary cards
 
 Create cards for:
 
@@ -496,7 +496,7 @@ Cards must support:
 
 ---
 
-## 2.3 — Cash-flow chart
+## [x] 2.3 — Cash-flow chart
 
 Create an interactive chart showing:
 
@@ -512,7 +512,7 @@ Use a modern chart library such as Recharts.
 
 ---
 
-## 2.4 — Expense category chart
+## [x] 2.4 — Expense category chart
 
 Create a chart showing expense distribution.
 

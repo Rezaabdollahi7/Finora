@@ -1989,3 +1989,86 @@ violation.
 
 The 8px spacing scale of section 11 already matches Tailwind's default scale
 (`space-4` = 16px), so spacing is not redefined.
+
+---
+
+# 59. Chart Palette
+
+Sections 29 and 30 set the visual language for charts. This section fixes the
+exact steps, because chart colour is the one place where "looks fine" and
+"is readable" come apart: two hues can be clearly different to most people and
+nearly identical to a reader with colour vision deficiency.
+
+Every palette here was checked with a validator rather than by eye, against
+five criteria: an OKLCH lightness band for the surface, a chroma floor so no
+step reads as grey, separation between adjacent pairs under protanopia,
+deuteranopia and tritanopia, separation under normal vision, and contrast
+against the chart surface.
+
+## 59.1 Cash-flow series
+
+```text
+Light                      Dark
+income   #0e9280           #0faa93
+expense  #e05038           #e85f4a
+savings  #5346f0           #6d62f3
+```
+
+These are **not** the semantic success and danger steps of section 4. Those are
+tuned for text and badges, where each appears alone next to an icon and a
+label. Side by side in a chart they are the classic red/green pair and
+separate by only ΔE 6.7 under deuteranopia — the most common form of colour
+blindness. Pushing the positive hue toward teal raises the worst adjacent pair
+to ΔE 11.5 in light and ΔE 10.8 in dark.
+
+The dark steps are re-stepped rather than reused: the light ones sit outside
+the dark lightness band and fall to ΔE 5.6 there, which fails outright.
+
+## 59.2 Sequential ramp
+
+For magnitude — "which category cost the most" — a single hue, darkest for
+the largest value.
+
+```text
+Light (largest first)      Dark (largest first)
+#352aa1                    #c9c4fb
+#4436c9                    #b3abf9
+#5346f0                    #9c92f7
+#6e5ff3                    #8579f5
+#8579f5                    #6e5ff3
+#9c92f7                    #5346f0
+```
+
+One hue, monotone lightness, even steps of roughly 0.065 OKLCH L. The ramp
+runs the other way on a dark surface, because there the lightest step is the
+one with the most contrast.
+
+A slice that is an *absence* of data rather than a category — uncategorised
+spending — takes `--chart-neutral`, which is outside the ramp.
+
+## 59.3 Rules
+
+* **Never generate a hue to fit one more series.** A generated ninth colour is
+  indistinguishable from an existing one under CVD. Fold the tail into "سایر",
+  or switch to a table.
+* **Colour is never the only channel.** Two or more series always carry a
+  legend, and the values are always reachable — as a direct label, a tooltip,
+  or the figure beside the chart.
+* **Text never wears a series colour.** Marks carry the colour; labels, values
+  and axis text use the text tokens. Identity comes from the swatch beside the
+  text.
+* **Sequential for magnitude, categorical for identity.** Never a rainbow, and
+  never a hue at a diverging midpoint.
+* **Colour follows the entity, not its rank.** Filtering a series out must not
+  repaint the ones that remain.
+
+## 59.4 Marks
+
+```text
+Bar            ≤ 24px thick, 4px rounded at the data end, square at the baseline
+Line           2px, round join and cap
+Marker         ≥ 8px, 2px ring in the surface colour
+Area fill      series hue at ~10%
+Grid           1px solid, --chart-grid, never dashed
+Gap            2px of surface between touching marks
+```
