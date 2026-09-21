@@ -1,0 +1,51 @@
+# Finora
+
+**Smart Finances, Better Business** — a Persian-first personal and household
+finance manager built for a two-person household.
+
+Finora tracks where money is, how it moves, and where it is heading: accounts
+and wallets, income and expenses, transfers, assets and liabilities, loans and
+installments, recurring payments, monthly budgets, financial goals, net worth,
+and cash-flow forecasting — all on the Jalali calendar, fully right-to-left,
+in light and dark themes.
+
+## Stack
+
+Next.js (App Router) · React · TypeScript · Tailwind CSS v4 · shadcn/ui ·
+Prisma · PostgreSQL · Recharts · Docker
+
+## Getting started
+
+```bash
+cp .env.example .env
+docker compose up
+```
+
+The application is served at <http://localhost:3000> and PostgreSQL at
+`localhost:5432`.
+
+To run against a local Node toolchain instead:
+
+```bash
+npm install
+npm run dev
+```
+
+## Scripts
+
+| Script              | Purpose                        |
+| ------------------- | ------------------------------ |
+| `npm run dev`       | Development server             |
+| `npm run build`     | Production build               |
+| `npm run start`     | Serve the production build     |
+| `npm run lint`      | ESLint                         |
+| `npm run typecheck` | TypeScript, no emit            |
+| `npm run format`    | Prettier                       |
+| `npm run test`      | Unit tests                     |
+
+## Documentation
+
+- [`SPRINTS.md`](./SPRINTS.md) — implementation roadmap
+- [`CLAUDE.md`](./CLAUDE.md) — project rules
+- [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md) — visual language
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — technical decisions
