@@ -16,10 +16,11 @@ import {
   balanceDelta,
   type Movement,
 } from "@/features/transactions/balance";
-import type {
-  CreateTransactionInput,
-  TransactionFilters,
-  UpdateTransactionInput,
+import {
+  UNCATEGORISED,
+  type CreateTransactionInput,
+  type TransactionFilters,
+  type UpdateTransactionInput,
 } from "@/features/transactions/schemas";
 import type { TransactionDto } from "@/features/transactions/types";
 
@@ -288,22 +289,71 @@ export type TransactionPage = {
   totalPages: number;
 };
 
+/**
+ * Translate the filters into a query.
+ *
+ * Every clause is combined with AND. The account filter is the one that
+ * expands to an OR internally, because an account's list has to include
+ * transfers arriving into it as well as leaving it — so it goes in its own
+ * AND branch rather than at the top level, where it would be overwritten by
+ * any other OR.
+ */
+function buildWhere(filters: TransactionFilters): Prisma.TransactionWhereInput {
+  const and: Prisma.TransactionWhereInput[] = [];
+
+  if (filters.type) and.push({ type: filters.type });
+  if (filters.owner) and.push({ owner: filters.owner });
+
+  if (filters.accountId) {
+    and.push({
+      OR: [{ accountId: filters.accountId }, { toAccountId: filters.accountId }],
+    });
+  }
+
+  if (filters.categoryId === UNCATEGORISED) {
+    // Transfers are never categorised, so they would otherwise flood this
+    // filter and hide the income and expenses that actually need a category.
+    and.push({ categoryId: null, type: { not: "TRANSFER" } });
+  } else if (filters.categoryId) {
+    // Selecting a parent includes everything filed under its children, which
+    // is what picking "خوراک" is understood to mean.
+    and.push({
+      OR: [
+        { categoryId: filters.categoryId },
+        { category: { parentId: filters.categoryId } },
+      ],
+    });
+  }
+
+  if (filters.dateFrom || filters.dateTo) {
+    and.push({
+      date: {
+        ...(filters.dateFrom ? { gte: filters.dateFrom } : {}),
+        ...(filters.dateTo ? { lte: filters.dateTo } : {}),
+      },
+    });
+  }
+
+  if (filters.amountMin !== undefined || filters.amountMax !== undefined) {
+    and.push({
+      amount: {
+        ...(filters.amountMin !== undefined ? { gte: filters.amountMin } : {}),
+        ...(filters.amountMax !== undefined ? { lte: filters.amountMax } : {}),
+      },
+    });
+  }
+
+  if (filters.search) {
+    and.push({ description: { contains: filters.search, mode: "insensitive" } });
+  }
+
+  return and.length > 0 ? { AND: and } : {};
+}
+
 export async function listTransactions(
   filters: TransactionFilters,
 ): Promise<TransactionPage> {
-  const where: Prisma.TransactionWhereInput = {
-    ...(filters.type ? { type: filters.type } : {}),
-    ...(filters.owner ? { owner: filters.owner } : {}),
-    // An account's page should show transfers in as well as out.
-    ...(filters.accountId
-      ? {
-          OR: [{ accountId: filters.accountId }, { toAccountId: filters.accountId }],
-        }
-      : {}),
-    ...(filters.search
-      ? { description: { contains: filters.search, mode: "insensitive" } }
-      : {}),
-  };
+  const where = buildWhere(filters);
 
   const [transactions, total] = await Promise.all([
     prisma.transaction.findMany({

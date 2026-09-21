@@ -400,7 +400,7 @@ Categories must support:
 
 ---
 
-## 1.8 — Transaction filters
+## [x] 1.8 — Transaction filters
 
 Support:
 

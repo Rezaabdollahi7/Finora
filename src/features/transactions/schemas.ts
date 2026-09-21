@@ -125,15 +125,92 @@ export const createTransactionSchema = refineShape(
  */
 export const updateTransactionSchema = createTransactionSchema;
 
-export const transactionFiltersSchema = z.object({
-  type: z.enum(TRANSACTION_TYPES).optional(),
-  accountId: z.string().min(1).optional(),
-  owner: z.enum(OWNERS).optional(),
-  /** Free-text match against the description. */
-  search: z.string().trim().max(100).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(25),
-});
+/** An optional amount bound, in Toman, as Rial. Blank means "no bound". */
+const optionalTomanBound = z
+  .union([z.string(), z.number()])
+  .optional()
+  .transform((value, ctx) => {
+    if (value === undefined || String(value).trim() === "") return undefined;
+
+    const rial = parseTomanToRial(String(value));
+
+    if (rial === null || rial < 0n) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "مبلغ نامعتبر است." });
+      return z.NEVER;
+    }
+
+    return rial;
+  });
+
+/** An optional instant bound. Blank means "no bound". */
+const optionalInstant = z
+  .union([z.string(), z.date()])
+  .optional()
+  .transform((value, ctx) => {
+    if (value === undefined || (typeof value === "string" && value.trim() === "")) {
+      return undefined;
+    }
+
+    const date = value instanceof Date ? value : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "تاریخ نامعتبر است." });
+      return z.NEVER;
+    }
+
+    return date;
+  });
+
+/**
+ * The full filter set (task 1.8).
+ *
+ * Both range filters are inclusive on each end, which is what a user means by
+ * "from the 1st to the 31st". Reversed ranges are rejected rather than
+ * quietly returning nothing, so a mistyped bound is visible instead of
+ * looking like an empty ledger.
+ *
+ * `categoryId` accepts the sentinel "none" to mean "uncategorised", which a
+ * plain id cannot express and which is the one filter that finds entries
+ * needing attention.
+ */
+export const UNCATEGORISED = "none";
+
+export const transactionFiltersSchema = z
+  .object({
+    type: z.enum(TRANSACTION_TYPES).optional(),
+    accountId: z.string().min(1).optional(),
+    owner: z.enum(OWNERS).optional(),
+    categoryId: z.string().min(1).optional(),
+    dateFrom: optionalInstant,
+    dateTo: optionalInstant,
+    amountMin: optionalTomanBound,
+    amountMax: optionalTomanBound,
+    /** Free-text match against the description. */
+    search: z.string().trim().max(100).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  })
+  .superRefine((value, ctx) => {
+    if (value.dateFrom && value.dateTo && value.dateFrom > value.dateTo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["dateTo"],
+        message: "تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.",
+      });
+    }
+
+    if (
+      value.amountMin !== undefined &&
+      value.amountMax !== undefined &&
+      value.amountMin > value.amountMax
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["amountMax"],
+        message: "حداکثر مبلغ نمی‌تواند کمتر از حداقل باشد.",
+      });
+    }
+  });
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
