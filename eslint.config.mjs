@@ -67,6 +67,12 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // Command-line scripts report to the terminal; that is their output.
+  {
+    files: ["scripts/**/*.{js,mjs,ts}"],
+    rules: { "no-console": "off" },
+  },
+
   // Prettier last: it only turns formatting rules off.
   prettier,
 
