@@ -6,6 +6,7 @@ budgets belongs in `src/features/<domain>/components` instead.
 ```text
 components/
 ├── ui/       shadcn/ui primitives — the design system's vocabulary
+├── layout/   application chrome: sidebar, header, navigation, theme
 ├── charts/   Recharts wrappers, themed and RTL-aware (rule G.8)
 ├── forms/    reusable form building blocks over react-hook-form
 └── common/   composites shared across features (page header, empty state, ...)

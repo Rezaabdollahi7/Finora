@@ -44,6 +44,7 @@ src/
 ├── app/            # routes, layouts, route handlers
 ├── components/
 │   ├── ui/         # shadcn/ui primitives
+│   ├── layout/     # application chrome (sidebar, header, theme)
 │   ├── charts/     # Recharts wrappers
 │   ├── forms/      # form building blocks
 │   └── common/     # shared composites
