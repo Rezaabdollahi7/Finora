@@ -36,13 +36,14 @@ async function makeAccount(overrides: Partial<Record<string, unknown>> = {}) {
   );
 }
 
-beforeEach(async () => {
+/** Transactions reference accounts, so they have to go first. */
+async function clearLedger() {
+  await prisma.transaction.deleteMany();
   await prisma.account.deleteMany();
-});
+}
 
-afterEach(async () => {
-  await prisma.account.deleteMany();
-});
+beforeEach(clearLedger);
+afterEach(clearLedger);
 
 afterAll(async () => {
   await prisma.$disconnect();

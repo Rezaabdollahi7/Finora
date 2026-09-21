@@ -19,18 +19,55 @@ import type { AccountDto } from "@/features/accounts/types";
  */
 
 /**
- * Movement recorded against an account.
+ * Every account's net movement and transaction count, in two queries
+ * regardless of how many accounts there are.
  *
- * Transactions arrive in task 1.4. Until then there are none, so every
- * account's balance is its opening balance and every count is zero. This
- * function is the single place that changes when the ledger exists — the
- * balance formula and the DTO shape above it are already correct.
+ * Grouping in the database rather than loading rows and summing in JavaScript
+ * is what task 2.10 will ask for, and it is also the only way the totals stay
+ * exact: Prisma returns a BigInt sum, so nothing passes through a float.
  */
 async function loadAccountActivity(
   accountIds: readonly string[],
 ): Promise<Map<string, { delta: bigint; count: number }>> {
-  void accountIds;
-  return new Map();
+  const activity = new Map<string, { delta: bigint; count: number }>();
+
+  if (accountIds.length === 0) return activity;
+
+  const ids = [...accountIds];
+
+  const bump = (id: string, delta: bigint, count: number) => {
+    const current = activity.get(id) ?? { delta: 0n, count: 0 };
+    activity.set(id, { delta: current.delta + delta, count: current.count + count });
+  };
+
+  // Income, expense, and transfers leaving each account.
+  const outgoing = await prisma.transaction.groupBy({
+    by: ["accountId", "type"],
+    where: { accountId: { in: ids } },
+    _sum: { amount: true },
+    _count: { _all: true },
+  });
+
+  for (const row of outgoing) {
+    const amount = row._sum.amount ?? 0n;
+    // INCOME credits the account; EXPENSE and an outgoing TRANSFER debit it.
+    bump(row.accountId, row.type === "INCOME" ? amount : -amount, row._count._all);
+  }
+
+  // Transfers arriving into each account.
+  const incoming = await prisma.transaction.groupBy({
+    by: ["toAccountId"],
+    where: { type: "TRANSFER", toAccountId: { in: ids } },
+    _sum: { amount: true },
+    _count: { _all: true },
+  });
+
+  for (const row of incoming) {
+    if (!row.toAccountId) continue;
+    bump(row.toAccountId, row._sum.amount ?? 0n, row._count._all);
+  }
+
+  return activity;
 }
 
 /**

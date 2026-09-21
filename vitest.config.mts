@@ -16,6 +16,13 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    /*
+     * Integration tests share one PostgreSQL database, so running their
+     * files in parallel lets one suite truncate tables another is mid-way
+     * through. Serialising files keeps each suite's setup meaningful; the
+     * pure unit tests are fast enough that the cost is negligible.
+     */
+    fileParallelism: false,
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
