@@ -297,7 +297,7 @@ Yeganeh
 
 ---
 
-## 1.4 — Transaction database model
+## [x] 1.4 — Transaction database model
 
 Create the transaction model.
 
@@ -328,7 +328,7 @@ Transfers require a source account and destination account.
 
 ---
 
-## 1.5 — Transaction business rules
+## [x] 1.5 — Transaction business rules
 
 Implement:
 
@@ -342,7 +342,7 @@ Implement:
 
 ---
 
-## 1.6 — Transaction CRUD
+## [x] 1.6 — Transaction CRUD
 
 Implement:
 
