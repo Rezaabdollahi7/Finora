@@ -228,7 +228,7 @@ The application must be able to represent where money exists and how money moves
 
 ---
 
-## 1.1 — Account database model
+## [x] 1.1 — Account database model
 
 Create the `Account` model.
 
@@ -261,7 +261,7 @@ Do not duplicate current balance unnecessarily if it can be calculated safely fr
 
 ---
 
-## 1.2 — Account CRUD API
+## [x] 1.2 — Account CRUD API
 
 Implement:
 
@@ -275,7 +275,7 @@ Do not permanently delete accounts that already have financial transactions.
 
 ---
 
-## 1.3 — Account UI
+## [x] 1.3 — Account UI
 
 Create:
 

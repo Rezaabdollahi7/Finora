@@ -87,6 +87,23 @@ The domains match the roadmap: dashboard, accounts, transactions, assets,
 loans, budgets, goals, calendar, reports. Each exists as a folder from
 Sprint 0 so later sprints add files rather than invent placement.
 
+## Pages that read the database
+
+A Prisma call is not one of Next's dynamic APIs, so a page that only awaits a
+database query is still prerendered at build time. The build output marks it
+`○ (Static)` and it then serves whatever the data looked like when the image
+was built, silently, while the API next to it returns the truth.
+
+Every page that reads the database therefore declares:
+
+```ts
+export const dynamic = "force-dynamic";
+```
+
+Routes with dynamic params (`/accounts/[id]`) and route handlers are already
+dynamic and need nothing. When adding a page, check the build output: a route
+that reads data and shows `○` is a bug.
+
 ## Authentication
 
 The roadmap lists authentication in the Sprint 8 audits but gives it no task of
