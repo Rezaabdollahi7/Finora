@@ -12,6 +12,12 @@ export const siteConfig = {
   locale: "fa-IR",
   direction: "rtl",
   /**
+   * The household's time zone. Timestamps are stored in UTC, and every
+   * Jalali conversion is anchored here rather than to the server's zone —
+   * otherwise a late-evening transaction lands on the wrong day.
+   */
+  timeZone: "Asia/Tehran",
+  /**
    * Money is stored as whole Rial (rule G.2) and shown to the user in Toman.
    * One Toman is ten Rial.
    */
