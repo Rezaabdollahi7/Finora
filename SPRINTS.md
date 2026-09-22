@@ -1309,7 +1309,7 @@ Support two people sharing one household while keeping personal and shared finan
 
 ---
 
-## 7.1 — Household model
+## [x] 7.1 — Household model
 
 Create:
 
@@ -1322,7 +1322,7 @@ Household
 
 ---
 
-## 7.2 — Ownership rules
+## [x] 7.2 — Ownership rules
 
 Financial records can belong to:
 
@@ -1334,7 +1334,7 @@ Shared
 
 ---
 
-## 7.3 — Income ownership
+## [x] 7.3 — Income ownership
 
 Track individual income separately.
 
@@ -1351,7 +1351,7 @@ Salary       30M
 
 ---
 
-## 7.4 — Shared expenses
+## [x] 7.4 — Shared expenses
 
 Shared household expenses should be clearly identified.
 
@@ -1367,13 +1367,13 @@ Travel
 
 ---
 
-## 7.5 — Personal expenses
+## [x] 7.5 — Personal expenses
 
 Allow each person to have personal spending that does not affect the shared budget incorrectly.
 
 ---
 
-## 7.6 — Household dashboard
+## [x] 7.6 — Household dashboard
 
 Show:
 
@@ -1387,7 +1387,7 @@ Shared Liabilities
 
 ---
 
-## 7.7 — Contribution overview
+## [x] 7.7 — Contribution overview
 
 Show how much each person contributed to the household.
 
@@ -1397,7 +1397,7 @@ Do not create competitive scoring or rankings between household members.
 
 ---
 
-## 7.8 — Personal views
+## [x] 7.8 — Personal views
 
 Each user should be able to see:
 
@@ -1411,7 +1411,7 @@ My Goals
 
 ---
 
-## 7.9 — Couple tests
+## [x] 7.9 — Couple tests
 
 Test:
 

@@ -194,6 +194,50 @@ a slice of the monthly forecast, because they answer different questions: a
 month can close comfortably and still have a week where the rent, an
 instalment and a bill all land before payday.
 
+## Two owners, and they mean different things
+
+A transaction carries **two** owners, and confusing them is the easiest
+mistake in this codebase to make.
+
+`transaction.owner` says whose record it is: a household cost or one person's.
+The owner of the **account** says whose pocket the money came out of. A
+shared rent paid from Reza's account is `owner: SHARED` with a REZA account,
+and it takes both facts to say that the household spent it and Reza provided
+it.
+
+Every model carries an owner, Budget included since Sprint 7. A budget
+measures one owner's spending: the household's food budget counts household
+food and Reza's personal budget counts Reza's, which is what keeps a gadget
+he bought for himself out of the household's limit. The "one open window per
+category" rule is therefore per category **and** owner, so the household and
+a person can budget the same category at once.
+
+### What a contribution means
+
+Money that left that person's own pocket for the household's benefit, by two
+routes:
+
+- **direct** — a household expense paid straight from their own account.
+- **pooled** — a transfer from their own account into a shared one.
+
+A household expense paid *from a shared account* credits nobody: that money
+was already pooled, and counting it again would credit whoever pressed the
+button for money both people had put in. Income is not a contribution either
+— a household where one person earns more but the other pays the rent would
+otherwise read backwards.
+
+None of it is a score. Nothing ranks, sorts by size, or computes a share, and
+the panel says so on screen.
+
+### What a person kept
+
+`totals.savings` is income minus that person's *own* spending, and it is not
+what they kept: a shared cost paid from their account is filed under the
+household, correctly, so it never appears in their expense column. `retained`
+subtracts their contribution as well, and it is what the personal view shows.
+The difference is not small — 41M against 13M in a month with one rent
+payment.
+
 ## States that depend on the clock
 
 An instalment's `UPCOMING` / `DUE` / `OVERDUE` state is **derived on read,
