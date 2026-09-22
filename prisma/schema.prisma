@@ -540,6 +540,13 @@ model Budget {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   /// The limit for one month, in whole Rial (rule G.2).
   amount     BigInt
+  /// Whose spending this limit measures (task 7.5).
+  ///
+  /// SHARED is the household's own budget and counts only household
+  /// expenses; a personal budget counts only that person's. Without this a
+  /// gadget Reza bought for himself would eat the household's food budget,
+  /// which is the whole of task 7.5.
+  owner      Owner    @default(SHARED)
   /// Whether what is left over carries into the next month (task 5.9).
   rollover   Boolean  @default(false)
   /// First Jalali month this limit applies to, as an absolute month.
@@ -549,7 +556,7 @@ model Budget {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([categoryId, fromMonth])
+  @@index([categoryId, owner, fromMonth])
   @@map("budgets")
 }
 

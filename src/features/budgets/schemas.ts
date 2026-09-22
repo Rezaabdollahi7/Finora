@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { parseTomanToRial } from "@/utils/money";
+import { OWNERS } from "@/features/accounts/types";
 
 /**
  * Validation for budget input.
@@ -40,8 +41,18 @@ const absoluteMonth = z.coerce
   .min(1300 * 12, "ماه نامعتبر است.")
   .max(1500 * 12, "ماه نامعتبر است.");
 
+/**
+ * Whose spending a budget measures (task 7.5).
+ *
+ * Defaults to the household. A personal budget is the same shape scoped to
+ * one person, which is what keeps a gadget someone bought for themselves out
+ * of the household's food budget.
+ */
+const budgetOwner = z.enum(OWNERS).default("SHARED");
+
 export const setBudgetSchema = z.object({
   categoryId: z.string().min(1, "دسته‌بندی را انتخاب کنید."),
+  owner: budgetOwner,
   amount: budgetAmount,
   /** The month the new limit starts applying to. Earlier months keep theirs. */
   fromMonth: absoluteMonth,
@@ -51,11 +62,13 @@ export const setBudgetSchema = z.object({
 /** Clearing a budget: it stops applying from this month on. */
 export const clearBudgetSchema = z.object({
   categoryId: z.string().min(1, "دسته‌بندی را انتخاب کنید."),
+  owner: budgetOwner,
   fromMonth: absoluteMonth,
 });
 
 export const budgetMonthQuerySchema = z.object({
   month: absoluteMonth.optional(),
+  owner: budgetOwner,
 });
 
 export type SetBudgetInput = z.infer<typeof setBudgetSchema>;

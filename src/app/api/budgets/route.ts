@@ -12,15 +12,18 @@ import {
   setBudget,
 } from "@/features/budgets/server/budget-service";
 
-/** GET /api/budgets?month= — one Jalali month of budgets, spending and alerts. */
+/** GET /api/budgets?month=&owner= — one month of budgets, spending and alerts. */
 export async function GET(request: Request) {
   try {
     const params = new URL(request.url).searchParams;
-    const { month } = budgetMonthQuerySchema.parse({
+    const { month, owner } = budgetMonthQuerySchema.parse({
       month: params.get("month") ?? undefined,
+      owner: params.get("owner") ?? undefined,
     });
 
-    return NextResponse.json({ budget: await getBudgetMonth(month) });
+    return NextResponse.json({
+      budget: await getBudgetMonth(month, new Date(), owner),
+    });
   } catch (error) {
     return handleApiError(error);
   }
@@ -38,7 +41,9 @@ export async function PUT(request: Request) {
     const input = setBudgetSchema.parse(await readJsonBody(request));
     await setBudget(input);
 
-    return NextResponse.json({ budget: await getBudgetMonth(input.fromMonth) });
+    return NextResponse.json({
+      budget: await getBudgetMonth(input.fromMonth, new Date(), input.owner),
+    });
   } catch (error) {
     return handleApiError(error);
   }
@@ -60,7 +65,9 @@ export async function DELETE(request: Request) {
 
     await clearBudget(input);
 
-    return NextResponse.json({ budget: await getBudgetMonth(input.fromMonth) });
+    return NextResponse.json({
+      budget: await getBudgetMonth(input.fromMonth, new Date(), input.owner),
+    });
   } catch (error) {
     return handleApiError(error);
   }

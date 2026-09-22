@@ -1,3 +1,5 @@
+import type { Owner } from "@/generated/prisma/enums";
+
 import type { BudgetAlertKind, BudgetState } from "@/features/budgets/tracking";
 
 export type { BudgetState, BudgetAlertKind };
@@ -29,6 +31,8 @@ export type BudgetLineDto = {
   ratio: number;
   state: BudgetState;
   rollover: boolean;
+  /** Whose spending this line measures (task 7.5). */
+  owner: Owner;
 };
 
 /** Everything the budgets screen needs for one month. */
@@ -38,6 +42,8 @@ export type BudgetMonthDto = {
   year: number;
   monthOfYear: number;
   label: string;
+  /** The scope being looked at: the household, or one person. */
+  owner: Owner;
   lines: BudgetLineDto[];
   totals: {
     amount: string;

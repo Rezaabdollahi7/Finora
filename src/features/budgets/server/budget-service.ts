@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Owner } from "@/generated/prisma/enums";
 import type { BudgetModel } from "@/generated/prisma/models";
 import { NotFoundError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
@@ -76,6 +77,7 @@ type CategoryRow = {
 export async function getBudgetMonth(
   month?: number,
   now: Date = new Date(),
+  owner: Owner = "SHARED",
 ): Promise<BudgetMonthDto> {
   const target = month ?? absoluteJalaliMonth(jalaliMonthOf(now));
 
@@ -85,9 +87,9 @@ export async function getBudgetMonth(
       select: { id: true, name: true, parentId: true, icon: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
-    // Every window that has ever been open for a category with one now: the
+    // Every window that has ever been open for this owner's categories: the
     // rollover chain reads months before the target.
-    prisma.budget.findMany({ orderBy: { fromMonth: "asc" } }),
+    prisma.budget.findMany({ where: { owner }, orderBy: { fromMonth: "asc" } }),
   ]);
 
   const byCategory = new Map<string, BudgetModel[]>();
@@ -114,7 +116,7 @@ export async function getBudgetMonth(
     target,
   );
 
-  const spending = await spendingByCategoryMonth(earliest, target);
+  const spending = await spendingByCategoryMonth(earliest, target, owner);
   const childrenOf = groupChildren(categories);
   const nameById = new Map(categories.map((c) => [c.id, c.name]));
 
@@ -147,6 +149,7 @@ export async function getBudgetMonth(
     year,
     monthOfYear,
     label: jalaliMonthLabel({ year, month: monthOfYear }),
+    owner,
     lines,
     totals: {
       amount: sumRial(topLevel.map((line) => BigInt(line.amount))).toString(),
@@ -156,7 +159,7 @@ export async function getBudgetMonth(
       ratio: ratioOfStrings(totalAvailable, totalSpent),
       state: budgetState(totalAvailable, totalSpent),
     },
-    alerts: await alertsFor(lines, target, now),
+    alerts: await alertsFor(lines, target, now, owner),
   };
 }
 
@@ -165,6 +168,7 @@ export async function getBudgetHistory(
   categoryId: string,
   end: number,
   count = 6,
+  owner: Owner = "SHARED",
 ): Promise<BudgetHistoryPointDto[]> {
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
@@ -175,14 +179,17 @@ export async function getBudgetHistory(
 
   const start = end - (count - 1);
   const [budgets, children] = await Promise.all([
-    prisma.budget.findMany({ where: { categoryId }, orderBy: { fromMonth: "asc" } }),
+    prisma.budget.findMany({
+      where: { categoryId, owner },
+      orderBy: { fromMonth: "asc" },
+    }),
     prisma.category.findMany({
       where: { parentId: categoryId },
       select: { id: true },
     }),
   ]);
 
-  const spending = await spendingByCategoryMonth(start, end);
+  const spending = await spendingByCategoryMonth(start, end, owner);
   const ids = [categoryId, ...children.map((child) => child.id)];
 
   return Array.from({ length: count }, (_, index) => {
@@ -222,7 +229,7 @@ export async function setBudget(input: SetBudgetInput): Promise<void> {
   if (!category) throw new NotFoundError("دسته‌بندی پیدا نشد.");
 
   const windows = await prisma.budget.findMany({
-    where: { categoryId: input.categoryId },
+    where: { categoryId: input.categoryId, owner: input.owner },
     orderBy: { fromMonth: "asc" },
   });
 
@@ -248,6 +255,7 @@ export async function setBudget(input: SetBudgetInput): Promise<void> {
       await tx.budget.create({
         data: {
           categoryId: input.categoryId,
+          owner: input.owner,
           amount: input.amount,
           rollover: input.rollover,
           fromMonth: input.fromMonth,
@@ -264,6 +272,7 @@ export async function setBudget(input: SetBudgetInput): Promise<void> {
     await tx.budget.create({
       data: {
         categoryId: input.categoryId,
+        owner: input.owner,
         amount: input.amount,
         rollover: input.rollover,
         fromMonth: input.fromMonth,
@@ -281,7 +290,7 @@ export async function setBudget(input: SetBudgetInput): Promise<void> {
  */
 export async function clearBudget(input: ClearBudgetInput): Promise<void> {
   const windows = await prisma.budget.findMany({
-    where: { categoryId: input.categoryId },
+    where: { categoryId: input.categoryId, owner: input.owner },
     orderBy: { fromMonth: "asc" },
   });
 
@@ -303,7 +312,11 @@ export async function clearBudget(input: ClearBudgetInput): Promise<void> {
 
     // Anything starting later would silently come back into force.
     await tx.budget.deleteMany({
-      where: { categoryId: input.categoryId, fromMonth: { gte: input.fromMonth } },
+      where: {
+        categoryId: input.categoryId,
+        owner: input.owner,
+        fromMonth: { gte: input.fromMonth },
+      },
     });
   });
 }
@@ -352,6 +365,7 @@ function groupChildren(categories: CategoryRow[]): Map<string, string[]> {
 async function spendingByCategoryMonth(
   from: number,
   to: number,
+  owner: Owner,
 ): Promise<Map<string, bigint>> {
   const start = jalaliMonthRange(fromAbsoluteJalaliMonth(from)).start;
   const end = jalaliMonthRange(fromAbsoluteJalaliMonth(to)).end;
@@ -359,6 +373,7 @@ async function spendingByCategoryMonth(
   const rows = await prisma.transaction.findMany({
     where: {
       type: "EXPENSE",
+      owner,
       categoryId: { not: null },
       date: { gte: start, lt: end },
     },
@@ -422,6 +437,7 @@ function toLine(
     ratio: current.ratio,
     state: current.state,
     rollover: budget.rollover,
+    owner: budget.owner,
   };
 }
 
@@ -442,17 +458,26 @@ async function alertsFor(
   lines: BudgetLineDto[],
   target: number,
   now: Date,
+  owner: Owner,
 ): Promise<BudgetAlertDto[]> {
   const { end } = jalaliMonthRange(fromAbsoluteJalaliMonth(target));
 
-  const [accounts, obligations] = await Promise.all([
-    listAccounts(accountFiltersSchema.parse({})),
-    // The limit is a safety bound, not a page: obligations come back in date
-    // order, so the ones inside a single month are always within the first
-    // few. A household with two hundred payments due in one month has a
-    // problem this alert is not going to be the one to find.
-    getUpcomingObligations(OBLIGATION_LIMIT, now),
-  ]);
+  // The cash shortfall belongs to the household, not to a person. The
+  // accounts and the instalments it weighs are the household's, so raising
+  // it on Reza's personal budget screen would tell him his own spending had
+  // caused something it had nothing to do with.
+  const household = owner === "SHARED";
+
+  const [accounts, obligations] = household
+    ? await Promise.all([
+        listAccounts(accountFiltersSchema.parse({})),
+        // The limit is a safety bound, not a page: obligations come back in
+        // date order, so the ones inside a single month are always within
+        // the first few. A household with two hundred payments due in one
+        // month has a problem this alert is not going to be the one to find.
+        getUpcomingObligations(OBLIGATION_LIMIT, now),
+      ])
+    : [[], []];
 
   // Only what falls due inside the month being looked at; a payment two
   // months out is not a shortfall today.
@@ -480,6 +505,8 @@ async function alertsFor(
     })),
     {
       availableBalance,
+      // Zero against zero raises nothing, which is what a personal scope
+      // wants: the budget alerts still fire, the cash one does not.
       upcomingObligations: sumRial(due.map((event) => BigInt(event.amount))),
     },
   );

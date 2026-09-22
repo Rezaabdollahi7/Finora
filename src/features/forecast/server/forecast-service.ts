@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Owner } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import {
   absoluteJalaliMonth,
@@ -232,19 +233,25 @@ async function recurringByMonth(
 
   const payments = await prisma.recurringPayment.findMany({
     where: { id: { in: ids } },
-    select: { id: true, categoryId: true },
+    select: { id: true, categoryId: true, owner: true },
   });
 
-  const categoryOf = new Map(payments.map((row) => [row.id, row.categoryId]));
+  const ruleById = new Map(payments.map((row) => [row.id, row]));
   const totals = new Map<number, Map<string, bigint>>();
 
   for (const occurrence of occurrences) {
     if (occurrence.status === "PAID") continue;
 
     const month = absoluteJalaliMonth(jalaliMonthOf(new Date(occurrence.dueDate)));
+    const rule = ruleById.get(occurrence.recurringPaymentId);
     // A rule with no category still costs money; it just cannot be netted
-    // against any budget, so it gets a bucket of its own.
-    const key = categoryOf.get(occurrence.recurringPaymentId) ?? `__uncategorised__`;
+    // against any budget, so it gets a bucket of its own. The owner is part
+    // of the key because paying the rule files the expense under the rule's
+    // owner, and that is the budget it will land in.
+    const key =
+      rule?.categoryId && rule.owner
+        ? scopeKey(rule.owner, rule.categoryId)
+        : "__uncategorised__";
 
     const byCategory = totals.get(month) ?? new Map<string, bigint>();
     byCategory.set(key, (byCategory.get(key) ?? 0n) + BigInt(occurrence.amount));
@@ -269,6 +276,7 @@ async function recurringByMonth(
 function budgetedBeyondRecurring(
   budgets: {
     categoryId: string;
+    owner: Owner;
     amount: bigint;
     fromMonth: number;
     toMonth: number | null;
@@ -284,7 +292,12 @@ function budgetedBeyondRecurring(
       budget.fromMonth <= month && (budget.toMonth === null || month <= budget.toMonth),
   );
 
-  const budgetedIds = new Set(inForce.map((budget) => budget.categoryId));
+  // Scoped, not bare ids: a household budget on "food" does not contain
+  // Reza's personal budget on "restaurants", because the spending each one
+  // measures is filed under a different owner.
+  const budgetedScopes = new Set(
+    inForce.map((budget) => scopeKey(budget.owner, budget.categoryId)),
+  );
 
   const parentOf = new Map<string, string>();
   for (const [parent, children] of childrenOf) {
@@ -295,7 +308,9 @@ function budgetedBeyondRecurring(
     inForce
       .filter((budget) => {
         const parent = parentOf.get(budget.categoryId);
-        return parent === undefined || !budgetedIds.has(parent);
+        return (
+          parent === undefined || !budgetedScopes.has(scopeKey(budget.owner, parent))
+        );
       })
       .map((budget) => {
         const ids = [budget.categoryId, ...(childrenOf.get(budget.categoryId) ?? [])];
@@ -304,8 +319,12 @@ function budgetedBeyondRecurring(
         // has been paid is no longer an unpaid occurrence, and shows up in
         // the spending instead.
         const covered =
-          sumRial(ids.map((id) => recurringByCategory.get(id) ?? 0n)) +
-          sumRial(ids.map((id) => spentByCategory.get(id) ?? 0n));
+          sumRial(
+            ids.map((id) => recurringByCategory.get(scopeKey(budget.owner, id)) ?? 0n),
+          ) +
+          sumRial(
+            ids.map((id) => spentByCategory.get(scopeKey(budget.owner, id)) ?? 0n),
+          );
 
         return subtractToZero(budget.amount, covered);
       }),
@@ -327,6 +346,7 @@ function subtractToZero(a: bigint, b: bigint): bigint {
  */
 async function thisMonthSoFar(month: number): Promise<{
   income: bigint;
+  /** Keyed by `owner:categoryId`; see `scopeKey`. */
   spendingByCategory: Map<string, bigint>;
 }> {
   const { start, end } = jalaliMonthRange(fromAbsoluteJalaliMonth(month));
@@ -335,7 +355,7 @@ async function thisMonthSoFar(month: number): Promise<{
     // Transfers are not spending (rule G.3) and are excluded by the type
     // filter, not by hoping none exist.
     where: { type: { in: ["INCOME", "EXPENSE"] }, date: { gte: start, lt: end } },
-    select: { type: true, amount: true, categoryId: true },
+    select: { type: true, amount: true, categoryId: true, owner: true },
   });
 
   let income = 0n;
@@ -349,13 +369,22 @@ async function thisMonthSoFar(month: number): Promise<{
 
     if (!row.categoryId) continue;
 
-    spendingByCategory.set(
-      row.categoryId,
-      (spendingByCategory.get(row.categoryId) ?? 0n) + row.amount,
-    );
+    const key = scopeKey(row.owner, row.categoryId);
+    spendingByCategory.set(key, (spendingByCategory.get(key) ?? 0n) + row.amount);
   }
 
   return { income, spendingByCategory };
+}
+
+/**
+ * A budget's scope: whose spending it measures, and in which category.
+ *
+ * Budgets became owner-scoped in task 7.5, so netting by category alone
+ * would charge a household food budget for a gadget Reza bought himself —
+ * exactly the confusion that change exists to remove.
+ */
+function scopeKey(owner: Owner, categoryId: string): string {
+  return `${owner}:${categoryId}`;
 }
 
 /** Direct children by parent id. The category tree is two levels deep. */
