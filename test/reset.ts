@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
  * is simple: anything holding a RESTRICT reference goes before the table it
  * points at.
  *
+ *   goal contribution                     holds goals
  *   {installment, recurring occurrence}   hold transactions
  *   {loan, recurring payment, budget}     hold categories and accounts
  *   transaction                           holds categories and accounts
@@ -25,6 +26,8 @@ import { prisma } from "@/lib/prisma";
  *   {category, account}
  */
 export async function resetLedger(): Promise<void> {
+  await prisma.goalContribution.deleteMany();
+  await prisma.goal.deleteMany();
   await prisma.installment.deleteMany();
   await prisma.recurringOccurrence.deleteMany();
   await prisma.loan.deleteMany();

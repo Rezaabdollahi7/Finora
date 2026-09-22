@@ -84,9 +84,9 @@ model Account {
   updatedAt      DateTime    @updatedAt
 
   /// Income, expenses, and transfers *out of* this account.
-  transactions      Transaction[] @relation("TransactionAccount")
+  transactions      Transaction[]      @relation("TransactionAccount")
   /// Transfers *into* this account.
-  incomingTransfers Transaction[] @relation("TransactionToAccount")
+  incomingTransfers Transaction[]      @relation("TransactionToAccount")
   /// Loans whose instalments are paid from this account.
   loans             Loan[]
   /// Recurring payments paid from this account.
@@ -255,18 +255,18 @@ enum ValuationSource {
 /// in AssetValuation, so changing today's price appends a fact instead of
 /// overwriting one (rule G.4, task 3.8).
 model Asset {
-  id       String    @id @default(cuid())
-  name     String
-  type     AssetType
-  kind     AssetKind
-  owner    Owner
+  id                String    @id @default(cuid())
+  name              String
+  type              AssetType
+  kind              AssetKind
+  owner             Owner
   /// Scaled by 10^8, the same way money is scaled to Rial: an exact integer
   /// rather than a float, because this number is multiplied by money
   /// (rule G.2, see utils/quantity). FIXED assets hold exactly 100000000.
-  quantity BigInt    @default(100000000)
+  quantity          BigInt    @default(100000000)
   /// What one unit is, for display: گرم, دلار, سهم. Null for FIXED assets,
   /// which are not counted in units.
-  unit     String?
+  unit              String?
   /// Rial paid per unit at acquisition. For a FIXED asset, quantity is 1, so
   /// this is the purchase value itself (task 3.4).
   purchaseUnitPrice BigInt
@@ -274,9 +274,9 @@ model Asset {
   notes             String?
   /// Archived assets keep their valuation history but leave net worth: the
   /// household no longer owns them. Assets are never deleted (rule G.4).
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   valuations AssetValuation[]
 
@@ -298,11 +298,11 @@ model Asset {
 /// Selling half a holding tomorrow must not halve what the portfolio was
 /// worth yesterday.
 model AssetValuation {
-  id      String @id @default(cuid())
-  assetId String
+  id        String          @id @default(cuid())
+  assetId   String
   /// Cascade because a valuation has no meaning without its asset. Assets
   /// are archived rather than deleted, so this should never fire.
-  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  asset     Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
   /// Rial per unit at `asOf`.
   unitPrice BigInt
   /// The holding at `asOf`, scaled like Asset.quantity.
@@ -344,42 +344,42 @@ enum LoanStatus {
 /// payment is recorded, undone or back-dated — the same reasoning that keeps
 /// Account without a balance (see docs/ARCHITECTURE.md).
 model Loan {
-  id       String @id @default(cuid())
-  name     String
+  id                String     @id @default(cuid())
+  name              String
   /// The bank or person the money is owed to.
-  provider String
+  provider          String
   /// Amount borrowed, in whole Rial (rule G.2). Not the amount repaid: that
   /// is instalmentAmount x installmentCount, which includes the interest.
-  principalAmount BigInt
+  principalAmount   BigInt
   /// Annual rate in **basis points**: 2300 is 23%. An integer for the same
   /// reason money is — it is multiplied by money to show the cost of the
   /// loan, and a float rate would put that figure a Rial out.
-  interestRate    Int    @default(0)
+  interestRate      Int        @default(0)
   /// What is owed each month, in whole Rial. Entered rather than derived:
   /// an Iranian loan contract states the instalment, and recomputing it from
   /// the rate would disagree with the paper the household is holding.
   installmentAmount BigInt
   installmentCount  Int
   /// When the loan was taken out, in UTC. Displayed as Jalali (rule G.5).
-  startDate DateTime
+  startDate         DateTime
   /// The last instalment's due date. Derived from the schedule at creation
   /// and stored so a list can sort and filter by it without loading rows.
-  endDate   DateTime
+  endDate           DateTime
   /// Day of the **Jalali** month the instalment falls on, 1-31. A month
   /// shorter than this takes its last day instead; see features/loans/schedule.
-  paymentDay Int
-  owner      Owner
-  status     LoanStatus @default(ACTIVE)
+  paymentDay        Int
+  owner             Owner
+  status            LoanStatus @default(ACTIVE)
   /// Which category the instalment expenses are filed under. Optional, and
   /// RESTRICT, so retiring a category cannot orphan a loan's history (G.4).
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryId        String?
+  category          Category?  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   /// Which account instalments are paid from, by default.
-  accountId  String?
-  account    Account?  @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  notes      String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  accountId         String?
+  account           Account?   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  notes             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   installments Installment[]
 
@@ -398,17 +398,17 @@ model Loan {
 /// morning and would need a scheduled job to keep honest. Only the fact that
 /// decides PAID is stored: when it was paid, and which transaction paid it.
 model Installment {
-  id     String @id @default(cuid())
-  loanId String
-  loan   Loan   @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  id                String       @id @default(cuid())
+  loanId            String
+  loan              Loan         @relation(fields: [loanId], references: [id], onDelete: Cascade)
   /// 1-based, in due-date order.
-  number Int
+  number            Int
   /// Midnight Tehran of the Jalali due day, as a UTC instant (rule G.5).
-  dueDate DateTime
+  dueDate           DateTime
   /// What is owed, in whole Rial.
-  amount  BigInt
+  amount            BigInt
   /// When it was paid, or null. This is what makes an instalment PAID.
-  paidAt  DateTime?
+  paidAt            DateTime?
   /// The expense this payment created. One transaction per instalment, and
   /// the unique index is what makes a double payment impossible (task 4.4) —
   /// not just a check the service happens to remember to run.
@@ -419,8 +419,8 @@ model Installment {
   /// payment is its own operation, which removes both together.
   paidTransactionId String?      @unique
   paidTransaction   Transaction? @relation(fields: [paidTransactionId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   /// Instalments are numbered within their loan, and the number is the
   /// stable handle the UI and the API use.
@@ -452,35 +452,35 @@ enum RecurrenceFrequency {
 /// expense before the money moves. Only an occurrence that has actually been
 /// paid becomes a row (see RecurringOccurrence).
 model RecurringPayment {
-  id     String @id @default(cuid())
-  name   String
+  id         String              @id @default(cuid())
+  name       String
   /// What is expected each time, in whole Rial (rule G.2).
-  amount BigInt
-  frequency RecurrenceFrequency @default(MONTHLY)
+  amount     BigInt
+  frequency  RecurrenceFrequency @default(MONTHLY)
   /// How many units of the frequency between payments: 2 with MONTHLY is
   /// every other month, 14 with CUSTOM is every fortnight.
-  interval  Int                 @default(1)
+  interval   Int                 @default(1)
   /// When the rule starts, in UTC. Displayed as Jalali (rule G.5).
-  startDate DateTime
+  startDate  DateTime
   /// When it stops, or null for an open-ended rule.
-  endDate   DateTime?
+  endDate    DateTime?
   /// Day of the Jalali month, for MONTHLY. Null takes the start date's day.
   /// A month too short for it uses its own last day, never the next month's.
   paymentDay Int?
   /// The expense's category. RESTRICT so retiring a category cannot orphan
   /// a rule's history (rule G.4).
   categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  category   Category?           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   /// Which account it is paid from, by default.
   accountId  String?
-  account    Account?  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  account    Account?            @relation(fields: [accountId], references: [id], onDelete: Restrict)
   owner      Owner
   /// An inactive rule stops producing expected payments but keeps every
   /// occurrence already paid. Rules are never deleted (rule G.4).
-  isActive   Boolean   @default(true)
+  isActive   Boolean             @default(true)
   notes      String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
 
   occurrences RecurringOccurrence[]
 
@@ -501,19 +501,19 @@ model RecurringOccurrence {
   recurringPaymentId String
   recurringPayment   RecurringPayment @relation(fields: [recurringPaymentId], references: [id], onDelete: Cascade)
   /// The date the rule produced, which is the identity of the occurrence.
-  dueDate DateTime
+  dueDate            DateTime
   /// What was actually paid, which may differ from the rule's amount: a
   /// utility bill is "about" a figure, and the month it is not is exactly
   /// the month worth recording faithfully.
-  amount  BigInt
-  paidAt  DateTime
+  amount             BigInt
+  paidAt             DateTime
   /// The expense this payment created. RESTRICT, and unique, for the same
   /// reasons as a loan instalment's: it makes a double payment impossible
   /// and stops the transaction being deleted out from under the schedule.
-  paidTransactionId String      @unique
-  paidTransaction   Transaction @relation(fields: [paidTransactionId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  paidTransactionId  String           @unique
+  paidTransaction    Transaction      @relation(fields: [paidTransactionId], references: [id], onDelete: Restrict)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   /// One payment per rule per due date. This is the constraint that makes
   /// paying the same month twice impossible, rather than a check the service
@@ -551,4 +551,86 @@ model Budget {
 
   @@index([categoryId, fromMonth])
   @@map("budgets")
+}
+
+/// What a household is saving toward.
+///
+/// The roadmap's own examples: a car, an emergency fund, a trip, a laptop.
+/// The kind is a label for grouping and an icon, not a rule — nothing in the
+/// arithmetic behaves differently for a car than for a holiday.
+enum GoalKind {
+  EMERGENCY
+  PURCHASE
+  TRAVEL
+  INVESTMENT
+  EDUCATION
+  OTHER
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+/// A savings goal (task 6.1).
+///
+/// There is deliberately no `currentAmount` column. What has been put aside
+/// is the sum of the contributions, and a stored copy drifts the moment one
+/// is edited, removed or back-dated — the same reasoning that keeps Account
+/// without a balance and Loan without a remaining debt (docs/ARCHITECTURE.md).
+model Goal {
+  id           String     @id @default(cuid())
+  name         String
+  kind         GoalKind   @default(OTHER)
+  /// What the household is aiming for, in whole Rial (rule G.2).
+  targetAmount BigInt
+  /// When it should be reached, in UTC. Displayed as Jalali (rule G.5).
+  /// Optional: "an emergency fund of 100M" is a goal with no deadline.
+  targetDate   DateTime?
+  owner        Owner
+  status       GoalStatus @default(ACTIVE)
+  /// Key into the icon map in the UI, not a component or a path.
+  icon         String?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  contributions GoalContribution[]
+
+  @@index([status])
+  @@index([owner])
+  @@index([targetDate])
+  @@map("goals")
+}
+
+/// Money earmarked for a goal (task 6.4).
+///
+/// **Not a transaction, and that is the point.** A contribution does not
+/// move money: it says that some of what the household already has is spoken
+/// for. Recording it as an expense would make saving look like spending and
+/// would cut net worth every time the household put money aside, which rule
+/// G.3 forbids for the same reason it forbids counting transfers.
+///
+/// A household that also moves the money between accounts records that as a
+/// TRANSFER, separately. The two are independent on purpose: money can be
+/// earmarked without moving, and moved without being earmarked.
+model GoalContribution {
+  id           String   @id @default(cuid())
+  goalId       String
+  goal         Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  /// Always positive, in whole Rial. Taking money back out is its own row
+  /// with `isWithdrawal` set, so the history reads as what actually happened
+  /// rather than as a contribution that quietly shrank.
+  amount       BigInt
+  /// True when money came back out of the goal.
+  isWithdrawal Boolean  @default(false)
+  /// Midnight Tehran of the Jalali day, as a UTC instant (rule G.5).
+  date         DateTime
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([goalId, date])
+  @@map("goal_contributions")
 }
