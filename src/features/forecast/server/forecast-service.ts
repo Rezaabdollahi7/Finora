@@ -69,7 +69,7 @@ export async function getForecast(
   const months = Array.from({ length: period }, (_, index) => firstMonth + index);
   const horizon = jalaliMonthRange(fromAbsoluteJalaliMonth(months.at(-1)!)).end;
 
-  const [accounts, incomeHistory, loanPayments, recurring, budgets, categories] =
+  const [accounts, incomeHistory, loanPayments, recurring, budgets, categories, soFar] =
     await Promise.all([
       listAccounts(accountFiltersSchema.parse({})),
       monthlyIncome(firstMonth),
@@ -82,6 +82,8 @@ export async function getForecast(
         where: { kind: "EXPENSE" },
         select: { id: true, parentId: true },
       }),
+      // What the month in progress has already done. See `thisMonthSoFar`.
+      thisMonthSoFar(firstMonth),
     ]);
 
   // Only what could actually be spent: an investment account would have to be
@@ -95,18 +97,30 @@ export async function getForecast(
   const income = expectedIncome(incomeHistory);
   const childrenOf = groupChildren(categories);
 
-  const inputs: ForecastMonthInput[] = months.map((month) => ({
-    month,
-    income,
-    loanPayments: loanPayments.get(month) ?? 0n,
-    recurringExpenses: sumRial([...(recurring.get(month)?.values() ?? [])]),
-    budgetedExpenses: budgetedBeyondRecurring(
-      budgets,
+  const inputs: ForecastMonthInput[] = months.map((month) => {
+    // The month in progress is counted as what is *left* of it. Its income
+    // and its spending so far are already sitting in the opening balance, so
+    // adding a whole month of either on top would count them twice — which
+    // drew a forecast climbing steeply through a month that was nearly over.
+    // Every later month has nothing spent or received yet, so these fall away
+    // to zero on their own.
+    const current = month === firstMonth;
+    const receivedAlready = current ? soFar.income : 0n;
+
+    return {
       month,
-      recurring.get(month) ?? new Map(),
-      childrenOf,
-    ),
-  }));
+      income: subtractToZero(income, receivedAlready),
+      loanPayments: loanPayments.get(month) ?? 0n,
+      recurringExpenses: sumRial([...(recurring.get(month)?.values() ?? [])]),
+      budgetedExpenses: budgetedBeyondRecurring(
+        budgets,
+        month,
+        recurring.get(month) ?? new Map(),
+        childrenOf,
+        current ? soFar.spendingByCategory : new Map(),
+      ),
+    };
+  });
 
   const points = forecast(openingBalance, inputs);
   const shortfall = firstShortfall(points);
@@ -262,6 +276,8 @@ function budgetedBeyondRecurring(
   month: number,
   recurringByCategory: Map<string, bigint>,
   childrenOf: Map<string, string[]>,
+  /** Already spent this month, for the month in progress. Empty otherwise. */
+  spentByCategory: Map<string, bigint>,
 ): bigint {
   const inForce = budgets.filter(
     (budget) =>
@@ -283,13 +299,63 @@ function budgetedBeyondRecurring(
       })
       .map((budget) => {
         const ids = [budget.categoryId, ...(childrenOf.get(budget.categoryId) ?? [])];
-        const covered = sumRial(ids.map((id) => recurringByCategory.get(id) ?? 0n));
+        // Recurring payments still ahead, plus whatever the month has
+        // already spent. The two cannot overlap: a recurring payment that
+        // has been paid is no longer an unpaid occurrence, and shows up in
+        // the spending instead.
+        const covered =
+          sumRial(ids.map((id) => recurringByCategory.get(id) ?? 0n)) +
+          sumRial(ids.map((id) => spentByCategory.get(id) ?? 0n));
 
-        const rest = budget.amount - covered;
-
-        return rest > 0n ? rest : 0n;
+        return subtractToZero(budget.amount, covered);
       }),
   );
+}
+
+/** `a - b`, floored at zero: an over-spent budget is not a credit. */
+function subtractToZero(a: bigint, b: bigint): bigint {
+  return a > b ? a - b : 0n;
+}
+
+/**
+ * What the month in progress has already earned and spent.
+ *
+ * Both are already reflected in the opening balance, so the projection has
+ * to leave them out of that month or count them twice. A forecast run on the
+ * last day of Shahrivar was adding a whole month's salary and a whole
+ * month's budget to a balance that already contained both.
+ */
+async function thisMonthSoFar(month: number): Promise<{
+  income: bigint;
+  spendingByCategory: Map<string, bigint>;
+}> {
+  const { start, end } = jalaliMonthRange(fromAbsoluteJalaliMonth(month));
+
+  const rows = await prisma.transaction.findMany({
+    // Transfers are not spending (rule G.3) and are excluded by the type
+    // filter, not by hoping none exist.
+    where: { type: { in: ["INCOME", "EXPENSE"] }, date: { gte: start, lt: end } },
+    select: { type: true, amount: true, categoryId: true },
+  });
+
+  let income = 0n;
+  const spendingByCategory = new Map<string, bigint>();
+
+  for (const row of rows) {
+    if (row.type === "INCOME") {
+      income += row.amount;
+      continue;
+    }
+
+    if (!row.categoryId) continue;
+
+    spendingByCategory.set(
+      row.categoryId,
+      (spendingByCategory.get(row.categoryId) ?? 0n) + row.amount,
+    );
+  }
+
+  return { income, spendingByCategory };
 }
 
 /** Direct children by parent id. The category tree is two levels deep. */

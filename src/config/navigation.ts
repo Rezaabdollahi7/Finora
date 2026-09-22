@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ChartColumn,
   Gem,
+  TrendingUp,
   Landmark,
   LayoutDashboard,
   Repeat,
@@ -79,6 +80,12 @@ export const mainNavigation: readonly NavItem[] = [
     label: "اهداف",
     description: "اهداف مالی و پیشرفت آن‌ها",
     icon: Target,
+  },
+  {
+    href: "/forecast",
+    label: "پیش‌بینی",
+    description: "جریان نقدی ماه‌های پیش‌رو و هشدار کسری",
+    icon: TrendingUp,
   },
   {
     href: "/calendar",

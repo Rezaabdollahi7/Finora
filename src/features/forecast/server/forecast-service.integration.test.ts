@@ -10,8 +10,14 @@ import { createTransactionSchema } from "@/features/transactions/schemas";
 import { createTransaction } from "@/features/transactions/server/transaction-service";
 import { createLoanSchema } from "@/features/loans/schemas";
 import { createLoan } from "@/features/loans/server/loan-service";
-import { createRecurringPaymentSchema } from "@/features/recurring/schemas";
-import { createRecurringPayment } from "@/features/recurring/server/recurring-service";
+import {
+  createRecurringPaymentSchema,
+  payOccurrenceSchema,
+} from "@/features/recurring/schemas";
+import {
+  createRecurringPayment,
+  payOccurrence,
+} from "@/features/recurring/server/recurring-service";
 import { setBudgetSchema } from "@/features/budgets/schemas";
 import { setBudget } from "@/features/budgets/server/budget-service";
 import { getForecast } from "@/features/forecast/server/forecast-service";
@@ -394,5 +400,124 @@ describe("the week ahead", () => {
 
   it("says nothing when the week is covered", async () => {
     expect((await getForecast(1, NOW)).warning).toBeNull();
+  });
+});
+
+describe("the month in progress", () => {
+  it("does not count income the household has already been paid", async () => {
+    // Last month's salary sets the estimate; this month's is already in the
+    // balance, so counting a whole month's income on top would count it twice.
+    await earn("60,000,000", jalali(1405, 5, 10));
+    await earn("60,000,000", jalali(1405, 6, 1));
+
+    const result = await getForecast(3, NOW);
+
+    expect(result.expectedIncome).toBe("600000000");
+    expect(result.points[0]!.income).toBe("0");
+    // Next month has been paid nothing yet, so it expects the full estimate.
+    expect(result.points[1]!.income).toBe("600000000");
+  });
+
+  it("counts only the part of this month's income still to come", async () => {
+    await earn("60,000,000", jalali(1405, 5, 10));
+    await earn("20,000,000", jalali(1405, 6, 1));
+
+    expect((await getForecast(1, NOW)).points[0]!.income).toBe("400000000");
+  });
+
+  it("never turns an unusually good month into negative income", async () => {
+    await earn("60,000,000", jalali(1405, 5, 10));
+    await earn("200,000,000", jalali(1405, 6, 1));
+
+    expect((await getForecast(1, NOW)).points[0]!.income).toBe("0");
+  });
+
+  it("does not count budgeted spending that has already happened", async () => {
+    await setBudget(
+      setBudgetSchema.parse({
+        categoryId: housing.id,
+        amount: toman(50_000_000),
+        fromMonth: SHAHRIVAR,
+      }),
+    );
+
+    await createTransaction(
+      createTransactionSchema.parse({
+        type: "EXPENSE",
+        amount: toman(20_000_000),
+        date: jalali(1405, 6, 1).toISOString(),
+        accountId: bank.id,
+        categoryId: rent.id,
+        owner: "SHARED",
+      }),
+    );
+
+    const result = await getForecast(3, NOW);
+
+    // 50M budget less the 20M already spent on it; next month starts fresh.
+    expect(result.points[0]!.budgetedExpenses).toBe("300000000");
+    expect(result.points[1]!.budgetedExpenses).toBe("500000000");
+  });
+
+  it("floors an over-spent budget at zero rather than crediting it", async () => {
+    await setBudget(
+      setBudgetSchema.parse({
+        categoryId: housing.id,
+        amount: toman(10_000_000),
+        fromMonth: SHAHRIVAR,
+      }),
+    );
+
+    await createTransaction(
+      createTransactionSchema.parse({
+        type: "EXPENSE",
+        amount: toman(30_000_000),
+        date: jalali(1405, 6, 1).toISOString(),
+        accountId: bank.id,
+        categoryId: housing.id,
+        owner: "SHARED",
+      }),
+    );
+
+    expect((await getForecast(1, NOW)).points[0]!.budgetedExpenses).toBe("0");
+  });
+
+  it("does not subtract a recurring payment twice once it has been paid", async () => {
+    await setBudget(
+      setBudgetSchema.parse({
+        categoryId: housing.id,
+        amount: toman(50_000_000),
+        fromMonth: SHAHRIVAR,
+      }),
+    );
+
+    const { id } = await createRecurringPayment(
+      createRecurringPaymentSchema.parse({
+        name: "اجاره خانه",
+        amount: toman(20_000_000),
+        frequency: "MONTHLY",
+        interval: 1,
+        paymentDay: 1,
+        startDate: jalali(1405, 6, 1).toISOString(),
+        owner: "SHARED",
+        categoryId: rent.id,
+        accountId: bank.id,
+      }),
+      NOW,
+    );
+
+    // Paying it turns the projected occurrence into a real expense. It must
+    // be netted off the budget once, not once as an occurrence and again as
+    // spending.
+    await payOccurrence(
+      id,
+      payOccurrenceSchema.parse({ dueDate: jalali(1405, 6, 1).toISOString() }),
+      NOW,
+    );
+
+    const point = (await getForecast(1, NOW)).points[0]!;
+
+    expect(point.recurringExpenses).toBe("0");
+    expect(point.budgetedExpenses).toBe("300000000");
   });
 });
