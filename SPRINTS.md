@@ -1144,7 +1144,7 @@ Turn the application from a tracker into a planning tool.
 
 ---
 
-## 6.1 — Goal model
+## [x] 6.1 — Goal model
 
 Create financial goals.
 
@@ -1161,7 +1161,7 @@ Other
 
 ---
 
-## 6.2 — Goal CRUD
+## [x] 6.2 — Goal CRUD
 
 Implement:
 
@@ -1172,7 +1172,7 @@ Implement:
 
 ---
 
-## 6.3 — Goal progress
+## [x] 6.3 — Goal progress
 
 Each goal should have:
 
@@ -1196,7 +1196,7 @@ Emergency Fund
 
 ---
 
-## 6.4 — Goal contributions
+## [x] 6.4 — Goal contributions
 
 Allow money to be allocated toward goals.
 
@@ -1204,7 +1204,7 @@ A goal contribution must be distinguishable from an actual expense.
 
 ---
 
-## 6.5 — Goal dashboard
+## [x] 6.5 — Goal dashboard
 
 Show:
 
@@ -1215,7 +1215,7 @@ Show:
 
 ---
 
-## 6.6 — Cash-flow forecasting engine
+## [x] 6.6 — Cash-flow forecasting engine
 
 Create a forecasting service.
 
@@ -1237,7 +1237,7 @@ Budgeted expenses
 
 ---
 
-## 6.7 — Forecast periods
+## [x] 6.7 — Forecast periods
 
 Support:
 
@@ -1250,7 +1250,7 @@ Support:
 
 ---
 
-## 6.8 — Forecast chart
+## [x] 6.8 — Forecast chart
 
 Create a line chart showing projected liquidity.
 
@@ -1268,7 +1268,7 @@ Month 3
 
 ---
 
-## 6.9 — Low-balance warning
+## [x] 6.9 — Low-balance warning
 
 Detect situations where expected future obligations exceed available liquid funds.
 
@@ -1288,7 +1288,7 @@ Example:
 
 ---
 
-## 6.10 — Forecast tests
+## [x] 6.10 — Forecast tests
 
 Test:
 

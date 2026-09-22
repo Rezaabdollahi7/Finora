@@ -135,6 +135,65 @@ Spending is bucketed into Jalali months in TypeScript rather than in SQL.
 Postgres has no Persian calendar, and pushing one into a query puts the month
 boundary a few hours out twice a year.
 
+## Saving is not spending
+
+A goal contribution is **not a transaction**, and that is the point. It
+records that some of what the household already has is spoken for; it does
+not move money. Filing it as an expense would make saving look like spending
+and would cut net worth every time the household put something aside — the
+same mistake rule G.3 forbids for transfers.
+
+A household that also moves the money between accounts records that as a
+TRANSFER, separately. The two are independent on purpose: money can be
+earmarked without moving, and moved without being earmarked.
+
+Taking money back out is its own row with `isWithdrawal` set, so the history
+reads as what happened rather than as a contribution that quietly shrank. The
+sign lives in that flag, never in the number (rule G.2). A goal has no
+`currentAmount` column, for the reason Account has no balance.
+
+A goal completes itself when its contributions reach the target, but never
+reopens itself. The household can mark a goal finished below its target —
+deciding the holiday fund is enough at 80% is a real decision — and a sync
+that also demoted would undo that silently on the next contribution.
+Reopening is deliberate, by hand.
+
+## What a forecast can honestly claim
+
+The cash-flow forecast carries each month's closing balance into the next
+month's opening. A month that only just holds up matters because of what it
+leaves the month after it, and computing every month from today's balance
+would miss a run of small losses entirely.
+
+Three things it does that are decisions rather than sums:
+
+**Income is an estimate**, because nothing in the ledger says what next month
+will bring. It is the **median** of what the household actually earned, not
+the mean: one bonus month would otherwise inflate every future month by a
+twelfth of that bonus, and a forecast that quietly overstates income is worse
+than no forecast.
+
+**The month in progress is counted as what is left of it.** Its income and
+its spending so far are already in the opening balance, so the projection
+subtracts them — otherwise a salary paid on the first is counted again on the
+thirty-first, and the forecast climbs through a month that is nearly over.
+
+**Budgets and recurring payments overlap.** The rent is a recurring payment
+*and* sits inside a budgeted housing category, so each budget is reduced by
+the recurring payments filed under it, floored at zero. An under-set budget
+cannot become a credit against the rent.
+
+Only balances that could actually be spent open the forecast — bank, cash and
+wallet. An investment account would have to be liquidated first and a business
+account is not the household's to spend; counting either would turn a real
+shortfall into a comfortable balance, which is what the feature exists to
+prevent.
+
+The week-ahead warning is measured against real dated obligations rather than
+a slice of the monthly forecast, because they answer different questions: a
+month can close comfortably and still have a week where the rent, an
+instalment and a bill all land before payday.
+
 ## States that depend on the clock
 
 An instalment's `UPCOMING` / `DUE` / `OVERDUE` state is **derived on read,
