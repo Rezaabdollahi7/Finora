@@ -316,6 +316,24 @@ export function jalaliMonthOf(
   return { year, month };
 }
 
+/**
+ * A Jalali month as a single comparable integer.
+ *
+ * `1405/06` becomes 16865. Two months then compare, sort and subtract with
+ * the operators rather than through a helper, and a database can index and
+ * range-query the column — which is what a budget window needs, since "which
+ * budget was in force in Mehr" becomes `fromMonth <= m AND (toMonth IS NULL
+ * OR m <= toMonth)` and nothing more.
+ */
+export function absoluteJalaliMonth({ year, month }: JalaliMonth): number {
+  return year * 12 + (month - 1);
+}
+
+/** The inverse of {@link absoluteJalaliMonth}. */
+export function fromAbsoluteJalaliMonth(absolute: number): JalaliMonth {
+  return { year: Math.floor(absolute / 12), month: (absolute % 12) + 1 };
+}
+
 /** Move a Jalali month by a whole number of months, in either direction. */
 export function addJalaliMonths(
   { year, month }: JalaliMonth,

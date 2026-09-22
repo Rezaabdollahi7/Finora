@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  absoluteJalaliMonth,
   addJalaliMonths,
   calendarDaysBetween,
   formatJalaliDate,
   formatJalaliMonth,
   formatRelativeDay,
   formatTime,
+  fromAbsoluteJalaliMonth,
   fromJalaliDate,
   isValidJalaliDate,
   jalaliMonthLabel,
@@ -452,6 +454,40 @@ describe("jalaliMonthGrid (task 4.6)", () => {
       const gap = days[index]!.instant.getTime() - days[index - 1]!.instant.getTime();
       // One calendar day apart, whatever the months and years in between.
       expect(Math.round(gap / 86_400_000)).toBe(1);
+    }
+  });
+});
+
+describe("absoluteJalaliMonth", () => {
+  it("turns a month into one comparable integer", () => {
+    expect(absoluteJalaliMonth({ year: 1405, month: 6 })).toBe(1405 * 12 + 5);
+  });
+
+  it("orders months the way the calendar does", () => {
+    const a = absoluteJalaliMonth({ year: 1405, month: 12 });
+    const b = absoluteJalaliMonth({ year: 1406, month: 1 });
+
+    expect(b - a).toBe(1);
+  });
+
+  it("round-trips", () => {
+    for (const month of [
+      { year: 1400, month: 1 },
+      { year: 1405, month: 6 },
+      { year: 1405, month: 12 },
+      { year: 1412, month: 7 },
+    ]) {
+      expect(fromAbsoluteJalaliMonth(absoluteJalaliMonth(month))).toEqual(month);
+    }
+  });
+
+  it("agrees with addJalaliMonths across a year boundary", () => {
+    const start = { year: 1405, month: 11 };
+
+    for (let delta = 0; delta < 6; delta += 1) {
+      expect(absoluteJalaliMonth(addJalaliMonths(start, delta))).toBe(
+        absoluteJalaliMonth(start) + delta,
+      );
     }
   });
 });
