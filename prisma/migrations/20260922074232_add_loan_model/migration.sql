@@ -70,7 +70,7 @@ ALTER TABLE "loans" ADD CONSTRAINT "loans_accountId_fkey" FOREIGN KEY ("accountI
 ALTER TABLE "installments" ADD CONSTRAINT "installments_loanId_fkey" FOREIGN KEY ("loanId") REFERENCES "loans"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "installments" ADD CONSTRAINT "installments_paidTransactionId_fkey" FOREIGN KEY ("paidTransactionId") REFERENCES "transactions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "installments" ADD CONSTRAINT "installments_paidTransactionId_fkey" FOREIGN KEY ("paidTransactionId") REFERENCES "transactions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- Invariants the API also enforces, restated here so no path can write a bad
 -- row: not a migration, not a psql session, not a future feature that forgets.

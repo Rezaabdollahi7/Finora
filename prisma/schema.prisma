@@ -406,8 +406,13 @@ model Installment {
   /// The expense this payment created. One transaction per instalment, and
   /// the unique index is what makes a double payment impossible (task 4.4) —
   /// not just a check the service happens to remember to run.
+  ///
+  /// RESTRICT, not SET NULL. Clearing the link while `paidAt` stood would
+  /// leave a row that reads as still owed with the money already gone, and
+  /// the CHECK constraint on this table would reject it anyway. Undoing the
+  /// payment is its own operation, which removes both together.
   paidTransactionId String?      @unique
-  paidTransaction   Transaction? @relation(fields: [paidTransactionId], references: [id], onDelete: SetNull)
+  paidTransaction   Transaction? @relation(fields: [paidTransactionId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

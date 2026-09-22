@@ -213,6 +213,35 @@ export async function createTransaction(
   return toDto(created);
 }
 
+/**
+ * Refuse to touch a transaction a loan instalment was paid with.
+ *
+ * Editing its amount or account behind the schedule's back would leave the
+ * two disagreeing about what was paid, and deleting it would leave an
+ * instalment pointing at a transaction that no longer exists — which the
+ * foreign key refuses anyway, as a raw error rather than a sentence the user
+ * can act on. Undoing the payment on the loan removes both together.
+ *
+ * Read through the client the caller is already inside, so the check sees
+ * the same snapshot as the write it guards.
+ */
+async function assertNotLoanPayment(
+  tx: Prisma.TransactionClient,
+  transactionId: string,
+): Promise<void> {
+  const installment = await tx.installment.findUnique({
+    where: { paidTransactionId: transactionId },
+    select: { number: true, loan: { select: { name: true } } },
+  });
+
+  if (!installment) return;
+
+  throw new ConflictError(
+    `این تراکنش، پرداخت قسط ${installment.number.toLocaleString("fa-IR")} وام «${installment.loan.name}» است. برای تغییر آن، پرداخت قسط را در صفحه وام لغو کنید.`,
+    "LOAN_INSTALLMENT_PAYMENT",
+  );
+}
+
 export async function updateTransaction(
   id: string,
   input: UpdateTransactionInput,
@@ -221,6 +250,7 @@ export async function updateTransaction(
     const existing = await tx.transaction.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("تراکنش پیدا نشد.");
 
+    await assertNotLoanPayment(tx, id);
     await assertAccountsAccept(tx, toMovement(input), {
       type: existing.type,
       amount: existing.amount,
@@ -261,6 +291,7 @@ export async function deleteTransaction(id: string): Promise<void> {
     const existing = await tx.transaction.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("تراکنش پیدا نشد.");
 
+    await assertNotLoanPayment(tx, id);
     await assertAccountsAccept(tx, null, {
       type: existing.type,
       amount: existing.amount,
