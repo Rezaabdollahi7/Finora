@@ -24,10 +24,18 @@ docker compose up
 The application is served at <http://localhost:3000> and PostgreSQL at
 `localhost:5432`.
 
+`docker compose up` is also all that is needed **after pulling changes**. On
+every start the container reconciles dependencies, regenerates the Prisma
+client, applies any pending migrations and re-runs the seed. Each step is a
+no-op when there is nothing to do, and `prisma migrate deploy` only applies
+what is outstanding — it never resets, so it cannot take data with it.
+
 To run against a local Node toolchain instead:
 
 ```bash
 npm install
+npm run db:deploy   # apply pending migrations
+npm run db:seed     # reference data; idempotent
 npm run dev
 ```
 
@@ -42,6 +50,8 @@ npm run dev
 | `npm run typecheck` | TypeScript, no emit            |
 | `npm run format`    | Prettier                       |
 | `npm run test`      | Unit tests                     |
+| `npm run db:migrate`| Create a migration from schema changes |
+| `npm run db:deploy` | Apply pending migrations       |
 | `npm run db:seed`   | Seed the default categories    |
 | `npm run acceptance`| Foundation acceptance checks   |
 
