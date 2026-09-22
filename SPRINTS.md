@@ -779,7 +779,7 @@ Test:
 
 ---
 
-# Sprint 4 — Loans, Installments & Persian Calendar
+# Sprint 4 — Loans, Installments & Persian Calendar  `[x]`
 
 ## Goal
 
@@ -789,7 +789,7 @@ This is one of the core features of the application.
 
 ---
 
-## 4.1 — Loan model
+## [x] 4.1 — Loan model
 
 Create the `Loan` model.
 
@@ -811,7 +811,7 @@ status
 
 ---
 
-## 4.2 — Loan CRUD
+## [x] 4.2 — Loan CRUD
 
 Implement:
 
@@ -822,7 +822,7 @@ Implement:
 
 ---
 
-## 4.3 — Installment generation
+## [x] 4.3 — Installment generation
 
 When a loan is created, generate its installment schedule.
 
@@ -847,7 +847,7 @@ OVERDUE
 
 ---
 
-## 4.4 — Installment payment
+## [x] 4.4 — Installment payment
 
 Allow the user to mark an installment as paid.
 
@@ -860,7 +860,7 @@ When paid:
 
 ---
 
-## 4.5 — Loan progress
+## [x] 4.5 — Loan progress
 
 Display:
 
@@ -885,7 +885,7 @@ Remaining:
 
 ---
 
-## 4.6 — Persian/Jalali calendar
+## [x] 4.6 — Persian/Jalali calendar
 
 Implement a full Jalali calendar.
 
@@ -902,7 +902,7 @@ Requirements:
 
 ---
 
-## 4.7 — Financial calendar
+## [x] 4.7 — Financial calendar
 
 Calendar events should include:
 
@@ -917,7 +917,7 @@ Other financial events
 
 ---
 
-## 4.8 — Day detail panel
+## [x] 4.8 — Day detail panel
 
 When selecting a day:
 
@@ -936,7 +936,7 @@ Total:
 
 ---
 
-## 4.9 — Upcoming payment timeline
+## [x] 4.9 — Upcoming payment timeline
 
 Create a timeline for:
 
@@ -950,7 +950,7 @@ This month
 
 ---
 
-## 4.10 — Loan tests
+## [x] 4.10 — Loan tests
 
 Test:
 

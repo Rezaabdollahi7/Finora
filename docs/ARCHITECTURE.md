@@ -70,6 +70,39 @@ was written as today's row and did not overwrite Farvardin's.
 Each valuation stores the quantity and the total it was taken against, so
 selling half a holding tomorrow cannot re-value yesterday.
 
+## Schedules
+
+A loan's instalments are **Jalali monthly**. A household that owes on the
+fifth owes on the fifth of Mehr and the fifth of Aban — not every thirty
+days, and not on a Gregorian date that drifts through the Persian month.
+
+Two rules follow, both in `features/loans/schedule.ts`:
+
+- A payment day the month is too short for takes that month's **last day**
+  rather than spilling into the next one, which would put two instalments in
+  one month and none in another.
+- Each month clamps from the loan's own payment day, never from the previous
+  month's result, so one short Esfand cannot drag every later date earlier.
+
+Instalments are generated once, when the loan is created, and are **records
+rather than a projection**: each can be paid, and a paid one has a date and
+an amount of its own. Editing a loan regenerates only what is still owed
+(rule G.4).
+
+## States that depend on the clock
+
+An instalment's `UPCOMING` / `DUE` / `OVERDUE` state is **derived on read,
+never stored**. Three of the four change with nothing but the passage of
+time: an upcoming instalment becomes due and then overdue while the
+application sits idle, and no write happens to record it. A stored status
+would be wrong by morning and would need a scheduled job to keep honest.
+Only the fact that decides `PAID` is a column — when it was paid, and which
+transaction paid it.
+
+Anything derived from the clock is computed from a `now` passed in by the
+caller, and pages hand the **server's** clock to the client. A phone with the
+wrong date must not disagree with the figures rendered beside it.
+
 ## Net worth
 
 ```text
@@ -81,6 +114,11 @@ has to remember: `AssetType` has no cash or bank member, so money sitting in
 an account cannot also be registered as an asset. Foreign currency is an
 asset precisely because the ledger is Rial-only (see `Account.currency`) and
 it has nowhere else to live.
+
+**Liabilities are the unpaid instalments, not the outstanding principal.**
+The household's liability is the money that will actually leave its
+accounts, interest included — the same figure the loans page calls
+مانده بدهی, so net worth and the loan list cannot disagree.
 
 ## Dates
 
