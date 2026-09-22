@@ -2,12 +2,15 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Gem, Landmark } from "lucide-react";
+import { ChevronLeft, ChevronRight, Gem, Landmark, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/common/empty-state";
 import { Money } from "@/components/common/money";
 import { OWNER_LABELS } from "@/features/accounts/types";
 import { ContributionPanel } from "@/features/household/components/contribution-panel";
@@ -55,6 +58,15 @@ export function HouseholdView({
   // a shared cost paid from their own account left their pocket too.
   const headline = member ? member.retained : totals.savings;
   const overspent = BigInt(headline) < 0n;
+
+  // A month with nothing in it at all. Zeroes across five cards say "the
+  // arithmetic ran" where a household needs to be told "there is nothing
+  // here yet, and here is where to start" (task 8.12).
+  const nothingYet =
+    household.household.income === "0" &&
+    household.household.expenses === "0" &&
+    household.sharedAssets === "0" &&
+    household.sharedLiabilities === "0";
 
   return (
     <div className="space-y-6">
@@ -151,7 +163,18 @@ export function HouseholdView({
         </div>
       </div>
 
-      {scope === "HOUSEHOLD" ? (
+      {nothingYet ? (
+        <EmptyState
+          icon={Users}
+          title={`در ${household.label} چیزی ثبت نشده است`}
+          description="با ثبت درآمد و هزینه در صفحه تراکنش‌ها، تصویر خانه و سهم هر نفر همین‌جا ساخته می‌شود."
+          action={
+            <Button asChild>
+              <Link href="/transactions">ثبت تراکنش</Link>
+            </Button>
+          }
+        />
+      ) : scope === "HOUSEHOLD" ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <SharedFigure

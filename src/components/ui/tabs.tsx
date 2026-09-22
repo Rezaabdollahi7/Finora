@@ -16,7 +16,12 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "inline-flex w-fit items-center gap-1 rounded-full bg-muted p-1",
+        // `max-w-full` and `flex-wrap` together, because `w-fit` alone lets
+        // a strip of tabs grow past its parent: at 320px the dashboard's
+        // range tabs sat at 321..378, off the screen and unreachable. They
+        // only wrap when there is no room, so nothing changes at any width
+        // where they already fit.
+        "inline-flex w-fit max-w-full flex-wrap items-center gap-1 rounded-full bg-muted p-1",
         className,
       )}
       {...props}

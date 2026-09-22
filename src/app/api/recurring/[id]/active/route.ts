@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { handleApiError, readJsonBody } from "@/lib/api";
 import { setRecurringPaymentActive } from "@/features/recurring/server/recurring-service";
@@ -11,14 +12,21 @@ import { setRecurringPaymentActive } from "@/features/recurring/server/recurring
  * payments created are real transactions, and removing the rule would leave
  * them unexplained (rule G.4).
  */
+const bodySchema = z.object({
+  isActive: z.boolean({ message: "وضعیت فعال بودن باید درست یا نادرست باشد." }),
+});
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    const body = (await readJsonBody(request)) as { isActive?: unknown };
-    const isActive = body.isActive !== false;
+    // Validated rather than coerced. `body.isActive !== false` accepted a
+    // string, a number or a missing field as "switch it on", which is the
+    // one endpoint in the API that was reading an untrusted body without a
+    // schema to hold it to (task 8.18).
+    const { isActive } = bodySchema.parse(await readJsonBody(request));
 
     return NextResponse.json({
       payment: await setRecurringPaymentActive(id, isActive),

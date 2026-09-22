@@ -1432,7 +1432,7 @@ Complete the financial reporting system and prepare the application for real dai
 
 ---
 
-## 8.1 — Monthly financial report
+## [x] 8.1 — Monthly financial report
 
 Create a monthly report containing:
 
@@ -1447,7 +1447,7 @@ Net worth change
 
 ---
 
-## 8.2 — Income report
+## [x] 8.2 — Income report
 
 Show income by:
 
@@ -1458,7 +1458,7 @@ Show income by:
 
 ---
 
-## 8.3 — Expense report
+## [x] 8.3 — Expense report
 
 Show expenses by:
 
@@ -1469,7 +1469,7 @@ Show expenses by:
 
 ---
 
-## 8.4 — Savings report
+## [x] 8.4 — Savings report
 
 Calculate:
 
@@ -1487,7 +1487,7 @@ Savings / Income × 100
 
 ---
 
-## 8.5 — Debt report
+## [x] 8.5 — Debt report
 
 Show:
 
@@ -1501,7 +1501,7 @@ Upcoming installments
 
 ---
 
-## 8.6 — Asset report
+## [x] 8.6 — Asset report
 
 Show:
 
@@ -1515,7 +1515,7 @@ Asset history
 
 ---
 
-## 8.7 — Net worth report
+## [x] 8.7 — Net worth report
 
 Show:
 
@@ -1530,7 +1530,7 @@ with historical charts.
 
 ---
 
-## 8.8 — Category analysis
+## [x] 8.8 — Category analysis
 
 Identify:
 
@@ -1543,7 +1543,7 @@ The system should present factual observations rather than subjective financial 
 
 ---
 
-## 8.9 — Report filters
+## [x] 8.9 — Report filters
 
 All reports should support:
 
@@ -1556,7 +1556,7 @@ Category
 
 ---
 
-## 8.10 — Export
+## [x] 8.10 — Export
 
 Support exporting reports/data where appropriate.
 
@@ -1572,7 +1572,7 @@ Do not introduce unnecessary dependencies if browser printing/export is sufficie
 
 ---
 
-## 8.11 — Notification center
+## [x] 8.11 — Notification center
 
 Create a central notification system for:
 
@@ -1588,7 +1588,7 @@ Goal milestone
 
 ---
 
-## 8.12 — Empty states
+## [x] 8.12 — Empty states
 
 Every major page must have a meaningful empty state.
 
@@ -1604,7 +1604,7 @@ Do not show blank screens.
 
 ---
 
-## 8.13 — Loading states
+## [x] 8.13 — Loading states
 
 Every asynchronous page/component must support:
 
@@ -1616,7 +1616,7 @@ Avoid layout jumping.
 
 ---
 
-## 8.14 — Error states
+## [x] 8.14 — Error states
 
 Implement consistent error handling for:
 
@@ -1629,7 +1629,7 @@ Never expose raw server/database errors to users.
 
 ---
 
-## 8.15 — Responsive audit
+## [x] 8.15 — Responsive audit
 
 Review the complete application on:
 
@@ -1651,7 +1651,7 @@ Check:
 
 ---
 
-## 8.16 — Accessibility audit
+## [x] 8.16 — Accessibility audit
 
 Check:
 
@@ -1665,7 +1665,7 @@ Check:
 
 ---
 
-## 8.17 — Performance audit
+## [x] 8.17 — Performance audit
 
 Review:
 
@@ -1679,7 +1679,7 @@ Review:
 
 ---
 
-## 8.18 — Security audit
+## [x] 8.18 — Security audit
 
 Review:
 
@@ -1694,7 +1694,7 @@ Review:
 
 ---
 
-## 8.19 — Database integrity audit
+## [x] 8.19 — Database integrity audit
 
 Verify:
 
@@ -1709,7 +1709,7 @@ Financial calculations must never use floating-point arithmetic where monetary p
 
 ---
 
-## 8.20 — Automated tests
+## [x] 8.20 — Automated tests
 
 Create tests for critical business logic:
 
@@ -1730,7 +1730,7 @@ Household calculations
 
 ---
 
-## 8.21 — Final build verification
+## [x] 8.21 — Final build verification
 
 The following must succeed:
 
@@ -1744,25 +1744,55 @@ npm run build
 
 ---
 
-## 8.22 — Production readiness checklist
+## [x] 8.22 — Production readiness checklist
+
+The checklist below has been worked through. **Thirteen of its fifteen items
+are met; two are not, deliberately and by the roadmap's own design** — Finora
+has no authentication and no authorization, because ownership is modelled as
+an `owner` field rather than a user table and no task asks for a login. Those
+two are left unticked rather than reinterpreted, and what protects the
+deployment instead is written down in `docs/OPERATIONS.md`.
 
 Before declaring the project complete:
 
-- [ ] Database migrations work from a clean database
-- [ ] Environment variables documented
-- [ ] Docker production build works
-- [ ] Database backup strategy documented
-- [ ] Error logging exists
-- [ ] Authentication works
-- [ ] Authorization works
-- [ ] Responsive UI verified
-- [ ] RTL verified
-- [ ] Persian calendar verified
-- [ ] Monetary calculations verified
-- [ ] Critical tests passing
-- [ ] No TypeScript errors
-- [ ] No ESLint errors
-- [ ] No console errors in production build
+- [x] Database migrations work from a clean database — `migrate deploy` into a
+      fresh database creates 14 tables; the seed then takes categories 0 → 30.
+- [x] Environment variables documented — `docs/OPERATIONS.md`. There are two
+      the application reads: `DATABASE_URL` and the optional
+      `PRISMA_QUERY_COUNTER`.
+- [x] Docker production build works — `docker-compose.prod.yml` builds and the
+      production image serves; migrations are applied explicitly with
+      `npm run db:deploy`, not on start.
+- [x] Database backup strategy documented — `docs/OPERATIONS.md`: `pg_dump`
+      in custom format, a cron entry, and the instruction to test the restore.
+- [x] Error logging exists — `handleApiError` logs the real error server-side
+      and returns a fixed Persian message; no stack trace or SQL reaches the
+      browser.
+- [ ] **Authentication works — there is none, deliberately.** Finora has no
+      login and no user table: ownership is an `owner` field, which is what
+      the roadmap specifies. Anyone who can reach the port has full access.
+      The boundary is the network — localhost, a VPN, or an authenticating
+      reverse proxy. See the first section of `docs/OPERATIONS.md`.
+- [ ] **Authorization works — there is none, for the same reason.** Both
+      people see everything; the owner field separates whose money it is, not
+      who may look at it.
+- [x] Responsive UI verified — 14 routes at 1440, 820 and 390: no page
+      overflow, no clipped card, no console error. Audited at 320 as well;
+      one accepted finding is recorded in `docs/OPERATIONS.md`.
+- [x] RTL verified — `dir="rtl"` on the document, logical properties
+      throughout, and the audit checks it on every page.
+- [x] Persian calendar verified — every user-facing date is Jalali, storage is
+      UTC, and the conversion is anchored to Asia/Tehran.
+- [x] Monetary calculations verified — every money column in the database is
+      `bigint`; there is no `numeric`, `real` or `double precision` column
+      anywhere. `Number()` appears only for chart coordinates and display
+      ratios, never for money that feeds back into money.
+- [x] Critical tests passing — 825 across 43 files, including integration
+      tests against a real PostgreSQL for every service.
+- [x] No TypeScript errors — `tsc --noEmit` clean.
+- [x] No ESLint errors — `eslint` clean.
+- [x] No console errors in production build — verified by the sweep above,
+      which fails on any console error.
 
 ---
 

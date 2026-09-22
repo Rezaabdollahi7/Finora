@@ -238,6 +238,67 @@ subtracts their contribution as well, and it is what the personal view shows.
 The difference is not small — 41M against 13M in a month with one rent
 payment.
 
+## Reports read once, not once per report
+
+Every breakdown on the reports screen — by month, owner, category and account,
+for income and spending alike — folds out of a **single scan** of the window.
+Six reports each running their own query would be six scans of the same rows,
+and the bucketing has to happen in TypeScript anyway because the months are
+Jalali and PostgreSQL has no Persian calendar.
+
+The same applies to the series that back the charts: the cash balance for
+twelve months is one query carried forward, not twelve. There are tests that
+assert the query count does not move when the range grows from one month to
+twenty-four — a report that ran one query per month would pass every
+correctness test and still be unusable at two years.
+
+Three figures the roadmap words loosely and the code had to decide:
+
+- **A savings rate with no income is `null`, not zero.** A household that
+  earned nothing did not save 0% of anything.
+- **A change against nothing has no ratio.** Zero to something is not an
+  infinite improvement, and JSON cannot carry `Infinity` anyway. A debt
+  shrinking from −100M to −50M reads as a 50% improvement, because the ratio
+  is taken against the magnitude it started at.
+- **A trend has a dead band.** Under a twentieth either way is flat;
+  otherwise a household whose grocery bill moved by a thousand Toman sees an
+  arrow every month and learns to ignore all of them.
+
+Category analysis carries a figure, a share, a previous and a direction, and
+nothing else. No grade, no rating, no adjective — the roadmap asks for factual
+observations rather than subjective scores, and whether spending more on food
+than last month is *good* is not something a ledger can know.
+
+## Notifications are derived, not stored
+
+The notification centre recomputes on every read. Most of what it reports
+changes with nothing but the passage of time — an upcoming instalment becomes
+due and then overdue while the application sits idle — so a notifications
+table would be wrong by morning and would need a scheduled job to keep it
+honest. That is the same reasoning that keeps an instalment's status out of
+the database.
+
+Nothing is sent anywhere. "Notification" here means a list the household reads
+when it opens the application, which is what a self-hosted tool with no
+accounts and no addresses can honestly offer.
+
+## RTL scroll containers overflow where nothing can reach
+
+Twice in Sprint 8 the same browser behaviour produced a bug, and it is worth
+stating once. In an RTL scroll container the overflow runs **left**, and left
+overflow is unreachable: the container scrolls, but the overflowing width also
+propagates to the viewport and the whole page gains a horizontal scrollbar.
+
+- A 567px table in a 308px box dragged the document 202px wide on a 390px
+  phone. Clipping the card, clipping the wrapper and `overflow-clip` all left
+  it at exactly 202. The fix is `dir="ltr"` on the scroll container with the
+  table itself back in `rtl`, which sends the overflow right where it is
+  contained — and a sticky first column, because the labels would otherwise
+  be at whichever end the container does not open on.
+- A strip of eight tabs put its last tab at x=−233, reachable by nothing.
+  There the fix is not to scroll at all: `TabsList` wraps, which it only does
+  when there is no room.
+
 ## States that depend on the clock
 
 An instalment's `UPCOMING` / `DUE` / `OVERDUE` state is **derived on read,

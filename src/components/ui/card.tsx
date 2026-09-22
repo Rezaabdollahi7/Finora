@@ -57,9 +57,20 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
+/**
+ * A card's title is an `h2`, not an `h3`.
+ *
+ * A card sits directly under the page's `h1` on most screens, and rendering
+ * its title as `h3` skipped a level — a screen reader navigating by heading
+ * goes straight from the page title to a level it has no parent for. The
+ * dashboard, which groups its cards under a real section heading, ends up
+ * with sibling `h2`s, which is valid and reads correctly.
+ *
+ * The size is a class, so nothing about this changes how it looks.
+ */
+function CardTitle({ className, ...props }: React.ComponentProps<"h2">) {
   return (
-    <h3
+    <h2
       data-slot="card-title"
       className={cn("text-h4 font-semibold", className)}
       {...props}

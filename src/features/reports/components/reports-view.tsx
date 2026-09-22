@@ -149,7 +149,7 @@ export function ReportsView({
         }}
         className="print:hidden"
       >
-        <TabsList className="flex h-auto flex-wrap justify-start">
+        <TabsList className="justify-start">
           {TABS.map((entry) => (
             <TabsTrigger key={entry.value} value={entry.value}>
               {entry.label}
