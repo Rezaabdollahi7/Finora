@@ -193,7 +193,12 @@ function InstallmentRow({
         {installment.number.toLocaleString("fa-IR")}
       </span>
 
-      <span className="flex min-w-0 flex-col">
+      {/*
+        A fixed column, so the status badges line up down the page instead of
+        stepping in and out with the length of each month's name — "اردیبهشت"
+        is four characters longer than "دی".
+      */}
+      <span className="flex w-36 min-w-0 shrink-0 flex-col">
         <span className="text-body">
           {formatJalaliDate(new Date(installment.dueDate))}
         </span>

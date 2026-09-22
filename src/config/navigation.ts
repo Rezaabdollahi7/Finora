@@ -5,6 +5,7 @@ import {
   Gem,
   Landmark,
   LayoutDashboard,
+  Repeat,
   PiggyBank,
   Settings,
   Target,
@@ -60,6 +61,12 @@ export const mainNavigation: readonly NavItem[] = [
     label: "وام‌ها",
     description: "وام‌ها، اقساط و تاریخچه پرداخت",
     icon: Landmark,
+  },
+  {
+    href: "/recurring",
+    label: "پرداخت‌های دوره‌ای",
+    description: "اجاره، اشتراک‌ها و قبض‌های تکرارشونده",
+    icon: Repeat,
   },
   {
     href: "/budgets",
