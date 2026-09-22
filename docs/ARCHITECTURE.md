@@ -89,6 +89,52 @@ rather than a projection**: each can be paid, and a paid one has a date and
 an amount of its own. Editing a loan regenerates only what is still owed
 (rule G.4).
 
+## Rules that produce records
+
+A loan's instalments and a recurring payment's occurrences are the same idea
+seen from opposite ends, and they are stored differently for one reason: a
+loan is **finite** and a recurring payment is **open-ended**.
+
+A loan has sixty instalments and then it is finished, so all sixty are
+written when the loan is created. A recurring payment has no last month, so
+its future dates are **derived from the rule on read** and only become rows
+when they are paid — `features/recurring/recurrence.ts` generates dates for a
+window, and the generator seeks to the window rather than counting up to it,
+so asking about a month ten years out costs the same as asking about this
+one.
+
+Once a date has a row, the row wins. A paid occurrence keeps the date and the
+amount it actually had, and an edited rule cannot rewrite it (rule G.4): a
+rent that went up in Mehr did not retroactively cost more in Mordad. A paid
+occurrence also stays visible even when the edited rule no longer produces
+its date, because a payment that really happened must not disappear from the
+history.
+
+## Budgets are windows
+
+A budget is stored as a **window** — `fromMonth`, an optional `toMonth`, and
+the amount that applied between them — not as an amount on a category.
+Raising the food budget in Mehr closes the old window at Shahrivar and opens
+a new one, so asking what the budget was in Mordad still answers with
+Mordad's figure. A single mutable amount would rewrite every past month the
+moment the household changed its mind, which is rule G.4 again.
+
+Months are stored as the single integer `absoluteJalaliMonth` produces
+(`year * 12 + month - 1`), so "which budget was in force in Mehr" is one
+indexed range query and nothing more.
+
+A parent's budget covers what its children spend — "food: 25M" has to mean
+the restaurants inside it, or the limit is met by filing every dinner one
+level down — and the month's total then counts a child once rather than once
+per budgeted ancestor.
+
+Rollover carries a **surplus and never a deficit**. Carrying a deficit would
+quietly shrink next month's budget for a reason invisible inside next month.
+
+Spending is bucketed into Jalali months in TypeScript rather than in SQL.
+Postgres has no Persian calendar, and pushing one into a query puts the month
+boundary a few hours out twice a year.
+
 ## States that depend on the clock
 
 An instalment's `UPCOMING` / `DUE` / `OVERDUE` state is **derived on read,

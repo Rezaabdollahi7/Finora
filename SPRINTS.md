@@ -972,7 +972,7 @@ Automate predictable expenses and introduce monthly budgeting.
 
 ---
 
-## 5.1 — Recurring payment model
+## [x] 5.1 — Recurring payment model
 
 Create recurring financial events.
 
@@ -1005,7 +1005,7 @@ active
 
 ---
 
-## 5.2 — Recurring payment frequencies
+## [x] 5.2 — Recurring payment frequencies
 
 Support:
 
@@ -1018,7 +1018,7 @@ Custom
 
 ---
 
-## 5.3 — Automatic future events
+## [x] 5.3 — Automatic future events
 
 Recurring payments should automatically generate future expected events.
 
@@ -1026,7 +1026,7 @@ Do not immediately create real expense transactions for future events.
 
 ---
 
-## 5.4 — Convert recurring event to transaction
+## [x] 5.4 — Convert recurring event to transaction
 
 When the payment is actually made:
 
@@ -1038,7 +1038,7 @@ and create the real transaction.
 
 ---
 
-## 5.5 — Recurring payment UI
+## [x] 5.5 — Recurring payment UI
 
 Create:
 
@@ -1052,7 +1052,7 @@ Create:
 
 ---
 
-## 5.6 — Budget model
+## [x] 5.6 — Budget model
 
 Create monthly budgets.
 
@@ -1068,7 +1068,7 @@ Personal         3M
 
 ---
 
-## 5.7 — Budget tracking
+## [x] 5.7 — Budget tracking
 
 Calculate:
 
@@ -1081,7 +1081,7 @@ Percentage
 
 ---
 
-## 5.8 — Budget progress UI
+## [x] 5.8 — Budget progress UI
 
 Example:
 
@@ -1103,7 +1103,7 @@ Over budget
 
 ---
 
-## 5.9 — Budget rollover
+## [x] 5.9 — Budget rollover
 
 Allow selected budget categories to carry unused money into the next month.
 
@@ -1111,7 +1111,7 @@ Rollover must be configurable per category.
 
 ---
 
-## 5.10 — Budget alerts
+## [x] 5.10 — Budget alerts
 
 Prepare the system to notify the user when:
 
@@ -1123,7 +1123,7 @@ Upcoming expenses exceed available balance
 
 ---
 
-## 5.11 — Budget tests
+## [x] 5.11 — Budget tests
 
 Test:
 
