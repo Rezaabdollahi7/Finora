@@ -1,4 +1,5 @@
 import type { JalaliMonth } from "@/utils/date";
+import type { CalendarEventKind } from "@/features/calendar/types";
 
 /**
  * Every figure the dashboard shows, for one Jalali month.
@@ -32,7 +33,12 @@ export type UpcomingPayment = {
   title: string;
   amount: string;
   dueDate: string;
-  kind: "LOAN_INSTALMENT" | "RECURRING" | "GOAL_CONTRIBUTION";
+  /*
+   * Reuses the calendar's list rather than keeping a second one. Sprint 2
+   * declared these independently and Sprint 4 arrived with a different
+   * spelling of "instalment" — two enums for one idea, disagreeing.
+   */
+  kind: CalendarEventKind;
 };
 
 /** One category's budget for the period. */

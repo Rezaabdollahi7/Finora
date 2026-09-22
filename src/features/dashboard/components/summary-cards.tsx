@@ -2,6 +2,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Gem,
+  Landmark,
   Minus,
   PiggyBank,
   Scale,
@@ -39,6 +40,8 @@ type Metric = {
   goodWhen: "up" | "down" | "either";
   tone: Tone;
   hint?: string;
+  /** Spans the whole row: for a figure that totals the ones above it. */
+  wide?: boolean;
 };
 
 function buildMetrics(current: DashboardTotals, previous: DashboardTotals): Metric[] {
@@ -90,6 +93,23 @@ function buildMetrics(current: DashboardTotals, previous: DashboardTotals): Metr
       hint: "طلا، ارز، خودرو و ملک — پول داخل حساب‌ها اینجا شمرده نمی‌شود",
     },
     {
+      key: "liabilityValue",
+      label: "بدهی",
+      icon: Landmark,
+      value: current.liabilityValue,
+      previous: previous.liabilityValue,
+      goodWhen: "down",
+      tone: "neutral",
+      hint: "مجموع اقساط پرداخت‌نشده وام‌ها",
+    },
+    /*
+     * Net worth closes the row rather than sitting among the figures it is
+     * made of. Six tiles fill two rows of three and the seventh would be
+     * stranded alone; spanning it instead makes the odd one out read as the
+     * total it is. Four columns would fit seven, but a thirteen-digit figure
+     * does not fit a quarter of 1280px — the browser check measures that.
+     */
+    {
       key: "netWorth",
       label: "ارزش خالص",
       icon: Scale,
@@ -97,21 +117,11 @@ function buildMetrics(current: DashboardTotals, previous: DashboardTotals): Metr
       previous: previous.netWorth,
       goodWhen: "up",
       tone: "neutral",
+      wide: true,
       // Spelling out the formula is what stops the figure being read as a
-      // fourth independent number beside the three it is made of.
+      // seventh independent number beside the six it is made of.
       hint: "دارایی‌ها + موجودی حساب‌ها − بدهی‌ها",
     },
-    /*
-     * There is no liability tile yet.
-     *
-     * It was here as a placeholder reading zero, which was the right call
-     * while net worth had nothing else in it. Now that assets are real, a
-     * seventh tile leaves a single card stranded on its own row — and four
-     * columns is too narrow for a thirteen-digit figure, which the browser
-     * check confirms. A constant zero is the one of the seven worth
-     * dropping; it returns in Sprint 4 with a number in it, alongside the
-     * loans page. The net-worth hint still names the term.
-     */
   ];
 }
 
@@ -199,7 +209,7 @@ export function SummaryCards({
         <li key={metric.key} className="contents">
           <Card
             variant={metric.tone === "ink" ? "ink" : "default"}
-            className="gap-3"
+            className={cn("gap-3", metric.wide && "sm:col-span-2 xl:col-span-3")}
             aria-label={metric.label}
           >
             <span

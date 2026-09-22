@@ -123,6 +123,48 @@ async function seedAssets(assetCount: number, pricesPerAsset: number) {
   }
 }
 
+/**
+ * Loans and their instalments (tasks 4.5, 4.9).
+ *
+ * A ten-year loan is 120 instalments. Both the number of loans and the
+ * number of instalments each carries have to be free: the first is what a
+ * naive per-loan progress lookup would query, the second is what a naive
+ * per-instalment status check would.
+ */
+async function seedLoans(loanCount: number, installmentsPerLoan: number) {
+  await prisma.installment.deleteMany();
+  await prisma.loan.deleteMany();
+
+  const account = await prisma.account.findFirst();
+
+  for (let index = 0; index < loanCount; index += 1) {
+    const start = on({ year: 1405, month: 1 }, 1);
+
+    await prisma.loan.create({
+      data: {
+        name: `وام ${index}`,
+        provider: "بانک",
+        principalAmount: 1_000_000_000n,
+        interestRate: 2300,
+        installmentAmount: 10_000_000n,
+        installmentCount: installmentsPerLoan,
+        startDate: start,
+        endDate: on({ year: 1409, month: 12 }, 20),
+        paymentDay: 5,
+        owner: "SHARED",
+        accountId: account?.id ?? null,
+        installments: {
+          create: Array.from({ length: installmentsPerLoan }, (_, number) => ({
+            number: number + 1,
+            dueDate: new Date(start.getTime() + number * 30 * 86_400_000),
+            amount: 10_000_000n,
+          })),
+        },
+      },
+    });
+  }
+}
+
 /** Run something and report how many queries it took. */
 async function queriesFor(work: () => Promise<unknown>): Promise<number> {
   resetQueryCount();
@@ -150,10 +192,11 @@ describe("bounded round trips", () => {
   it("builds the whole summary in a handful of queries", async () => {
     const count = await queriesFor(() => getDashboardSummary(MONTH));
 
-    // Two periods, each needing income/expense plus a balance read. The
-    // exact number may shift as assets and liabilities land; what must not
-    // happen is growth with the data.
-    expect(count).toBeLessThanOrEqual(12);
+    // Two periods, each needing income/expense, a balance, a portfolio
+    // valuation and a liability total, plus the upcoming list. The exact
+    // number shifts as each sprint's model lands; what must not happen —
+    // and what the tests below actually pin — is growth with the data.
+    expect(count).toBeLessThanOrEqual(16);
   });
 
   it("does not issue more queries as the ledger grows", async () => {
@@ -213,6 +256,18 @@ describe("bounded round trips", () => {
     expect(year).toBe(three);
 
     await seedAssets(0, 0);
+  });
+
+  it("does not query per loan or per instalment for the summary", async () => {
+    await seedLoans(2, 12);
+    const few = await queriesFor(() => getDashboardSummary(MONTH));
+
+    await seedLoans(8, 120);
+    const many = await queriesFor(() => getDashboardSummary(MONTH));
+
+    expect(many).toBe(few);
+
+    await seedLoans(0, 0);
   });
 
   it("does not query per category for the expense breakdown", async () => {

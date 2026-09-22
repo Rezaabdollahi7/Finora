@@ -364,3 +364,91 @@ export function jalaliMonthLabel(
   const name = JALALI_MONTHS[month - 1]!;
   return withYear ? `${name} ${applyDigitStyle(String(year), digits)}` : name;
 }
+
+/* -------------------------------------------------------------------------
+ * Calendar grids (task 4.6)
+ * ---------------------------------------------------------------------- */
+
+/** One cell of a month grid. */
+export type JalaliCalendarDay = {
+  date: JalaliDate;
+  /** Midnight Tehran, as the UTC instant the database stores (rule G.5). */
+  instant: Date;
+  /** False for the days borrowed from the months on either side. */
+  inMonth: boolean;
+  isToday: boolean;
+  /** 0 = Saturday .. 6 = Friday. */
+  weekday: number;
+  /** Friday is the Persian weekend. */
+  isWeekend: boolean;
+};
+
+/**
+ * Six rows, always.
+ *
+ * A Jalali month needs five rows or six depending on which weekday it starts
+ * on. Letting the grid change height makes the whole page jump every time
+ * the user steps a month forward, and a calendar is a thing people page
+ * through quickly.
+ */
+const CALENDAR_ROWS = 6;
+const DAYS_IN_WEEK = 7;
+
+/**
+ * A Jalali month laid out as weeks, Saturday first (task 4.6).
+ *
+ * The leading and trailing cells come from the neighbouring months rather
+ * than being blank, so the week rows read as real weeks — a blank Saturday
+ * before the 1st of Mehr hides the fact that the 30th of Shahrivar was that
+ * Saturday. They are marked `inMonth: false` so the UI can mute them.
+ */
+export function jalaliMonthGrid(
+  { year, month }: JalaliMonth,
+  now: Date = new Date(),
+  timeZone: string = TIME_ZONE,
+): JalaliCalendarDay[][] {
+  const today = toJalaliDate(now, timeZone);
+  const previous = addJalaliMonths({ year, month }, -1);
+  const previousLength = jalaliMonthLength(previous.year, previous.month);
+  const lead = jalaliWeekday({ year, month, day: 1 }, timeZone);
+
+  const cells: JalaliCalendarDay[] = [];
+
+  for (let index = 0; index < CALENDAR_ROWS * DAYS_IN_WEEK; index += 1) {
+    // Days before the 1st count backwards into the previous month; days past
+    // the last count forwards into the next one.
+    const dayOfMonth = index - lead + 1;
+    let date: JalaliDate;
+    let inMonth = true;
+
+    if (dayOfMonth < 1) {
+      date = { ...previous, day: previousLength + dayOfMonth };
+      inMonth = false;
+    } else if (dayOfMonth > jalaliMonthLength(year, month)) {
+      const next = addJalaliMonths({ year, month }, 1);
+      date = { ...next, day: dayOfMonth - jalaliMonthLength(year, month) };
+      inMonth = false;
+    } else {
+      date = { year, month, day: dayOfMonth };
+    }
+
+    const weekday = index % DAYS_IN_WEEK;
+
+    cells.push({
+      date,
+      instant: fromJalaliDate(date, timeZone),
+      inMonth,
+      isToday:
+        date.year === today.year &&
+        date.month === today.month &&
+        date.day === today.day,
+      weekday,
+      // Friday is the sixth index in a Saturday-first week.
+      isWeekend: weekday === 6,
+    });
+  }
+
+  return Array.from({ length: CALENDAR_ROWS }, (_, row) =>
+    cells.slice(row * DAYS_IN_WEEK, (row + 1) * DAYS_IN_WEEK),
+  );
+}

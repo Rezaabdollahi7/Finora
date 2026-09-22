@@ -121,7 +121,7 @@ export function LoanDetail({
         </dl>
       </Card>
 
-      <InstallmentList loan={loan} now={now} />
+      <InstallmentList loan={loan} accounts={accounts} now={now} />
     </div>
   );
 }

@@ -10,7 +10,7 @@ const payment = (days: number, amount = "1000", id = `p${days}`): UpcomingPaymen
   title: `قسط ${id}`,
   amount,
   dueDate: new Date(NOW.getTime() + days * 86_400_000).toISOString(),
-  kind: "LOAN_INSTALMENT",
+  kind: "LOAN_INSTALLMENT",
 });
 
 describe("groupUpcomingPayments", () => {

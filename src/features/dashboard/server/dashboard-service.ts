@@ -3,6 +3,7 @@ import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { assetValueAsOf, assetValuesAt } from "@/features/assets/server/asset-service";
+import { getUpcomingObligations } from "@/features/calendar/server/calendar-service";
 import {
   addJalaliMonths,
   formatJalaliDate,
@@ -42,28 +43,52 @@ import type {
 /* -------------------------------------------------------------------------
  * Not yet modelled
  *
- * Loans arrive in Sprint 4, recurring payments and budgets in Sprint 5. The
- * dashboard's shape is complete; these three functions are the only places
- * that change when those models land, and the figures above them — net worth
- * in particular — are already correct arithmetic over whatever they return.
+ * Budgets arrive in Sprint 5. The dashboard's shape is complete; this is the
+ * only place that changes when they land, and the figures above it are
+ * already correct arithmetic over whatever it returns.
  *
- * Assets landed in Sprint 3 and now come from the asset service.
+ * Assets landed in Sprint 3 and loans in Sprint 4; both now come from their
+ * own services.
  * ---------------------------------------------------------------------- */
 
-/** Outstanding debt at an instant. Sprint 4. */
+/**
+ * What the household still owes on its loans at an instant (task 3.9).
+ *
+ * The unpaid instalments, not the outstanding principal: the household's
+ * liability is the money that will actually leave its accounts, interest
+ * included. That is the same figure the loans page calls "مانده بدهی", so
+ * net worth and the loan list cannot disagree.
+ *
+ * Instalments due *after* the instant are what is still owed at it. A
+ * payment recorded later does not make a past liability smaller, which is
+ * what keeps the net-worth history honest (rule G.4).
+ */
 async function loadLiabilityValue(asOf: Date): Promise<bigint> {
-  void asOf;
-  return 0n;
+  const owed = await prisma.installment.aggregate({
+    where: {
+      loan: { status: { not: "ARCHIVED" } },
+      OR: [{ paidAt: null }, { paidAt: { gte: asOf } }],
+    },
+    _sum: { amount: true },
+  });
+
+  return owed._sum.amount ?? 0n;
 }
 
-/** Obligations falling due after an instant. Sprints 4 and 5. */
+/** Obligations still owed, soonest first (task 4.9). */
 async function loadUpcomingPayments(
   after: Date,
   limit: number,
 ): Promise<UpcomingPayment[]> {
-  void after;
-  void limit;
-  return [];
+  const events = await getUpcomingObligations(limit, after);
+
+  return events.map((event) => ({
+    id: event.id,
+    title: event.subtitle ? `${event.title} — ${event.subtitle}` : event.title,
+    amount: event.amount,
+    dueDate: event.date,
+    kind: event.kind === "LOAN_INSTALLMENT" ? "LOAN_INSTALLMENT" : "RECURRING",
+  }));
 }
 
 /** Budget versus actual for a period. Sprint 5. */
@@ -191,7 +216,10 @@ export async function getDashboardSummary(
   const [current, previous, upcomingPayments, budgets] = await Promise.all([
     totalsFor(month),
     totalsFor(previousMonth),
-    loadUpcomingPayments(new Date(), 5),
+    // Twelve rather than five: a household with nine overdue instalments
+    // would otherwise see nothing but arrears, and the widget's whole point
+    // is the horizons — what is owed today, this week, this month.
+    loadUpcomingPayments(new Date(), 12),
     loadBudgetStatus(period),
   ]);
 

@@ -13,6 +13,8 @@ import { toast } from "@/components/ui/sonner";
 import { formatJalaliDate, formatRelativeDay } from "@/utils/date";
 import { INSTALLMENT_STATUS_LABELS } from "@/features/loans/schedule";
 import { INSTALLMENT_STATUS_STYLE } from "@/features/loans/format";
+import type { AccountDto } from "@/features/accounts/types";
+import { PayInstallmentDialog } from "@/features/loans/components/pay-installment-dialog";
 import type { InstallmentDto, LoanDetailDto } from "@/features/loans/types";
 
 /**
@@ -44,10 +46,19 @@ import type { InstallmentDto, LoanDetailDto } from "@/features/loans/types";
  * thing to hide.
  */
 const WINDOW = 12;
-export function InstallmentList({ loan, now }: { loan: LoanDetailDto; now: Date }) {
+export function InstallmentList({
+  loan,
+  accounts,
+  now,
+}: {
+  loan: LoanDetailDto;
+  accounts: AccountDto[];
+  now: Date;
+}) {
   const router = useRouter();
   const [pending, setPending] = React.useState<number | null>(null);
   const [showAll, setShowAll] = React.useState(false);
+  const [paying, setPaying] = React.useState<InstallmentDto | null>(null);
 
   const unpaid = loan.installments.filter((entry) => entry.status !== "PAID");
   const paidCount = loan.installments.length - unpaid.length;
@@ -62,12 +73,16 @@ export function InstallmentList({ loan, now }: { loan: LoanDetailDto; now: Date 
 
   const hidden = loan.installments.length - visible.length;
 
-  async function act(number: number, method: "POST" | "DELETE") {
+  /**
+   * Undo goes straight through; paying opens a dialog, because the date and
+   * the account are decisions rather than defaults.
+   */
+  async function undo(number: number) {
     setPending(number);
 
     try {
       const response = await fetch(`/api/loans/${loan.id}/installments/${number}/pay`, {
-        method,
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: "{}",
       });
@@ -80,7 +95,7 @@ export function InstallmentList({ loan, now }: { loan: LoanDetailDto; now: Date 
         return;
       }
 
-      toast.success(method === "POST" ? "قسط پرداخت شد." : "پرداخت قسط لغو شد.");
+      toast.success("پرداخت قسط لغو شد.");
       router.refresh();
     } finally {
       setPending(null);
@@ -111,8 +126,10 @@ export function InstallmentList({ loan, now }: { loan: LoanDetailDto; now: Date 
             emphasised={installment.number === nextUnpaid?.number}
             disabled={loan.status === "ARCHIVED"}
             pending={pending === installment.number}
-            onPay={() => void act(installment.number, "POST")}
-            onUndo={() => void act(installment.number, "DELETE")}
+            onPay={() => {
+              setPaying(installment);
+            }}
+            onUndo={() => void undo(installment.number)}
           />
         ))}
       </ul>
@@ -130,6 +147,16 @@ export function InstallmentList({ loan, now }: { loan: LoanDetailDto; now: Date 
             : `نمایش همه ${loan.installments.length.toLocaleString("fa-IR")} قسط`}
         </Button>
       ) : null}
+
+      <PayInstallmentDialog
+        loan={loan}
+        installment={paying}
+        accounts={accounts}
+        open={paying !== null}
+        onOpenChange={(next) => {
+          if (!next) setPaying(null);
+        }}
+      />
     </Card>
   );
 }
