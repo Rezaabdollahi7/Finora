@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/prisma";
+import { resetLedger } from "@test/reset";
 import { createAccountSchema } from "@/features/accounts/schemas";
 import { createAccount } from "@/features/accounts/server/account-service";
 import { createCategorySchema } from "@/features/categories/schemas";
@@ -28,9 +29,7 @@ const names = async (input: Record<string, unknown> = {}) =>
     .sort();
 
 beforeEach(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
 
   bank = await createAccount(
     createAccountSchema.parse({
@@ -103,9 +102,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
   await prisma.$disconnect();
 });
 

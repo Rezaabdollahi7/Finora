@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/prisma";
+import { resetLedger } from "@test/reset";
 import { fromJalaliDate, jalaliMonthRange } from "@/utils/date";
 import { createAccountSchema } from "@/features/accounts/schemas";
 import { createAccount } from "@/features/accounts/server/account-service";
@@ -53,9 +54,7 @@ async function tx(input: {
 }
 
 beforeEach(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
 
   bank = await createAccount(
     createAccountSchema.parse({
@@ -89,9 +88,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
   await prisma.$disconnect();
 });
 
@@ -500,8 +497,7 @@ describe("account distribution", () => {
   });
 
   it("returns nothing when there are no accounts", async () => {
-    await prisma.transaction.deleteMany();
-    await prisma.account.deleteMany();
+    await resetLedger();
 
     expect(await getAccountDistribution()).toEqual([]);
   });
@@ -589,8 +585,7 @@ describe("net worth history", () => {
   });
 
   it("returns nothing when there are no accounts", async () => {
-    await prisma.transaction.deleteMany();
-    await prisma.account.deleteMany();
+    await resetLedger();
 
     expect(await getNetWorthHistory("M6", NOW)).toEqual([]);
   });

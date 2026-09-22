@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { AppRuleError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
+import { resetLedger } from "@test/reset";
 import { fromJalaliDate, toJalaliDate } from "@/utils/date";
 import { createAccountSchema } from "@/features/accounts/schemas";
 import {
@@ -54,11 +55,7 @@ let bank: Awaited<ReturnType<typeof createAccount>>;
 let category: Awaited<ReturnType<typeof createCategory>>;
 
 async function clear() {
-  await prisma.installment.deleteMany();
-  await prisma.loan.deleteMany();
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
 }
 
 beforeEach(async () => {

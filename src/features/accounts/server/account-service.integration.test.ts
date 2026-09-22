@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { AppRuleError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
+import { resetLedger } from "@test/reset";
 import {
   archiveAccount,
   createAccount,
@@ -38,8 +39,7 @@ async function makeAccount(overrides: Partial<Record<string, unknown>> = {}) {
 
 /** Transactions reference accounts, so they have to go first. */
 async function clearLedger() {
-  await prisma.transaction.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
 }
 
 beforeEach(clearLedger);

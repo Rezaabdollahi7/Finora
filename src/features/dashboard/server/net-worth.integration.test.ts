@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/prisma";
+import { resetLedger } from "@test/reset";
 import { fromJalaliDate } from "@/utils/date";
 import { createAccountSchema } from "@/features/accounts/schemas";
 import { createAccount } from "@/features/accounts/server/account-service";
@@ -37,10 +38,7 @@ const NOW = on(MONTH, 20);
 let bank: Awaited<ReturnType<typeof createAccount>>;
 
 beforeEach(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.assetValuation.deleteMany();
-  await prisma.asset.deleteMany();
+  await resetLedger();
 
   bank = await createAccount(
     createAccountSchema.parse({
@@ -54,10 +52,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.assetValuation.deleteMany();
-  await prisma.asset.deleteMany();
+  await resetLedger();
   await prisma.$disconnect();
 });
 
@@ -255,7 +250,7 @@ describe("net worth history (3.10)", () => {
   it("still draws a portfolio held by a household with no accounts", async () => {
     // Without this, owning a flat and no bank account read as "no net
     // worth" on the chart while the assets page showed billions.
-    await prisma.account.deleteMany();
+    await resetLedger();
     await buyFlat(on({ year: 1405, month: 4 }, 1));
 
     const points = await getNetWorthHistory("M6", NOW);
@@ -266,7 +261,7 @@ describe("net worth history (3.10)", () => {
   });
 
   it("is empty when there is nothing at all to draw", async () => {
-    await prisma.account.deleteMany();
+    await resetLedger();
 
     expect(await getNetWorthHistory("M6", NOW)).toEqual([]);
   });

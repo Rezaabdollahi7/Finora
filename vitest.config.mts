@@ -12,6 +12,8 @@ export default defineConfig({
       "server-only": fileURLToPath(
         new URL("./test/server-only-stub.ts", import.meta.url),
       ),
+      // Integration suites share one reset helper; see test/reset.ts.
+      "@test": fileURLToPath(new URL("./test", import.meta.url)),
     },
   },
   test: {

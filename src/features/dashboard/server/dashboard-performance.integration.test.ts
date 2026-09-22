@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { prisma, readQueryCount, resetQueryCount } from "@/lib/prisma";
+import { resetLedger } from "@test/reset";
 import { fromJalaliDate } from "@/utils/date";
 import {
   getAccountDistribution,
@@ -35,11 +36,7 @@ const on = (month: { year: number; month: number }, day: number) =>
   new Date(fromJalaliDate({ ...month, day }).getTime() + 9 * 3_600_000);
 
 async function seed(accountCount: number, transactionsPerMonth: number) {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.assetValuation.deleteMany();
-  await prisma.asset.deleteMany();
+  await resetLedger();
 
   const parent = await prisma.category.create({
     data: { name: "خوراک", kind: "EXPENSE" },
@@ -138,11 +135,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.assetValuation.deleteMany();
-  await prisma.asset.deleteMany();
+  await resetLedger();
   await prisma.$disconnect();
 });
 

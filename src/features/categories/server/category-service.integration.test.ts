@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/prisma";
+import { resetLedger } from "@test/reset";
 import {
   categoryFiltersSchema,
   createCategorySchema,
@@ -30,15 +31,11 @@ async function child(
 }
 
 beforeEach(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
 });
 
 afterAll(async () => {
-  await prisma.transaction.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.account.deleteMany();
+  await resetLedger();
   await prisma.$disconnect();
 });
 
