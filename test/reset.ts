@@ -14,16 +14,22 @@ import { prisma } from "@/lib/prisma";
  * became order-dependent overnight. Keeping the order in one place means the
  * next model is one line here instead of nine edits.
  *
- * Deletes run from the most dependent table to the least:
+ * Deletes run from the most dependent table to the least. The ordering rule
+ * is simple: anything holding a RESTRICT reference goes before the table it
+ * points at.
  *
- *   installment -> loan -> transaction -> {asset valuation, category, account}
- *
- * Installments point at transactions and loans; loans point at accounts and
- * categories; transactions point at accounts and categories.
+ *   {installment, recurring occurrence}   hold transactions
+ *   {loan, recurring payment, budget}     hold categories and accounts
+ *   transaction                           holds categories and accounts
+ *   {asset valuation, asset}
+ *   {category, account}
  */
 export async function resetLedger(): Promise<void> {
   await prisma.installment.deleteMany();
+  await prisma.recurringOccurrence.deleteMany();
   await prisma.loan.deleteMany();
+  await prisma.recurringPayment.deleteMany();
+  await prisma.budget.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.assetValuation.deleteMany();
   await prisma.asset.deleteMany();

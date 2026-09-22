@@ -11,6 +11,8 @@ import {
 } from "@/utils/date";
 import { sumRial } from "@/utils/money";
 import { installmentStatus } from "@/features/loans/schedule";
+import { occurrencesForWindow } from "@/features/recurring/server/recurring-service";
+import type { OccurrenceDto } from "@/features/recurring/types";
 import type {
   CalendarDayEvents,
   CalendarEvent,
@@ -20,13 +22,13 @@ import type {
 /**
  * The financial calendar (tasks 4.7 and 4.8).
  *
- * Every dated obligation the household has, in one place. Loan instalments
- * are the only source today; recurring payments, bills and goal
- * contributions arrive in Sprints 5 and 6 and join here, which is why the
- * event shape is a union rather than an instalment.
+ * Every dated obligation the household has, in one place: loan instalments
+ * and recurring payments today, goal contributions in Sprint 6. The event
+ * shape is a union rather than an instalment precisely so a new source is a
+ * new `toEvent`, not a new shape travelling through three components.
  *
- * Archived loans are excluded throughout: an archived loan is one the
- * household has put away, and its dates are not obligations any more.
+ * Archived loans and inactive rules are excluded throughout: both are things
+ * the household has put away, and their dates are not obligations any more.
  */
 
 /** One query, bounded to the window, whatever the month contains. */
@@ -94,14 +96,42 @@ function byDay(events: CalendarEvent[]): Record<string, CalendarDayEvents> {
   return days;
 }
 
+/**
+ * A recurring payment's occurrence as a calendar event.
+ *
+ * An expected occurrence has no row and therefore no id of its own, so the
+ * event is keyed by the rule and the date — which is exactly what identifies
+ * it everywhere else too.
+ */
+function occurrenceToEvent(occurrence: OccurrenceDto): CalendarEvent {
+  return {
+    id: occurrence.id ?? `${occurrence.recurringPaymentId}:${occurrence.dueDate}`,
+    kind: "RECURRING",
+    title: occurrence.name,
+    subtitle: null,
+    amount: occurrence.amount,
+    date: occurrence.dueDate,
+    status: occurrence.status,
+    href: `/recurring/${occurrence.recurringPaymentId}`,
+  };
+}
+
 /** Every obligation in a Jalali month, grouped by day (tasks 4.7, 4.8). */
 export async function getCalendarMonth(
   month: JalaliMonth = jalaliMonthOf(new Date()),
   now: Date = new Date(),
 ): Promise<CalendarMonth> {
   const range = jalaliMonthRange(month);
-  const rows = await loadInstallments(range);
-  const events = rows.map((row) => toEvent(row, now));
+
+  const [rows, occurrences] = await Promise.all([
+    loadInstallments(range),
+    occurrencesForWindow(range, now),
+  ]);
+
+  const events = [
+    ...rows.map((row) => toEvent(row, now)),
+    ...occurrences.map(occurrenceToEvent),
+  ].sort((a, b) => a.date.localeCompare(b.date));
 
   return {
     ...month,
@@ -129,21 +159,39 @@ export async function getUpcomingObligations(
   limit = 20,
   now: Date = new Date(),
 ): Promise<CalendarEvent[]> {
-  const rows = await prisma.installment.findMany({
-    where: { paidAt: null, loan: { status: { not: "ARCHIVED" } } },
-    select: {
-      id: true,
-      number: true,
-      dueDate: true,
-      amount: true,
-      paidAt: true,
-      loan: {
-        select: { id: true, name: true, provider: true, installmentCount: true },
-      },
-    },
-    orderBy: { dueDate: "asc" },
-    take: limit,
-  });
+  // A rule is open-ended, so "everything still owed" is infinite. The window
+  // is what makes it finite: far enough back to keep an arrear visible, far
+  // enough forward to fill the horizons the widget groups by.
+  const window = {
+    start: new Date(now.getTime() - 365 * 86_400_000),
+    end: new Date(now.getTime() + 120 * 86_400_000),
+  };
 
-  return rows.map((row) => toEvent(row, now));
+  const [rows, occurrences] = await Promise.all([
+    prisma.installment.findMany({
+      where: { paidAt: null, loan: { status: { not: "ARCHIVED" } } },
+      select: {
+        id: true,
+        number: true,
+        dueDate: true,
+        amount: true,
+        paidAt: true,
+        loan: {
+          select: { id: true, name: true, provider: true, installmentCount: true },
+        },
+      },
+      orderBy: { dueDate: "asc" },
+      take: limit,
+    }),
+    occurrencesForWindow(window, now),
+  ]);
+
+  return [
+    ...rows.map((row) => toEvent(row, now)),
+    ...occurrences
+      .filter((occurrence) => occurrence.status !== "PAID")
+      .map(occurrenceToEvent),
+  ]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, limit);
 }

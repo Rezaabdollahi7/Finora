@@ -214,32 +214,47 @@ export async function createTransaction(
 }
 
 /**
- * Refuse to touch a transaction a loan instalment was paid with.
+ * Refuse to touch a transaction that something else generated.
  *
- * Editing its amount or account behind the schedule's back would leave the
- * two disagreeing about what was paid, and deleting it would leave an
- * instalment pointing at a transaction that no longer exists — which the
- * foreign key refuses anyway, as a raw error rather than a sentence the user
- * can act on. Undoing the payment on the loan removes both together.
+ * A loan instalment and a recurring payment each create an expense and then
+ * hold a reference to it. Editing its amount or account behind their back
+ * would leave the two disagreeing about what was paid, and deleting it would
+ * leave the schedule pointing at a transaction that no longer exists — which
+ * the foreign key refuses anyway, as a raw error rather than a sentence the
+ * user can act on. Undoing the payment where it was made removes both
+ * together, and the message says where that is.
  *
  * Read through the client the caller is already inside, so the check sees
  * the same snapshot as the write it guards.
  */
-async function assertNotLoanPayment(
+async function assertNotGeneratedPayment(
   tx: Prisma.TransactionClient,
   transactionId: string,
 ): Promise<void> {
-  const installment = await tx.installment.findUnique({
-    where: { paidTransactionId: transactionId },
-    select: { number: true, loan: { select: { name: true } } },
-  });
+  const [installment, occurrence] = await Promise.all([
+    tx.installment.findUnique({
+      where: { paidTransactionId: transactionId },
+      select: { number: true, loan: { select: { name: true } } },
+    }),
+    tx.recurringOccurrence.findUnique({
+      where: { paidTransactionId: transactionId },
+      select: { recurringPayment: { select: { name: true } } },
+    }),
+  ]);
 
-  if (!installment) return;
+  if (installment) {
+    throw new ConflictError(
+      `این تراکنش، پرداخت قسط ${installment.number.toLocaleString("fa-IR")} وام «${installment.loan.name}» است. برای تغییر آن، پرداخت قسط را در صفحه وام لغو کنید.`,
+      "LOAN_INSTALLMENT_PAYMENT",
+    );
+  }
 
-  throw new ConflictError(
-    `این تراکنش، پرداخت قسط ${installment.number.toLocaleString("fa-IR")} وام «${installment.loan.name}» است. برای تغییر آن، پرداخت قسط را در صفحه وام لغو کنید.`,
-    "LOAN_INSTALLMENT_PAYMENT",
-  );
+  if (occurrence) {
+    throw new ConflictError(
+      `این تراکنش، پرداخت «${occurrence.recurringPayment.name}» است. برای تغییر آن، پرداخت را در صفحه پرداخت‌های دوره‌ای لغو کنید.`,
+      "RECURRING_PAYMENT",
+    );
+  }
 }
 
 export async function updateTransaction(
@@ -250,7 +265,7 @@ export async function updateTransaction(
     const existing = await tx.transaction.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("تراکنش پیدا نشد.");
 
-    await assertNotLoanPayment(tx, id);
+    await assertNotGeneratedPayment(tx, id);
     await assertAccountsAccept(tx, toMovement(input), {
       type: existing.type,
       amount: existing.amount,
@@ -291,7 +306,7 @@ export async function deleteTransaction(id: string): Promise<void> {
     const existing = await tx.transaction.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("تراکنش پیدا نشد.");
 
-    await assertNotLoanPayment(tx, id);
+    await assertNotGeneratedPayment(tx, id);
     await assertAccountsAccept(tx, null, {
       type: existing.type,
       amount: existing.amount,
