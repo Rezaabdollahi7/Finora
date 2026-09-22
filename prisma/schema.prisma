@@ -87,6 +87,8 @@ model Account {
   transactions      Transaction[] @relation("TransactionAccount")
   /// Transfers *into* this account.
   incomingTransfers Transaction[] @relation("TransactionToAccount")
+  /// Loans whose instalments are paid from this account.
+  loans             Loan[]
 
   @@index([isActive])
   @@index([owner])
@@ -140,6 +142,9 @@ model Transaction {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
+  /// Set when this expense was created by paying a loan instalment.
+  paidInstallment Installment?
+
   @@index([date])
   @@index([accountId, date])
   @@index([toAccountId])
@@ -186,6 +191,7 @@ model Category {
   updatedAt DateTime     @updatedAt
 
   transactions Transaction[]
+  loans        Loan[]
 
   @@index([kind, isActive])
   @@index([parentId])
@@ -308,4 +314,107 @@ model AssetValuation {
   @@unique([assetId, asOf])
   @@index([assetId, asOf])
   @@map("asset_valuations")
+}
+
+/// Where a loan is in its life.
+///
+/// SETTLED is maintained by the service, in the same transaction that pays
+/// the final instalment, rather than derived on read. It is the one
+/// denormalisation in the schema, and it earns its place: "show me the loans
+/// I still owe on" is the most common read in the feature, and deriving it
+/// would mean a join and an aggregate on every list. The service is the only
+/// writer, and a test asserts the stored value always agrees with the
+/// instalments.
+enum LoanStatus {
+  ACTIVE
+  SETTLED
+  ARCHIVED
+}
+
+/// A debt repaid in monthly instalments.
+///
+/// There is deliberately no `remainingDebt` column, and no `paidCount`. Both
+/// are sums over the instalments, and a stored copy drifts the moment a
+/// payment is recorded, undone or back-dated — the same reasoning that keeps
+/// Account without a balance (see docs/ARCHITECTURE.md).
+model Loan {
+  id       String @id @default(cuid())
+  name     String
+  /// The bank or person the money is owed to.
+  provider String
+  /// Amount borrowed, in whole Rial (rule G.2). Not the amount repaid: that
+  /// is instalmentAmount x installmentCount, which includes the interest.
+  principalAmount BigInt
+  /// Annual rate in **basis points**: 2300 is 23%. An integer for the same
+  /// reason money is — it is multiplied by money to show the cost of the
+  /// loan, and a float rate would put that figure a Rial out.
+  interestRate    Int    @default(0)
+  /// What is owed each month, in whole Rial. Entered rather than derived:
+  /// an Iranian loan contract states the instalment, and recomputing it from
+  /// the rate would disagree with the paper the household is holding.
+  installmentAmount BigInt
+  installmentCount  Int
+  /// When the loan was taken out, in UTC. Displayed as Jalali (rule G.5).
+  startDate DateTime
+  /// The last instalment's due date. Derived from the schedule at creation
+  /// and stored so a list can sort and filter by it without loading rows.
+  endDate   DateTime
+  /// Day of the **Jalali** month the instalment falls on, 1-31. A month
+  /// shorter than this takes its last day instead; see features/loans/schedule.
+  paymentDay Int
+  owner      Owner
+  status     LoanStatus @default(ACTIVE)
+  /// Which category the instalment expenses are filed under. Optional, and
+  /// RESTRICT, so retiring a category cannot orphan a loan's history (G.4).
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// Which account instalments are paid from, by default.
+  accountId  String?
+  account    Account?  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  installments Installment[]
+
+  @@index([status])
+  @@index([owner])
+  @@index([endDate])
+  @@map("loans")
+}
+
+/// One scheduled repayment.
+///
+/// The four statuses in the roadmap are deliberately **not** a column. Three
+/// of them change with nothing but the passage of time — an upcoming
+/// instalment becomes due and then overdue while the application sits idle,
+/// and no write happens to record it. A stored status would be wrong by
+/// morning and would need a scheduled job to keep honest. Only the fact that
+/// decides PAID is stored: when it was paid, and which transaction paid it.
+model Installment {
+  id     String @id @default(cuid())
+  loanId String
+  loan   Loan   @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  /// 1-based, in due-date order.
+  number Int
+  /// Midnight Tehran of the Jalali due day, as a UTC instant (rule G.5).
+  dueDate DateTime
+  /// What is owed, in whole Rial.
+  amount  BigInt
+  /// When it was paid, or null. This is what makes an instalment PAID.
+  paidAt  DateTime?
+  /// The expense this payment created. One transaction per instalment, and
+  /// the unique index is what makes a double payment impossible (task 4.4) —
+  /// not just a check the service happens to remember to run.
+  paidTransactionId String?      @unique
+  paidTransaction   Transaction? @relation(fields: [paidTransactionId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Instalments are numbered within their loan, and the number is the
+  /// stable handle the UI and the API use.
+  @@unique([loanId, number])
+  @@index([dueDate])
+  @@index([loanId, dueDate])
+  @@map("installments")
 }

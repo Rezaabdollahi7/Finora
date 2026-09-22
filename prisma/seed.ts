@@ -50,6 +50,19 @@ const CATEGORIES: Root[] = [
     ],
   },
   {
+    // Added in Sprint 4. Paying a loan instalment creates an expense, and
+    // without a category for it every repayment would land in "بدون دسته"
+    // and the expense breakdown would say the household spent nothing on
+    // debt.
+    name: "وام و اقساط",
+    kind: "EXPENSE",
+    icon: "loan",
+    children: [
+      { name: "قسط وام", icon: "installment" },
+      { name: "کارمزد و دیرکرد", icon: "bill" },
+    ],
+  },
+  {
     name: "شخصی",
     kind: "EXPENSE",
     icon: "personal",

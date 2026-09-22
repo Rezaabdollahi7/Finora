@@ -1,5 +1,6 @@
 import {
   Briefcase,
+  CalendarClock,
   Car,
   CircleDollarSign,
   Clapperboard,
@@ -68,6 +69,8 @@ export const CATEGORY_ICONS = {
   salary: HandCoins,
   investment: Landmark,
   bill: Receipt,
+  loan: Landmark,
+  installment: CalendarClock,
   other: CircleDollarSign,
 } as const satisfies Record<string, LucideIcon>;
 
