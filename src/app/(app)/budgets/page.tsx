@@ -15,14 +15,14 @@ export const metadata: Metadata = { title: nav.label };
 /** Reads the database on every request; see docs/ARCHITECTURE.md. */
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ month?: string }> };
+type Props = { searchParams: Promise<{ month?: string; owner?: string }> };
 
 export default async function BudgetsPage({ searchParams }: Props) {
   const now = new Date();
-  const { month } = budgetMonthQuerySchema.parse(await searchParams);
+  const { month, owner } = budgetMonthQuerySchema.parse(await searchParams);
 
   const [budget, categories] = await Promise.all([
-    getBudgetMonth(month, now),
+    getBudgetMonth(month, now, owner),
     listCategoryTree({ includeArchived: false }),
   ]);
 

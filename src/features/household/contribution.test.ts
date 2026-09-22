@@ -4,6 +4,7 @@ import {
   contributions,
   householdTotals,
   isMember,
+  retained,
   type MovementInput,
 } from "@/features/household/contribution";
 
@@ -207,5 +208,39 @@ describe("contributions", () => {
       REZA: { direct: 0n, pooled: 0n, total: 0n },
       YEGANEH: { direct: 0n, pooled: 0n, total: 0n },
     });
+  });
+});
+
+describe("retained", () => {
+  const forMember = (owner: "REZA" | "YEGANEH") =>
+    retained(householdTotals(MONTH).byMember[owner], contributions(MONTH)[owner]);
+
+  it("takes the household's share out of what a person kept", () => {
+    // Reza earns 35M, spends 4M on himself and pays 38M of shared rent from
+    // his own account. Income minus personal spending would call 31M his
+    // savings in a month his account fell by 7M.
+    expect(forMember("REZA")).toBe(toman(-7_000_000));
+  });
+
+  it("counts money pooled into the shared account as gone too", () => {
+    // Yeganeh: 30M in, 2.5M personal, 10M pooled, 0 direct.
+    expect(forMember("YEGANEH")).toBe(toman(17_500_000));
+  });
+
+  it("is not the same as income minus personal spending", () => {
+    const totals = householdTotals(MONTH).byMember.REZA;
+
+    expect(totals.savings).toBe(toman(31_000_000));
+    expect(forMember("REZA")).not.toBe(totals.savings);
+  });
+
+  it("is plain savings for a person who contributed nothing", () => {
+    const alone: MovementInput[] = [
+      income(20_000_000, "REZA"),
+      expense(5_000_000, "REZA", "REZA"),
+    ];
+    const totals = householdTotals(alone).byMember.REZA;
+
+    expect(retained(totals, contributions(alone).REZA)).toBe(totals.savings);
   });
 });

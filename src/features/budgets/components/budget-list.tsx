@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/common/empty-state";
 import { Money } from "@/components/common/money";
 import { toast } from "@/components/ui/sonner";
@@ -18,6 +19,7 @@ import { BudgetDialog } from "@/features/budgets/components/budget-dialog";
 import { BudgetProgressBar } from "@/features/budgets/components/budget-progress";
 import type { BudgetLineDto, BudgetMonthDto } from "@/features/budgets/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
+import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
 
 /**
  * The budgets screen (task 5.8).
@@ -30,6 +32,12 @@ import type { CategoryTreeNode } from "@/features/categories/types";
  * The headline is the whole month rather than any one category: a household
  * that is over on food and under on transport has not overspent, and three
  * separate bars would not say so.
+ *
+ * The owner tabs are a scope, not a filter (task 7.5). A budget belongs to
+ * whoever it measures: the household's food budget counts household food,
+ * and Reza's counts Reza's. Switching tabs is asking a different question,
+ * not narrowing the answer to the same one — which is why the URL carries it
+ * and the server re-reads, rather than the client hiding rows.
  */
 export function BudgetList({
   budget,
@@ -52,8 +60,14 @@ export function BudgetList({
 
   const totals = budget.totals;
 
-  function goToMonth(month: number) {
-    router.push(month === currentMonth ? "/budgets" : `/budgets?month=${month}`);
+  /** Both the month and the scope live in the URL, so a view is linkable. */
+  function go({ month = budget.month, owner = budget.owner } = {}) {
+    const params = new URLSearchParams();
+    if (month !== currentMonth) params.set("month", String(month));
+    if (owner !== "SHARED") params.set("owner", owner);
+
+    const query = params.toString();
+    router.push(query ? `/budgets?${query}` : "/budgets");
   }
 
   async function remove(line: BudgetLineDto) {
@@ -61,7 +75,7 @@ export function BudgetList({
 
     try {
       const response = await fetch(
-        `/api/budgets?categoryId=${encodeURIComponent(line.categoryId)}&fromMonth=${budget.month}`,
+        `/api/budgets?categoryId=${encodeURIComponent(line.categoryId)}&owner=${line.owner}&fromMonth=${budget.month}`,
         { method: "DELETE" },
       );
 
@@ -95,7 +109,9 @@ export function BudgetList({
     <div className="space-y-6">
       <Card variant="ink" padding="large" className="gap-2">
         <span className="text-body text-ink-surface-muted">
-          خرج‌شده در {budget.label}
+          {budget.owner === "SHARED"
+            ? `خرج مشترک در ${budget.label}`
+            : `خرج شخصی ${OWNER_LABELS[budget.owner]} در ${budget.label}`}
         </span>
         {/*
           The figure steps down on a phone; at the display size a
@@ -140,6 +156,20 @@ export function BudgetList({
       </Card>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
+        <Tabs
+          value={budget.owner}
+          onValueChange={(value) => {
+            go({ owner: value as Owner });
+          }}
+        >
+          <TabsList>
+            {OWNERS.map((owner) => (
+              <TabsTrigger key={owner} value={owner}>
+                {owner === "SHARED" ? "خانواده" : OWNER_LABELS[owner]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
         <div className="flex items-center gap-1">
           {/* In RTL the earlier month is to the right, so the arrows swap. */}
           <Button
@@ -147,7 +177,7 @@ export function BudgetList({
             size="icon"
             aria-label="ماه قبل"
             onClick={() => {
-              goToMonth(budget.month - 1);
+              go({ month: budget.month - 1 });
             }}
           >
             <ChevronRight />
@@ -160,7 +190,7 @@ export function BudgetList({
             size="icon"
             aria-label="ماه بعد"
             onClick={() => {
-              goToMonth(budget.month + 1);
+              go({ month: budget.month + 1 });
             }}
           >
             <ChevronLeft />
@@ -174,8 +204,16 @@ export function BudgetList({
       {budget.lines.length === 0 ? (
         <EmptyState
           icon={PiggyBank}
-          title="برای این ماه بودجه‌ای تعیین نشده است"
-          description="برای هر دسته یک سقف ماهانه بگذارید تا خرج هر ماه در برابر آن سنجیده شود."
+          title={
+            budget.owner === "SHARED"
+              ? "برای این ماه بودجه‌ مشترکی تعیین نشده است"
+              : `${OWNER_LABELS[budget.owner]} برای این ماه بودجه‌ای ندارد`
+          }
+          description={
+            budget.owner === "SHARED"
+              ? "برای هر دسته یک سقف ماهانه بگذارید تا خرج مشترک خانه در برابر آن سنجیده شود."
+              : "بودجه شخصی فقط خرج همین نفر را می‌سنجد و روی بودجه مشترک اثری ندارد."
+          }
           action={addButton}
         />
       ) : (
@@ -198,6 +236,7 @@ export function BudgetList({
       <BudgetDialog
         month={budget.month}
         monthLabel={budget.label}
+        owner={budget.owner}
         categories={categories}
         budgetedIds={budget.lines.map((line) => line.categoryId)}
         open={adding}
@@ -208,6 +247,7 @@ export function BudgetList({
         line={editing ?? undefined}
         month={budget.month}
         monthLabel={budget.label}
+        owner={budget.owner}
         categories={categories}
         budgetedIds={budget.lines.map((line) => line.categoryId)}
         open={editing !== null}

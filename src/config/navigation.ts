@@ -6,6 +6,7 @@ import {
   TrendingUp,
   Landmark,
   LayoutDashboard,
+  Users,
   Repeat,
   PiggyBank,
   Settings,
@@ -74,6 +75,12 @@ export const mainNavigation: readonly NavItem[] = [
     label: "بودجه‌ها",
     description: "بودجه ماهانه و پیشرفت هر دسته",
     icon: PiggyBank,
+  },
+  {
+    href: "/household",
+    label: "خانواده",
+    description: "درآمد، خرج و سهم هر نفر در خانه",
+    icon: Users,
   },
   {
     href: "/goals",

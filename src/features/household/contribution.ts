@@ -90,6 +90,20 @@ export function householdTotals(movements: MovementInput[]): {
   return { household, shared, byMember };
 }
 
+/**
+ * What a person actually kept this month.
+ *
+ * Their income, less what they spent on themselves, less what they put into
+ * the household. The last term is the one that is easy to miss: a shared
+ * rent paid from Reza's own account is filed as a *household* expense, so
+ * income minus personal spending would call 41M his savings in a month his
+ * account only gained 13M. Money that went to the household has left his
+ * pocket whatever the record says it was for.
+ */
+export function retained(totals: OwnerTotals, contribution: Contribution): bigint {
+  return totals.income - totals.expenses - contribution.total;
+}
+
 export type Contribution = {
   /** Shared costs paid straight out of this person's own account. */
   direct: bigint;

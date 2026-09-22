@@ -31,6 +31,13 @@ export type MemberViewDto = {
   owner: HouseholdMember;
   totals: OwnerTotalsDto;
   contribution: ContributionDto;
+  /**
+   * Income less personal spending less what they put into the household.
+   *
+   * Not the same as `totals.savings`, which does not know that a shared cost
+   * paid from this person's own account left their pocket.
+   */
+  retained: string;
   /** Their own accounts' balances, in Rial. */
   accountBalance: string;
   /** What their personal budgets allow and what they have spent against them. */

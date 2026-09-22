@@ -22,6 +22,7 @@ import { getBudgetMonth } from "@/features/budgets/server/budget-service";
 import {
   contributions,
   householdTotals,
+  retained,
   HOUSEHOLD_MEMBERS,
   type Contribution,
   type HouseholdMember,
@@ -127,6 +128,7 @@ export async function getHouseholdMonth(
       owner,
       totals: toTotalsDto(totals.byMember[owner]),
       contribution: toContributionDto(owner, byMember[owner]),
+      retained: retained(totals.byMember[owner], byMember[owner]).toString(),
       accountBalance: balanceOf(accounts, owner),
       budget:
         budget.lines.length === 0

@@ -33,6 +33,7 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import type { CategoryTreeNode } from "@/features/categories/types";
+import { OWNER_LABELS, type Owner } from "@/features/accounts/types";
 import type { BudgetLineDto } from "@/features/budgets/types";
 
 const NO_CATEGORY = "";
@@ -68,6 +69,7 @@ export function BudgetDialog({
   line,
   month,
   monthLabel,
+  owner,
   categories,
   budgetedIds,
   open,
@@ -78,6 +80,8 @@ export function BudgetDialog({
   /** The absolute Jalali month the budget starts applying from. */
   month: number;
   monthLabel: string;
+  /** Whose spending this budget will measure (task 7.5). */
+  owner: Owner;
   categories: CategoryTreeNode[];
   /** Categories that already have a budget this month; hidden when adding. */
   budgetedIds: string[];
@@ -113,6 +117,7 @@ export function BudgetDialog({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         categoryId: values.categoryId,
+        owner,
         amount: values.amount,
         fromMonth: month,
         rollover: values.rollover === "on",
@@ -149,8 +154,10 @@ export function BudgetDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "ویرایش بودجه" : "تعیین بودجه"}</DialogTitle>
           <DialogDescription>
-            این بودجه از {monthLabel} به بعد اعمال می‌شود. ماه‌های پیش از آن با همان سقف
-            قبلی خود باقی می‌مانند.
+            {owner === "SHARED"
+              ? `این بودجه مشترک از ${monthLabel} به بعد اعمال می‌شود و فقط خرج مشترک خانه را می‌سنجد.`
+              : `این بودجه شخصی ${OWNER_LABELS[owner]} از ${monthLabel} به بعد اعمال می‌شود و روی بودجه مشترک اثری ندارد.`}{" "}
+            ماه‌های پیش از آن با همان سقف قبلی خود باقی می‌مانند.
           </DialogDescription>
         </DialogHeader>
 
