@@ -357,3 +357,63 @@
     }
   }
 }
+
+/**
+ * Printing (task 8.10).
+ *
+ * The roadmap asks not to add a PDF dependency where the browser is enough,
+ * and for a report it is: every browser prints to PDF. What that needs is
+ * for the page to stop looking like an application — the navigation, the
+ * filter controls and the tab strip are not part of a report, and a printed
+ * page has nothing to click.
+ *
+ * Colours are forced to print rather than being dropped, because a report
+ * whose "over budget" row prints the same shade as every other row has lost
+ * the thing it was drawing attention to.
+ */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  :root {
+    /* Print in the light theme whatever the screen was showing: a dark
+       background wastes a cartridge and reads worse on paper. */
+    color-scheme: light;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* The application shell: sidebar, mobile bar, sticky header. */
+  aside,
+  nav,
+  header,
+  [data-slot="sonner-toaster"] {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  [data-slot="card"] {
+    box-shadow: none !important;
+    /* A card split across a page break loses the figure from its label. */
+    break-inside: avoid;
+  }
+
+  table {
+    break-inside: auto;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
