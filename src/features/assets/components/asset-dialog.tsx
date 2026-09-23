@@ -49,6 +49,7 @@ import {
 } from "@/features/assets/types";
 import { useOwners } from "@/features/members/components/members-provider";
 import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   name: string;
@@ -353,16 +354,7 @@ export function AssetDialog({
                   <FormItem>
                     <FormLabel>{priceLabel}</FormLabel>
                     <FormControl>
-                      <Input
-                        // Not type="number": that rejects Persian digits and
-                        // the thousands separators people actually type.
-                        inputMode="numeric"
-                        dir="ltr"
-                        placeholder="0"
-                        className="text-start"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <MoneyInput placeholder="0" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -394,14 +386,7 @@ export function AssetDialog({
                       {perUnit ? "قیمت فعلی هر واحد (تومان)" : "ارزش فعلی (تومان)"}
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        inputMode="numeric"
-                        dir="ltr"
-                        placeholder="اختیاری"
-                        className="text-start"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <MoneyInput placeholder="اختیاری" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

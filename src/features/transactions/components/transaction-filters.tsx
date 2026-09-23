@@ -24,6 +24,7 @@ import {
   TRANSACTION_TYPE_LABELS,
 } from "@/features/transactions/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { MoneyInput } from "@/components/common/money-input";
 
 const ALL = "__all__";
 const UNCATEGORISED = "none";
@@ -216,24 +217,20 @@ export function TransactionFilters({
 
           <Field label="مبلغ (تومان)">
             <div className="flex gap-2" dir="ltr">
-              <Input
-                aria-label="حداقل مبلغ"
-                inputMode="numeric"
+              <AmountFilter
+                label="حداقل مبلغ"
                 placeholder="از"
-                className="h-9"
-                defaultValue={get("amountMin")}
-                onBlur={(event) => {
-                  apply({ amountMin: event.target.value });
+                initial={get("amountMin")}
+                onCommit={(value) => {
+                  apply({ amountMin: value });
                 }}
               />
-              <Input
-                aria-label="حداکثر مبلغ"
-                inputMode="numeric"
+              <AmountFilter
+                label="حداکثر مبلغ"
                 placeholder="تا"
-                className="h-9"
-                defaultValue={get("amountMax")}
-                onBlur={(event) => {
-                  apply({ amountMax: event.target.value });
+                initial={get("amountMax")}
+                onCommit={(value) => {
+                  apply({ amountMax: value });
                 }}
               />
             </div>
@@ -308,5 +305,36 @@ function SearchField({
         }}
       />
     </div>
+  );
+}
+
+/**
+ * One end of the amount range, grouped in threes like every amount field.
+ * It applies on blur, as before; the URL gets the bare digits.
+ */
+function AmountFilter({
+  label,
+  placeholder,
+  initial,
+  onCommit,
+}: {
+  label: string;
+  placeholder: string;
+  initial: string;
+  onCommit: (value: string) => void;
+}) {
+  const [value, setValue] = React.useState(initial);
+
+  return (
+    <MoneyInput
+      aria-label={label}
+      placeholder={placeholder}
+      className="h-9"
+      value={value}
+      onChange={setValue}
+      onBlur={() => {
+        onCommit(value.replace(/,/g, ""));
+      }}
+    />
   );
 }

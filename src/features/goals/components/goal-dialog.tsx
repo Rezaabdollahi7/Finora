@@ -45,6 +45,7 @@ import {
 } from "@/features/goals/types";
 import { useOwners } from "@/features/members/components/members-provider";
 import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   name: string;
@@ -230,14 +231,7 @@ export function GoalDialog({
                   <FormItem>
                     <FormLabel>مبلغ هدف (تومان)</FormLabel>
                     <FormControl>
-                      <Input
-                        inputMode="numeric"
-                        dir="ltr"
-                        placeholder="0"
-                        className="text-start"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <MoneyInput placeholder="0" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

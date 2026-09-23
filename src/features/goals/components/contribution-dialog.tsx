@@ -32,6 +32,7 @@ import { Money } from "@/components/common/money";
 import { parseTomanToRial } from "@/utils/money";
 import type { GoalDto } from "@/features/goals/types";
 import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   amount: string;
@@ -160,14 +161,7 @@ export function ContributionDialog({
                 <FormItem>
                   <FormLabel>مبلغ (تومان)</FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

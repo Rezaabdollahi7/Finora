@@ -21,7 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -36,6 +35,7 @@ import { type Owner } from "@/features/accounts/types";
 import type { BudgetLineDto } from "@/features/budgets/types";
 import { useOwners } from "@/features/members/components/members-provider";
 import { FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 const NO_CATEGORY = "";
 
@@ -207,14 +207,7 @@ export function BudgetDialog({
                 <FormItem>
                   <FormLabel>سقف ماهانه (تومان)</FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

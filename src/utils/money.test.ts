@@ -7,6 +7,8 @@ import {
   rialToTomanParts,
   sumRial,
   tomanToRial,
+  groupAmountInput,
+  caretAfterGrouping,
 } from "@/utils/money";
 
 describe("rial <-> toman conversion", () => {
@@ -131,5 +133,62 @@ describe("sumRial", () => {
 
   it("is zero for an empty list", () => {
     expect(sumRial([])).toBe(0n);
+  });
+});
+
+describe("groupAmountInput", () => {
+  it("groups the whole part in threes while typing", () => {
+    expect(groupAmountInput("1")).toBe("1");
+    expect(groupAmountInput("1250")).toBe("1,250");
+    expect(groupAmountInput("12500000")).toBe("12,500,000");
+  });
+
+  it("regroups text that already has separators in the wrong places", () => {
+    expect(groupAmountInput("12,50,0000")).toBe("12,500,000");
+    expect(groupAmountInput("1٬250٬000")).toBe("1,250,000");
+  });
+
+  it("turns Persian and Arabic digits into Latin ones", () => {
+    expect(groupAmountInput("۱۲۵۰۰۰۰")).toBe("1,250,000");
+    expect(groupAmountInput("١٢٣٤")).toBe("1,234");
+  });
+
+  it("keeps a leading minus and one decimal mark, and nothing else", () => {
+    expect(groupAmountInput("-2500000")).toBe("-2,500,000");
+    expect(groupAmountInput("−2500")).toBe("-2,500");
+    expect(groupAmountInput("1500.5")).toBe("1,500.5");
+    expect(groupAmountInput("1500٫5")).toBe("1,500.5");
+    expect(groupAmountInput("1.2.3")).toBe("1.23");
+    expect(groupAmountInput("12a3 تومان")).toBe("123");
+    expect(groupAmountInput("")).toBe("");
+  });
+
+  it("stays exact past 2^53, where a number would round", () => {
+    expect(groupAmountInput("9007199254740993")).toBe("9,007,199,254,740,993");
+  });
+
+  it("produces text the money parser reads back unchanged", () => {
+    for (const typed of ["12500000", "-2500000", "1500.5", "۱۲۵۰۰۰۰"]) {
+      expect(parseTomanToRial(groupAmountInput(typed))).toBe(parseTomanToRial(typed));
+    }
+  });
+});
+
+describe("caretAfterGrouping", () => {
+  it("keeps the caret at the end while typing at the end", () => {
+    expect(caretAfterGrouping("1250", 4, "1,250")).toBe(5);
+    expect(caretAfterGrouping("125000", 6, "125,000")).toBe(7);
+  });
+
+  it("keeps the caret after the same digit when a comma appears in front", () => {
+    // Typing "9" after the "1" of "1,250": raw "19,250", caret after the 9.
+    expect(caretAfterGrouping("19,250", 2, "19,250")).toBe(2);
+    // Raw "1,2950" (typed 9 after the 2), grouped "12,950": after the 9.
+    expect(caretAfterGrouping("1,2950", 4, "12,950")).toBe(4);
+  });
+
+  it("keeps the caret in place when a digit is deleted", () => {
+    // "1,250,000" with the first "0" of "250" deleted: raw "1,25,000".
+    expect(caretAfterGrouping("1,25,000", 4, "125,000")).toBe(3);
   });
 });

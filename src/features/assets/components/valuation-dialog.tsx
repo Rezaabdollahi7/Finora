@@ -31,6 +31,7 @@ import {
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import { isQuantityAsset, type AssetDto } from "@/features/assets/types";
 import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   unitPrice: string;
@@ -154,15 +155,7 @@ export function ValuationDialog({
                       : "ارزش فعلی (تومان)"}
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      autoFocus
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" autoFocus {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

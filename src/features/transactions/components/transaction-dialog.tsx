@@ -50,6 +50,7 @@ import {
 } from "@/features/transactions/types";
 import { useOwners } from "@/features/members/components/members-provider";
 import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 const NO_CATEGORY = "__none__";
 
@@ -247,12 +248,7 @@ export function TransactionDialog({
                 <FormItem>
                   <FormLabel>مبلغ (تومان)</FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      dir="ltr"
-                      className="text-start"
-                      {...field}
-                    />
+                    <MoneyInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

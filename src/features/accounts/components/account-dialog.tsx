@@ -40,6 +40,7 @@ import {
 } from "@/features/accounts/types";
 import { useOwners } from "@/features/members/components/members-provider";
 import { FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   name: string;
@@ -240,16 +241,7 @@ function AccountDialog({
                 <FormItem>
                   <FormLabel>موجودی اولیه (تومان)</FormLabel>
                   <FormControl>
-                    <Input
-                      // Not type="number": that would reject Persian digits
-                      // and the thousands separators people actually type.
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
