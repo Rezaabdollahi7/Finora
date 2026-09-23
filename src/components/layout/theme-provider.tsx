@@ -1,5 +1,6 @@
 "use client";
 
+import { DirectionProvider } from "@radix-ui/react-direction";
 import { MotionConfig } from "motion/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
@@ -14,6 +15,13 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
  * system's reduced-motion setting: transforms jump to their end state while
  * opacity still fades, so nothing slides or scales for someone who asked it
  * not to (§0.7).
+ *
+ * `DirectionProvider` tells every Radix primitive the interface is RTL
+ * (rule G.6). The document's `dir="rtl"` is not enough on its own: select
+ * menus, dropdown menus and popovers render into a portal and read their
+ * direction from this context, and without it their items are laid out
+ * left-to-right — text on the left, the check mark on the wrong side, and
+ * arrow-key navigation reversed.
  */
 function ThemeProvider({
   children,
@@ -27,7 +35,9 @@ function ThemeProvider({
       disableTransitionOnChange
       {...props}
     >
-      <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      <DirectionProvider dir="rtl">
+        <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      </DirectionProvider>
     </NextThemesProvider>
   );
 }
