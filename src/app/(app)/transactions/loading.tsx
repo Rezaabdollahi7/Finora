@@ -10,7 +10,7 @@ export default function TransactionsLoading() {
       </div>
       <div className="grid gap-3 md:hidden">
         {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} className="h-20 w-full rounded-md" />
+          <Skeleton key={index} className="h-20 w-full rounded-xl" />
         ))}
       </div>
       <Skeleton className="hidden h-96 w-full rounded-lg md:block" />

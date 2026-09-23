@@ -15,7 +15,7 @@ import type { CalendarDayEvents } from "@/features/calendar/types";
  * designing for RTL rather than flipping afterwards.
  *
  * A day with something owed carries a dot and, where there is room, the
- * amount. The dot is what makes the month scannable at arm's length; the
+ * amount as a highlight pill. The dot is what makes the month scannable at arm's length; the
  * amount is what makes it useful once you are looking. On a phone only the
  * dot survives, because a five-figure sum in a 44px cell is unreadable.
  */
@@ -62,18 +62,20 @@ export function MonthGrid({
               aria-pressed={selected === iso}
               aria-label={`${toPersianDigits(day.date.day)} ${JALALI_WEEKDAYS[day.weekday]}${entry ? ` — ${toPersianDigits(entry.events.length)} پرداخت` : ""}`}
               className={cn(
-                "flex min-h-14 flex-col items-center gap-1 rounded-md border border-transparent p-1.5",
-                "transition-colors duration-150 ease-out sm:min-h-20 sm:items-start sm:p-2",
-                "hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                !day.inMonth && "opacity-40",
-                day.isWeekend && day.inMonth && "bg-muted/40",
-                day.isToday && "border-primary",
-                selected === iso && "bg-primary-soft",
+                "flex min-h-14 flex-col items-center gap-1 rounded-lg p-1.5",
+                "transition-[background-color,box-shadow] duration-150 ease-out sm:min-h-22 sm:items-start sm:p-2",
+                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                // Days outside the month and weekends are hatched, as on
+                // the reference calendar: present, but not the working grid.
+                day.inMonth ? "bg-muted hover:bg-primary-soft" : "bg-hatch opacity-50",
+                day.isWeekend && day.inMonth && "bg-hatch",
+                day.isToday && "ring-2 ring-primary",
+                selected === iso && "bg-primary-soft ring-2 ring-primary/40",
               )}
             >
               <span
                 className={cn(
-                  "tabular flex size-6 items-center justify-center rounded-full text-caption",
+                  "tabular flex size-7 items-center justify-center rounded-full text-caption",
                   day.isToday && "bg-primary font-semibold text-primary-foreground",
                 )}
               >
@@ -85,14 +87,18 @@ export function MonthGrid({
                   <span
                     aria-hidden
                     className={cn(
-                      "size-1.5 shrink-0 rounded-full sm:hidden",
-                      owed > 0n ? "bg-danger" : "bg-success",
+                      "size-2 shrink-0 rounded-full sm:hidden",
+                      owed > 0n ? "bg-highlight" : "bg-success",
                     )}
                   />
+                  {/* What is owed that day, as the warm highlight pill; a
+                      day already settled takes the success tint instead. */}
                   <span
                     className={cn(
-                      "tabular hidden w-full truncate text-start text-caption sm:block",
-                      owed > 0n ? "text-danger" : "text-success",
+                      "tabular hidden max-w-full truncate rounded-full px-2 py-0.5 text-start text-caption font-medium sm:block",
+                      owed > 0n
+                        ? "bg-highlight text-highlight-foreground"
+                        : "bg-success-subtle text-success",
                     )}
                     dir="ltr"
                   >

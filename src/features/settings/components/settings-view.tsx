@@ -14,9 +14,9 @@ import type {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border py-3 last:border-0">
-      <dt className="text-body text-muted-foreground">{label}</dt>
-      <dd className="text-body font-medium">{children}</dd>
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted px-4 py-3">
+      <dt className="truncate text-caption text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-body font-medium break-words">{children}</dd>
     </div>
   );
 }
@@ -25,7 +25,7 @@ function Count({ label, value }: { label: string; value: number }) {
   return (
     <div className="space-y-1">
       <span className="text-caption text-muted-foreground">{label}</span>
-      <span className="tabular block text-h3 font-bold">
+      <span className="tabular block text-h3 font-light">
         {value.toLocaleString("fa-IR")}
       </span>
     </div>
@@ -61,18 +61,18 @@ export function SettingsView({
       </Alert>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card variant="featured" className="gap-4">
+        <Card variant="featured" className="reveal gap-5">
           <CardHeader>
             <div className="space-y-1">
               <CardTitle>پیکربندی</CardTitle>
               <CardDescription>زبان، تقویم و واحد پولی این نصب</CardDescription>
             </div>
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
               <Globe className="size-5" />
             </span>
           </CardHeader>
 
-          <dl>
+          <dl className="grid grid-cols-2 gap-3">
             <Row label="زبان و قالب‌بندی">{deployment.locale}</Row>
             <Row label="جهت رابط">
               {deployment.direction === "rtl" ? "راست‌به‌چپ" : "چپ‌به‌راست"}
@@ -90,13 +90,13 @@ export function SettingsView({
           </dl>
         </Card>
 
-        <Card variant="featured" className="gap-4">
+        <Card variant="featured" className="reveal gap-5">
           <CardHeader>
             <div className="space-y-1">
               <CardTitle>اعضای خانه</CardTitle>
               <CardDescription>هر رکورد به یکی از این‌ها تعلق دارد</CardDescription>
             </div>
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
               <Users className="size-5" />
             </span>
           </CardHeader>
@@ -122,7 +122,7 @@ export function SettingsView({
         </Card>
       </div>
 
-      <Card variant="featured" className="gap-4">
+      <Card variant="featured" className="reveal gap-5">
         <CardHeader>
           <div className="space-y-1">
             <CardTitle>داده‌های این نصب</CardTitle>
@@ -130,7 +130,7 @@ export function SettingsView({
               آنچه پایگاه داده نگه می‌دارد — برای پشتیبان‌گیری و انتقال
             </CardDescription>
           </div>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
             <Database className="size-5" />
           </span>
         </CardHeader>
@@ -151,7 +151,7 @@ export function SettingsView({
           <Count label="اهداف" value={data.goals} />
         </div>
 
-        <dl className="mt-2">
+        <dl className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Row label="نخستین تراکنش">
             {data.firstTransaction
               ? formatJalaliDate(new Date(data.firstTransaction))
@@ -171,13 +171,13 @@ export function SettingsView({
         </p>
       </Card>
 
-      <Card variant="featured" className="gap-4">
+      <Card variant="featured" className="reveal gap-5">
         <CardHeader>
           <div className="space-y-1">
             <CardTitle>ظاهر</CardTitle>
             <CardDescription>پوسته روشن، تیره یا هماهنگ با سیستم</CardDescription>
           </div>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
             <Palette className="size-5" />
           </span>
         </CardHeader>

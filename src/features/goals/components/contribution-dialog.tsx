@@ -142,7 +142,7 @@ export function ContributionDialog({
             rial={
               withdrawal ? goal.progress.currentAmount : goal.progress.remainingAmount
             }
-            className="text-h3 font-bold"
+            className="text-h3 font-light"
           />
         </div>
 

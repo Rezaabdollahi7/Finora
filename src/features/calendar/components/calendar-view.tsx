@@ -106,7 +106,7 @@ export function CalendarView({
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
-      <Card variant="featured" className="gap-6 lg:col-span-3">
+      <Card variant="featured" className="reveal gap-6 p-6 lg:col-span-3">
         <CardHeader>
           <div className="space-y-1">
             <CardTitle>{jalaliMonthLabel(month)}</CardTitle>
@@ -168,7 +168,7 @@ export function CalendarView({
         </div>
       </Card>
 
-      <div className="lg:col-span-2">
+      <div className="reveal lg:col-span-2" style={{ "--i": 1 } as React.CSSProperties}>
         <DayPanel date={new Date(selectedIso)} day={data?.days[selectedIso]} />
       </div>
     </div>

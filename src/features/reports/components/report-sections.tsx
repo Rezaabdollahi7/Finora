@@ -79,7 +79,7 @@ export function Figure({
       <Money
         rial={rial}
         className={cn(
-          "block text-h3 font-bold",
+          "block text-h3 font-light",
           tone === "danger" && "text-danger",
           tone === "success" && "text-success",
         )}

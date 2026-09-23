@@ -10,7 +10,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
+import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
 import { OWNER_LABELS } from "@/features/accounts/types";
 import { ContributionPanel } from "@/features/household/components/contribution-panel";
@@ -70,28 +72,16 @@ export function HouseholdView({
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          {member
+      <HeroCard
+        label={
+          member
             ? `باقی‌مانده برای ${OWNER_LABELS[member.owner]} در ${household.label}`
-            : `پس‌انداز خانه در ${household.label}`}
-        </span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money
-          rial={overspent ? (-BigInt(headline)).toString() : headline}
-          className={cn("text-h1 sm:text-display", overspent && "text-danger")}
-          unit={false}
-        />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex flex-wrap items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
+            : `پس‌انداز خانه در ${household.label}`
+        }
+        icon={Users}
+        value={overspent ? (-BigInt(headline)).toString() : headline}
+        negative={overspent}
+        meta={
           <span>
             {overspent
               ? "بیش از درآمد خرج شده"
@@ -99,26 +89,15 @@ export function HouseholdView({
                 ? "درآمد منهای خرج شخصی و سهم خانه"
                 : "درآمد منهای خرج"}
           </span>
-        </span>
-        <div className="mt-3 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-caption text-ink-surface-muted">
-          <span className="flex items-baseline gap-2">
-            <span>درآمد</span>
-            <Money rial={totals.income} className="font-medium" />
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span>{member ? "خرج شخصی" : "خرج"}</span>
-            <Money rial={totals.expenses} className="font-medium" />
-          </span>
-          {member ? (
-            <span className="flex items-baseline gap-2">
-              <span>سهم خانه</span>
-              <Money rial={member.contribution.total} className="font-medium" />
-            </span>
-          ) : null}
-        </div>
-      </Card>
+        }
+        stats={[
+          { label: "درآمد", rial: totals.income },
+          { label: member ? "خرج شخصی" : "خرج", rial: totals.expenses },
+          ...(member ? [{ label: "سهم خانه", rial: member.contribution.total }] : []),
+        ]}
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <Toolbar>
         <Tabs
           value={scope}
           onValueChange={(value) => {
@@ -161,7 +140,7 @@ export function HouseholdView({
             <ChevronLeft />
           </Button>
         </div>
-      </div>
+      </Toolbar>
 
       {nothingYet ? (
         <EmptyState
@@ -247,7 +226,7 @@ function SharedFigure({
           </span>
         </span>
       </div>
-      <Money rial={rial} className="text-h3 font-bold" />
+      <Money rial={rial} className="text-h3 font-light" />
     </Card>
   );
 }
@@ -256,7 +235,7 @@ function Split({ label, rial }: { label: string; rial: string }) {
   return (
     <div className="space-y-1">
       <span className="text-caption text-muted-foreground">{label}</span>
-      <Money rial={rial} className="block text-h3 font-bold" />
+      <Money rial={rial} className="block text-h3 font-light" />
     </div>
   );
 }

@@ -34,7 +34,14 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
 }
 
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
-  return <thead data-slot="table-header" className={className} {...props} />;
+  // The header sits on a soft band rather than over a rule (§0.13).
+  return (
+    <thead
+      data-slot="table-header"
+      className={cn("[&_tr]:border-0 [&_tr]:bg-muted [&_tr]:hover:bg-muted", className)}
+      {...props}
+    />
+  );
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
@@ -56,7 +63,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-border transition-colors last:border-0",
+        "border-b border-border/60 transition-colors last:border-0",
         "hover:bg-primary-subtle data-[state=selected]:bg-primary-soft",
         className,
       )}
@@ -70,7 +77,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 px-4 text-start align-middle",
+        "h-11 px-4 text-start align-middle first:rounded-s-lg last:rounded-e-lg",
         "text-caption font-semibold whitespace-nowrap text-muted-foreground",
         className,
       )}

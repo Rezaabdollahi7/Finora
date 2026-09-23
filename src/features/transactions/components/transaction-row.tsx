@@ -64,7 +64,7 @@ export function TransactionRow({
         {formatJalaliDate(new Date(transaction.date), { style: "medium" })}
       </TableCell>
       <TableCell className="text-end">
-        <TransactionAmount transaction={transaction} className="font-bold" />
+        <TransactionAmount transaction={transaction} className="font-medium" />
       </TableCell>
     </TableRow>
   );
@@ -84,7 +84,7 @@ export function TransactionCard({
       onClick={() => {
         onSelect(transaction);
       }}
-      className="flex w-full items-center gap-3 rounded-md border border-border bg-card p-4 text-start transition-colors hover:bg-primary-subtle"
+      className="reveal flex w-full items-center gap-3 rounded-xl border border-card-edge bg-card p-4 text-start glass-edge transition-colors hover:bg-card-solid dark:border-border"
     >
       <TransactionIcon transaction={transaction} />
       <span className="flex min-w-0 flex-1 flex-col">
@@ -95,7 +95,7 @@ export function TransactionCard({
           {formatJalaliDate(new Date(transaction.date), { style: "medium" })}
         </span>
       </span>
-      <TransactionAmount transaction={transaction} className="shrink-0 font-bold" />
+      <TransactionAmount transaction={transaction} className="shrink-0 font-medium" />
     </button>
   );
 }

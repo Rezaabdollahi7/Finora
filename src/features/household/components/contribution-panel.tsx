@@ -34,7 +34,7 @@ export function ContributionPanel({
             آنچه این ماه از جیب هر نفر برای خانه هزینه شده است.
           </CardDescription>
         </div>
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
           <HandCoins className="size-5" />
         </span>
       </CardHeader>
@@ -54,7 +54,7 @@ export function ContributionPanel({
                 <OwnerBadge owner={contribution.owner} />
               </div>
 
-              <Money rial={contribution.total} className="text-h3 font-bold" />
+              <Money rial={contribution.total} className="text-h3 font-light" />
 
               <dl className="mt-auto space-y-1 text-caption text-muted-foreground">
                 <div className="flex items-baseline justify-between gap-3">

@@ -8,9 +8,9 @@ export default function ForecastLoading() {
         <Skeleton className="h-9 w-32" />
         <Skeleton className="h-6 w-80" />
       </div>
-      <Skeleton className="h-44 w-full rounded-xl" />
-      <Skeleton className="h-80 w-full rounded-xl" />
-      <Skeleton className="h-64 w-full rounded-xl" />
+      <Skeleton className="h-44 w-full rounded-2xl bg-primary-muted" />
+      <Skeleton className="h-80 w-full rounded-2xl" />
+      <Skeleton className="h-64 w-full rounded-2xl" />
     </div>
   );
 }

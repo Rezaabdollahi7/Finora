@@ -27,7 +27,7 @@ export default function CalendarLoading() {
             ))}
           </div>
         </div>
-        <Skeleton className="h-80 w-full rounded-xl lg:col-span-2" />
+        <Skeleton className="h-80 w-full rounded-2xl lg:col-span-2" />
       </div>
     </div>
   );

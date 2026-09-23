@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/common/empty-state";
+import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
 import {
   FORECAST_PERIODS,
@@ -79,38 +80,24 @@ export function ForecastView({ forecast }: { forecast: ForecastDto }) {
         </Alert>
       ) : null}
 
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">موجودی قابل استفاده</span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money
-          rial={forecast.openingBalance}
-          className="text-h1 sm:text-display"
-          unit={false}
-        />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex flex-wrap items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>حساب‌های بانکی، نقد و کیف پول</span>
-        </span>
+      <HeroCard
+        label="موجودی قابل استفاده"
+        icon={TrendingUp}
+        value={forecast.openingBalance}
+        meta={<span>حساب‌های بانکی، نقد و کیف پول</span>}
+      >
         {shortfall ? (
-          <span className="mt-2 flex flex-wrap items-baseline gap-2 text-caption text-danger">
+          <span className="flex flex-wrap items-baseline gap-2 text-caption text-danger">
             <span>با این روند، در {shortfall.label} موجودی به</span>
             <Money rial={shortfall.closingBalance} className="font-medium" />
             <span>می‌رسد</span>
           </span>
         ) : (
-          <span className="mt-2 text-caption text-ink-surface-muted">
+          <span className="text-caption text-on-brand/75">
             در این بازه کسری پیش‌بینی نمی‌شود
           </span>
         )}
-      </Card>
+      </HeroCard>
 
       <Card variant="featured" className="gap-6">
         <CardHeader className="flex-col items-stretch gap-4 sm:flex-row sm:items-center">

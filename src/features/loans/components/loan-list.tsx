@@ -4,10 +4,11 @@ import * as React from "react";
 import { Landmark, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedList } from "@/components/common/animated-list";
+import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
-import { Money } from "@/components/common/money";
+import { HeroCard } from "@/components/common/hero-card";
 import { sumRial } from "@/utils/money";
 import {
   OWNERS,
@@ -77,33 +78,25 @@ export function LoanList({
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          {owner === "ALL" ? "مجموع بدهی" : `بدهی ${OWNER_LABELS[owner]}`}
-        </span>
-        <Money
-          rial={totals.remaining}
-          className="text-h1 sm:text-display"
-          unit={false}
-        />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>{totals.count.toLocaleString("fa-IR")} وام در جریان</span>
-        </span>
-        {totals.overdue > 0 ? (
-          <span className="mt-2 flex items-center gap-1.5 text-caption text-danger">
-            <span className="tabular">{totals.overdue.toLocaleString("fa-IR")}</span>
-            <span>قسط معوق</span>
-          </span>
-        ) : null}
-      </Card>
+      <HeroCard
+        label={owner === "ALL" ? "مجموع بدهی" : `بدهی ${OWNER_LABELS[owner]}`}
+        icon={Landmark}
+        value={totals.remaining}
+        meta={<span>{totals.count.toLocaleString("fa-IR")} وام در جریان</span>}
+        stats={
+          totals.overdue > 0
+            ? [
+                {
+                  label: "قسط معوق",
+                  content: totals.overdue.toLocaleString("fa-IR"),
+                  alert: true,
+                },
+              ]
+            : undefined
+        }
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <Toolbar>
         <Tabs
           value={owner}
           onValueChange={(value) => {
@@ -120,7 +113,7 @@ export function LoanList({
           </TabsList>
         </Tabs>
         {addButton}
-      </div>
+      </Toolbar>
 
       {visible.length === 0 ? (
         <EmptyState
@@ -134,13 +127,11 @@ export function LoanList({
           action={addButton}
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatedList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((loan) => (
-            <li key={loan.id} className="contents">
-              <LoanCard loan={loan} now={now} />
-            </li>
+            <LoanCard key={loan.id} loan={loan} now={now} />
           ))}
-        </ul>
+        </AnimatedList>
       )}
 
       <LoanDialog

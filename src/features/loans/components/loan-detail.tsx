@@ -1,7 +1,8 @@
-import { Archive } from "lucide-react";
+import { Archive, Landmark } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
+import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
 import { formatJalaliDate } from "@/utils/date";
 import { formatPercent } from "@/utils/number";
@@ -13,11 +14,15 @@ import { LoanActions } from "@/features/loans/components/loan-actions";
 import { LoanProgressBar } from "@/features/loans/components/loan-progress";
 import { loanInterestTotal, type LoanDetailDto } from "@/features/loans/types";
 
+/**
+ * One fact of the record as a small tile (§0.13), the same shape as
+ * FactGrid's, kept local so the conditional rows above can stay inline.
+ */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border py-3 last:border-0">
-      <dt className="text-body text-muted-foreground">{label}</dt>
-      <dd className="text-body font-medium">{children}</dd>
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted px-4 py-3">
+      <dt className="truncate text-caption text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-body font-medium break-words">{children}</dd>
     </div>
   );
 }
@@ -49,19 +54,23 @@ export function LoanDetail({
         </Alert>
       ) : null}
 
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">مانده بدهی</span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money
-          rial={loan.progress.remainingAmount}
-          className="text-h1 sm:text-display"
-          unit={false}
-        />
-        <span className="text-caption text-ink-surface-subtle">تومان</span>
-      </Card>
+      <HeroCard
+        label="مانده بدهی"
+        icon={Landmark}
+        value={loan.progress.remainingAmount}
+        meta={
+          <span>
+            {loan.progress.paid.toLocaleString("fa-IR")} از{" "}
+            {loan.progress.total.toLocaleString("fa-IR")} قسط پرداخت شده
+          </span>
+        }
+        stats={[
+          { label: "پرداخت‌شده", rial: loan.progress.paidAmount },
+          ...(loan.progress.overdue > 0
+            ? [{ label: "معوق", rial: loan.progress.overdueAmount, alert: true }]
+            : []),
+        ]}
+      />
 
       <Card variant="featured">
         <LoanProgressBar progress={loan.progress} />
@@ -69,8 +78,9 @@ export function LoanDetail({
 
       <LoanActions loan={loan} accounts={accounts} categories={categories} />
 
-      <Card variant="featured">
-        <dl>
+      <Card variant="featured" className="reveal gap-5 p-6">
+        <h2 className="text-h4">مشخصات</h2>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Field label="وام‌دهنده">{loan.provider}</Field>
           <Field label="مالک">
             <OwnerBadge owner={loan.owner} />

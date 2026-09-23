@@ -5,9 +5,10 @@ import { Plus, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedList } from "@/components/common/animated-list";
 import { EmptyState } from "@/components/common/empty-state";
-import { Money } from "@/components/common/money";
-import { Card } from "@/components/ui/card";
+import { HeroCard, type HeroStat } from "@/components/common/hero-card";
+import { Toolbar } from "@/components/common/toolbar";
 import { sumRial } from "@/utils/money";
 import { AccountCard } from "@/features/accounts/components/account-card";
 import { AccountDialog } from "@/features/accounts/components/account-dialog";
@@ -46,6 +47,21 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
     [visible],
   );
 
+  // With every owner showing, the hero breaks the total down by owner; with
+  // one selected, the breakdown would be the total again, so it is omitted.
+  const stats: HeroStat[] | undefined =
+    owner === "ALL"
+      ? OWNERS.map((value) => ({
+          label: OWNER_LABELS[value],
+          rial: sumRial(
+            accounts
+              .filter((a) => a.isActive && a.owner === value)
+              .map((a) => BigInt(a.balance)),
+          ).toString(),
+        }))
+      : undefined;
+  const activeCount = visible.filter((a) => a.isActive).length;
+
   const addButton = (
     <Button
       onClick={() => {
@@ -59,27 +75,16 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          {owner === "ALL" ? "موجودی کل" : `موجودی ${OWNER_LABELS[owner]}`}
-        </span>
-        <Money rial={total} className="text-h1 sm:text-display" unit={false} />
-        {/*
-          Each part is its own element rather than one interpolated string.
-          A neutral separator sitting between Persian text and a number is
-          reordered by the bidi algorithm, which rendered this line as
-          "تومان ۲ ·" instead of "تومان · ۲".
-        */}
-        <span className="flex items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>
-            {visible.filter((a) => a.isActive).length.toLocaleString("fa-IR")} حساب فعال
-          </span>
-        </span>
-      </Card>
+      <HeroCard
+        label={owner === "ALL" ? "موجودی کل" : `موجودی ${OWNER_LABELS[owner]}`}
+        icon={Wallet}
+        value={total}
+        negative={BigInt(total) < 0n}
+        meta={<span>{activeCount.toLocaleString("fa-IR")} حساب فعال</span>}
+        stats={stats}
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <Toolbar>
         <Tabs
           value={owner}
           onValueChange={(value) => {
@@ -96,7 +101,7 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
           </TabsList>
         </Tabs>
         {addButton}
-      </div>
+      </Toolbar>
 
       {visible.length === 0 ? (
         <EmptyState
@@ -114,13 +119,11 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
           action={addButton}
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatedList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((account) => (
-            <li key={account.id} className="contents">
-              <AccountCard account={account} />
-            </li>
+            <AccountCard key={account.id} account={account} />
           ))}
-        </ul>
+        </AnimatedList>
       )}
 
       <AccountDialog open={dialogOpen} onOpenChange={setDialogOpen} />

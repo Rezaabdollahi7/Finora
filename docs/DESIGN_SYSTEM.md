@@ -270,6 +270,35 @@ coins. It leans toward the pointer and breathes. Rules:
   tiles. The active item wears the same sliding pill; with a mouse the
   icons magnify toward the pointer.
 
+## 0.13 Section pages
+
+Every page outside the dashboard is built from the same five pieces, so the
+application reads as one family:
+
+```text
+HeroCard      components/common/hero-card.tsx   the headline figure on the
+              brand gradient, a label chip, a meta line, up to three glass
+              stat tiles, and an icon watermark; replaces the old ink card
+Toolbar       components/common/toolbar.tsx     tabs and the primary action
+              on one glass strip under the hero
+AnimatedList  components/common/animated-list.tsx  card grids; filters animate
+              cards in and out and slide the rest into place (Motion layout)
+FactGrid      components/common/fact-grid.tsx   a record's facts as tiles,
+              not a ruled list (detail pages use the same tile locally)
+.hover-lift   list cards rise 3px with a deeper shadow on hover
+```
+
+Inside `.hero-surface` the semantic tokens are re-pointed — primary to white,
+success and danger to their light steps, borders to white hairlines — so a
+progress bar, a profit figure or a link placed in the hero is legible on blue
+without special cases.
+
+Entrance on these pages is the CSS `.reveal` stagger (`--i` sets the step),
+not GSAP: it runs on streamed HTML before hydration and never replays when a
+client-side filter re-renders. Calendar days are soft tiles; days outside the
+month and weekends are hatched; what is owed on a day is a highlight pill.
+Tables sit on a card with the header on a soft band instead of a rule.
+
 ## 0.12 Superseded values
 
 Sections 2, 3, 6, 7, 8, 9, 13, 15, 43, 54, 57 and 59 describe the first

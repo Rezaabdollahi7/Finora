@@ -164,7 +164,7 @@ export function PayInstallmentDialog({
         {installment ? (
           <div className="flex items-baseline justify-between gap-4 rounded-lg bg-primary-soft px-4 py-3">
             <span className="text-body text-muted-foreground">مبلغ</span>
-            <Money rial={installment.amount} className="text-h3 font-bold" />
+            <Money rial={installment.amount} className="text-h3 font-light" />
           </div>
         ) : null}
 

@@ -100,7 +100,7 @@ export function TransactionDetailSheet({
 
             <TransactionAmount
               transaction={transaction}
-              className="text-h1 font-bold"
+              className="text-h1 font-light"
             />
 
             <dl>

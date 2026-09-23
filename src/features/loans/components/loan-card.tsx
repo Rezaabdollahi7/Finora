@@ -27,21 +27,14 @@ export function LoanCard({ loan, now }: { loan: LoanDto; now: Date }) {
   const isLate = loan.progress.overdue > 0;
 
   return (
-    <Card
-      variant="compact"
-      padding="none"
-      className={cn(
-        "transition-shadow duration-150 ease-out hover:shadow-md",
-        archived && "opacity-70",
-      )}
-    >
+    <Card padding="none" className={cn("hover-lift h-full", archived && "opacity-70")}>
       <Link
         href={`/loans/${loan.id}`}
-        className="flex h-full flex-col gap-4 rounded-md p-5"
+        className="flex h-full flex-col gap-5 rounded-xl p-5"
       >
         <div className="flex items-start justify-between gap-3">
           <span className="flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
               <Landmark className="size-5" />
             </span>
             <span className="flex min-w-0 flex-col">
@@ -58,7 +51,7 @@ export function LoanCard({ loan, now }: { loan: LoanDto; now: Date }) {
           <span className="text-caption text-muted-foreground">مانده بدهی</span>
           <Money
             rial={loan.progress.remainingAmount}
-            className="block text-h2 font-bold"
+            className="block text-h2 font-light tracking-tight"
           />
         </div>
 

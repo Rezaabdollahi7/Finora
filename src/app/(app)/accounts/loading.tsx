@@ -11,11 +11,11 @@ export default function AccountsLoading() {
         <Skeleton className="h-9 w-40" />
         <Skeleton className="h-6 w-72" />
       </div>
-      <Skeleton className="h-36 w-full rounded-xl" />
+      <Skeleton className="h-36 w-full rounded-2xl bg-primary-muted" />
       <Skeleton className="h-11 w-72 rounded-full" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} className="h-44 w-full rounded-md" />
+          <Skeleton key={index} className="h-44 w-full rounded-xl" />
         ))}
       </div>
     </div>
