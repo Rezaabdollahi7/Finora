@@ -4,3 +4,5 @@ package-lock.json
 public
 coverage
 *.md
+.claude
+skills-lock.json
