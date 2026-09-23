@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -44,6 +43,7 @@ import type {
   OccurrenceDto,
   RecurringPaymentDetailDto,
 } from "@/features/recurring/types";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 type FormValues = {
   amount: string;
@@ -182,9 +182,6 @@ export function PayOccurrenceDialog({
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    اگر این ماه فرق داشت، مبلغ واقعی را وارد کنید.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -233,14 +230,24 @@ export function PayOccurrenceDialog({
                   <FormControl>
                     <Input placeholder="اختیاری" autoComplete="off" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    اگر خالی بماند، نام پرداخت دوره‌ای ثبت می‌شود.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "مبلغ",
+                  text: "اگر این ماه فرق داشت، مبلغ واقعی را وارد کنید.",
+                },
+                {
+                  label: "توضیح",
+                  text: "اگر خالی بماند، نام پرداخت دوره‌ای ثبت می‌شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "در حال ثبت…" : "ثبت پرداخت"}

@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -49,6 +48,7 @@ import {
 } from "@/features/recurring/recurrence";
 import type { RecurringPaymentDto } from "@/features/recurring/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 const NO_CATEGORY = "__none__";
 const NO_ACCOUNT = "__none__";
@@ -361,9 +361,6 @@ export function RecurringDialog({
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>
-                        خالی بگذارید تا روز شروع در نظر گرفته شود.
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -489,6 +486,15 @@ export function RecurringDialog({
               />
             </div>
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "روز ماه",
+                  text: "خالی بگذارید تا روز شروع در نظر گرفته شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

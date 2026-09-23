@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,6 +39,7 @@ import {
   type Owner,
 } from "@/features/accounts/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { FormNotes } from "@/components/common/form-notes";
 
 type FormValues = {
   name: string;
@@ -251,15 +251,19 @@ function AccountDialog({
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    موجودی حساب در لحظه‌ای که آن را اضافه می‌کنید. بعداً با تراکنش‌ها
-                    به‌روز می‌شود.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                {
+                  label: "موجودی اولیه",
+                  text: "موجودی حساب در لحظه‌ای که آن را اضافه می‌کنید. بعداً با تراکنش‌ها به‌روز می‌شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

@@ -49,6 +49,7 @@ import {
   type TransactionType,
 } from "@/features/transactions/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 const NO_CATEGORY = "__none__";
 
@@ -404,6 +405,7 @@ export function TransactionDialog({
               )}
             />
 
+            <FormNotes notes={[DATE_NOTE]} />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

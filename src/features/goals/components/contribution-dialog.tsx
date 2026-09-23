@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -32,6 +31,7 @@ import {
 import { Money } from "@/components/common/money";
 import { parseTomanToRial } from "@/utils/money";
 import type { GoalDto } from "@/features/goals/types";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 type FormValues = {
   amount: string;
@@ -191,15 +191,20 @@ export function ContributionDialog({
                   <FormControl>
                     <Input placeholder="اختیاری" autoComplete="off" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    برای جابه‌جایی واقعی پول بین حساب‌ها، از بخش تراکنش‌ها یک انتقال ثبت
-                    کنید.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "توضیح",
+                  text: "برای جابه‌جایی واقعی پول بین حساب‌ها، از بخش تراکنش‌ها یک انتقال ثبت کنید.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

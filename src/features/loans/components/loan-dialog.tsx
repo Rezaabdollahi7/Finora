@@ -17,7 +17,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -45,6 +44,7 @@ import type { CategoryTreeNode } from "@/features/categories/types";
 import { MAX_PAYMENT_DAY } from "@/features/loans/schedule";
 import type { LoanDto } from "@/features/loans/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 const NO_CATEGORY = "__none__";
 const NO_ACCOUNT = "__none__";
@@ -279,9 +279,6 @@ export function LoanDialog({
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
-                      مبلغی که دریافت کرده‌اید، نه مجموع اقساط.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -394,9 +391,6 @@ export function LoanDialog({
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
-                      روز ماه شمسی. ماه کوتاه‌تر، آخرین روز خودش را می‌گیرد.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -463,9 +457,6 @@ export function LoanDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      اقساط به‌طور پیش‌فرض از این حساب پرداخت می‌شوند.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -492,9 +483,6 @@ export function LoanDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      هزینه هر قسط زیر این دسته ثبت می‌شود.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -515,6 +503,27 @@ export function LoanDialog({
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "مبلغ وام",
+                  text: "مبلغی که دریافت کرده‌اید، نه مجموع اقساط.",
+                },
+                {
+                  label: "روز پرداخت",
+                  text: "روز ماه شمسی. ماه کوتاه‌تر، آخرین روز خودش را می‌گیرد.",
+                },
+                {
+                  label: "حساب پرداخت",
+                  text: "اقساط به‌طور پیش‌فرض از این حساب پرداخت می‌شوند.",
+                },
+                {
+                  label: "دسته‌بندی هزینه",
+                  text: "هزینه هر قسط زیر این دسته ثبت می‌شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

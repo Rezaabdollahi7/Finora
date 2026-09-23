@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -45,6 +44,7 @@ import {
   type GoalKind,
 } from "@/features/goals/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 type FormValues = {
   name: string;
@@ -295,15 +295,18 @@ export function GoalDialog({
                     <FormControl>
                       <Input placeholder="اختیاری" autoComplete="off" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      تاریخ را خالی بگذارید تا هدف بدون مهلت باشد.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                { label: "مهلت", text: "تاریخ را خالی بگذارید تا هدف بدون مهلت باشد." },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

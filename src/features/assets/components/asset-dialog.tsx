@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -49,6 +48,7 @@ import {
   type AssetType,
 } from "@/features/assets/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 type FormValues = {
   name: string;
@@ -261,12 +261,6 @@ export function AssetDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    {isEdit ? (
-                      <FormDescription>
-                        نوع دارایی پس از ثبت تغییر نمی‌کند؛ تاریخچهٔ قیمت‌ها بر اساس آن
-                        ثبت شده است.
-                      </FormDescription>
-                    ) : null}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -409,10 +403,6 @@ export function AssetDialog({
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
-                      اگر خالی بماند، ارزش فعلی همان مبلغ خرید در نظر گرفته می‌شود.
-                      بعداً می‌توانید قیمت روز را ثبت کنید.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -433,6 +423,21 @@ export function AssetDialog({
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "نوع دارایی",
+                  text: "نوع دارایی پس از ثبت تغییر نمی‌کند؛ تاریخچهٔ قیمت‌ها بر اساس آن ثبت شده است.",
+                  when: isEdit,
+                },
+                {
+                  label: perUnit ? "قیمت فعلی هر واحد" : "ارزش فعلی",
+                  text: "اگر خالی بماند، ارزش فعلی همان مبلغ خرید در نظر گرفته می‌شود. بعداً می‌توانید قیمت روز را ثبت کنید.",
+                  when: !isEdit,
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

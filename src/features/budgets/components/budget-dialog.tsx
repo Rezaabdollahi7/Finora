@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -36,6 +35,7 @@ import type { CategoryTreeNode } from "@/features/categories/types";
 import { type Owner } from "@/features/accounts/types";
 import type { BudgetLineDto } from "@/features/budgets/types";
 import { useOwners } from "@/features/members/components/members-provider";
+import { FormNotes } from "@/components/common/form-notes";
 
 const NO_CATEGORY = "";
 
@@ -190,9 +190,6 @@ export function BudgetDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    بودجه یک دسته والد، خرج زیرمجموعه‌هایش را هم در بر می‌گیرد.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -241,15 +238,23 @@ export function BudgetDialog({
                       <SelectItem value="on">بله</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    تنها مانده استفاده‌نشده منتقل می‌شود؛ بیش‌ازحد خرج‌کردن به ماه بعد
-                    بدهی نمی‌برد.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                {
+                  label: "دسته‌بندی",
+                  text: "بودجه یک دسته والد، خرج زیرمجموعه‌هایش را هم در بر می‌گیرد.",
+                },
+                {
+                  label: "انتقال مانده به ماه بعد",
+                  text: "تنها مانده استفاده‌نشده منتقل می‌شود؛ بیش‌ازحد خرج‌کردن به ماه بعد بدهی نمی‌برد.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "در حال ذخیره…" : "ذخیره بودجه"}
