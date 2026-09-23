@@ -40,15 +40,11 @@ import {
 } from "@/components/common/jalali-date-field";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import { parseNumber } from "@/utils/number";
-import {
-  OWNERS,
-  OWNER_LABELS,
-  type AccountDto,
-  type Owner,
-} from "@/features/accounts/types";
+import { type AccountDto, type Owner } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import { MAX_PAYMENT_DAY } from "@/features/loans/schedule";
 import type { LoanDto } from "@/features/loans/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 const NO_CATEGORY = "__none__";
 const NO_ACCOUNT = "__none__";
@@ -131,6 +127,7 @@ export function LoanDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = loan !== undefined;
   const form = useForm<FormValues>({ defaultValues: defaultsFor(undefined) });
@@ -415,31 +412,33 @@ export function LoanDialog({
                 error={form.formState.errors.jalaliDay?.message}
               />
 
-              <FormField
-                control={form.control}
-                name="owner"
-                rules={{ required: "مالک وام را انتخاب کنید." }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مالک</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب کنید" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {OWNERS.map((owner) => (
-                          <SelectItem key={owner} value={owner}>
-                            {OWNER_LABELS[owner]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {owners.enabled ? (
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  rules={{ required: "مالک وام را انتخاب کنید." }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مالک</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {owners.options.map(({ value: owner }) => (
+                            <SelectItem key={owner} value={owner}>
+                              {owners.label(owner)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">

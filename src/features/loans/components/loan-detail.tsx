@@ -83,7 +83,7 @@ export function LoanDetail({
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Field label="وام‌دهنده">{loan.provider}</Field>
           <Field label="مالک">
-            <OwnerBadge owner={loan.owner} />
+            <OwnerBadge owner={loan.owner} always />
           </Field>
           <Field label="مبلغ وام">
             <Money rial={loan.principalAmount} />

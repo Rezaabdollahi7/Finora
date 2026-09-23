@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { parseTomanToRial } from "@/utils/money";
-import { OWNERS } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 import { GOAL_KINDS, GOAL_STATUSES } from "@/features/goals/types";
 
 /**
@@ -83,7 +83,7 @@ const fields = {
   kind: z.enum(GOAL_KINDS, { message: "نوع هدف را انتخاب کنید." }),
   targetAmount: positiveAmount,
   targetDate: optionalInstant,
-  owner: z.enum(OWNERS, { message: "مالک را انتخاب کنید." }),
+  owner: ownerSchema("مالک را انتخاب کنید."),
   icon: optionalText(40, "آیکون"),
   notes: optionalText(MAX_NOTES_LENGTH, "یادداشت"),
 };
@@ -128,7 +128,7 @@ const queryFlag = z
   );
 
 export const goalFiltersSchema = z.object({
-  owner: z.enum(OWNERS).optional(),
+  owner: ownerSchema().optional(),
   status: z.enum(GOAL_STATUSES).optional(),
   /** Archived goals are hidden unless explicitly asked for. */
   includeArchived: queryFlag,

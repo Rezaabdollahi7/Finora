@@ -1,9 +1,5 @@
-import type {
-  AssetKind,
-  AssetType,
-  Owner,
-  ValuationSource,
-} from "@/generated/prisma/enums";
+import type { AssetKind, AssetType, ValuationSource } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 
 export type { AssetKind, AssetType, ValuationSource };
 

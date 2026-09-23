@@ -1,4 +1,5 @@
-import type { AccountType, Owner } from "@/generated/prisma/enums";
+import type { AccountType } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 
 export type { AccountType, Owner };
 
@@ -38,8 +39,6 @@ export const ACCOUNT_TYPES = [
   "OTHER",
 ] as const satisfies readonly AccountType[];
 
-export const OWNERS = ["SHARED", "REZA", "YEGANEH"] as const satisfies readonly Owner[];
-
 /** The only currency the ledger supports; see the schema comment on Account. */
 export const SUPPORTED_CURRENCIES = ["IRR"] as const;
 
@@ -50,10 +49,4 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   INVESTMENT: "سرمایه‌گذاری",
   BUSINESS: "کسب‌وکار",
   OTHER: "سایر",
-};
-
-export const OWNER_LABELS: Record<Owner, string> = {
-  SHARED: "مشترک",
-  REZA: "رضا",
-  YEGANEH: "یگانه",
 };

@@ -10,13 +10,14 @@ import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
 import { HeroCard } from "@/components/common/hero-card";
 import { sumRial } from "@/utils/money";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import { AssetCard } from "@/features/assets/components/asset-card";
 import { AssetDialog } from "@/features/assets/components/asset-dialog";
 import { AssetDistribution } from "@/features/assets/components/asset-distribution";
 import { ProfitLoss } from "@/features/assets/components/profit-loss";
 import { ratioOf } from "@/features/assets/valuation";
 import type { AssetDto, PortfolioSummary } from "@/features/assets/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The portfolio screen (task 3.7): a total, the mix, an owner filter, the
@@ -37,6 +38,7 @@ export function AssetList({
   assets: AssetDto[];
   summary: PortfolioSummary;
 }) {
+  const owners = useOwners();
   const [owner, setOwner] = React.useState<Owner | "ALL">("ALL");
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -75,7 +77,7 @@ export function AssetList({
     <div className="space-y-6">
       <HeroCard
         label={
-          owner === "ALL" ? "ارزش کل دارایی‌ها" : `دارایی‌های ${OWNER_LABELS[owner]}`
+          owner === "ALL" ? "ارزش کل دارایی‌ها" : `دارایی‌های ${owners.label(owner)}`
         }
         icon={Gem}
         value={totals.value}
@@ -97,21 +99,25 @@ export function AssetList({
       ) : null}
 
       <Toolbar>
-        <Tabs
-          value={owner}
-          onValueChange={(value) => {
-            setOwner(value as Owner | "ALL");
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">همه</TabsTrigger>
-            {OWNERS.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {OWNER_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {owners.enabled ? (
+          <Tabs
+            value={owner}
+            onValueChange={(value) => {
+              setOwner(value as Owner | "ALL");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">همه</TabsTrigger>
+              {owners.options.map(({ value: value }) => (
+                <TabsTrigger key={value} value={value}>
+                  {owners.label(value)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         {addButton}
       </Toolbar>
 

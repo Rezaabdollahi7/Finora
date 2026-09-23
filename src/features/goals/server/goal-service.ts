@@ -17,6 +17,7 @@ import type {
   GoalDetailDto,
   GoalDto,
 } from "@/features/goals/types";
+import { assertOwner } from "@/features/members/server/member-service";
 
 /**
  * Goal data access and business rules (tasks 6.1–6.5).
@@ -140,6 +141,7 @@ export async function createGoal(
   input: CreateGoalInput,
   now: Date = new Date(),
 ): Promise<GoalDetailDto> {
+  await assertOwner(input.owner);
   const goal = await prisma.goal.create({
     data: {
       name: input.name,
@@ -167,6 +169,7 @@ export async function updateGoal(
   input: UpdateGoalInput,
   now: Date = new Date(),
 ): Promise<GoalDetailDto> {
+  if (input.owner !== undefined) await assertOwner(input.owner);
   await requireGoal(id);
 
   await prisma.goal.update({

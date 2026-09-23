@@ -97,7 +97,7 @@ export function RecurringDetail({
             )}
           </Field>
           <Field label="مالک">
-            <OwnerBadge owner={payment.owner} />
+            <OwnerBadge owner={payment.owner} always />
           </Field>
           <Field label="دوره">{cadenceLabel(payment)}</Field>
           {payment.paymentDay !== null ? (

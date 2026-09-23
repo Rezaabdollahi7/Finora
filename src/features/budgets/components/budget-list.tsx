@@ -22,7 +22,8 @@ import { BudgetDialog } from "@/features/budgets/components/budget-dialog";
 import { BudgetProgressBar } from "@/features/budgets/components/budget-progress";
 import type { BudgetLineDto, BudgetMonthDto } from "@/features/budgets/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The budgets screen (task 5.8).
@@ -56,6 +57,7 @@ export function BudgetList({
   currentMonth: number;
   categories: CategoryTreeNode[];
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const [editing, setEditing] = React.useState<BudgetLineDto | null>(null);
   const [adding, setAdding] = React.useState(false);
@@ -114,7 +116,7 @@ export function BudgetList({
         label={
           budget.owner === "SHARED"
             ? `خرج مشترک در ${budget.label}`
-            : `خرج شخصی ${OWNER_LABELS[budget.owner]} در ${budget.label}`
+            : `خرج شخصی ${owners.label(budget.owner)} در ${budget.label}`
         }
         icon={PiggyBank}
         value={totals.spent}
@@ -147,20 +149,24 @@ export function BudgetList({
       </HeroCard>
 
       <Toolbar>
-        <Tabs
-          value={budget.owner}
-          onValueChange={(value) => {
-            go({ owner: value as Owner });
-          }}
-        >
-          <TabsList>
-            {OWNERS.map((owner) => (
-              <TabsTrigger key={owner} value={owner}>
-                {owner === "SHARED" ? "خانواده" : OWNER_LABELS[owner]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {owners.enabled ? (
+          <Tabs
+            value={budget.owner}
+            onValueChange={(value) => {
+              go({ owner: value as Owner });
+            }}
+          >
+            <TabsList>
+              {owners.options.map(({ value: owner }) => (
+                <TabsTrigger key={owner} value={owner}>
+                  {owner === "SHARED" ? "خانواده" : owners.label(owner)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         <div className="flex items-center gap-1">
           {/* In RTL the earlier month is to the right, so the arrows swap. */}
           <Button
@@ -198,7 +204,7 @@ export function BudgetList({
           title={
             budget.owner === "SHARED"
               ? "برای این ماه بودجه‌ مشترکی تعیین نشده است"
-              : `${OWNER_LABELS[budget.owner]} برای این ماه بودجه‌ای ندارد`
+              : `${owners.label(budget.owner)} برای این ماه بودجه‌ای ندارد`
           }
           description={
             budget.owner === "SHARED"

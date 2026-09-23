@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { parseTomanToRial } from "@/utils/money";
-import { ACCOUNT_TYPES, OWNERS, SUPPORTED_CURRENCIES } from "@/features/accounts/types";
+import { ACCOUNT_TYPES, SUPPORTED_CURRENCIES } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 
 /**
  * Validation for account input.
@@ -40,7 +41,7 @@ export const accountNameSchema = z
 export const createAccountSchema = z.object({
   name: accountNameSchema,
   type: z.enum(ACCOUNT_TYPES, { message: "نوع حساب را انتخاب کنید." }),
-  owner: z.enum(OWNERS, { message: "مالک حساب را انتخاب کنید." }),
+  owner: ownerSchema("مالک حساب را انتخاب کنید."),
   currency: z.enum(SUPPORTED_CURRENCIES).default("IRR"),
   // The default is the *input* "0", which the transform turns into 0n.
   initialBalance: tomanAmount.default("0"),
@@ -57,7 +58,7 @@ export const updateAccountSchema = z
   .object({
     name: accountNameSchema,
     type: z.enum(ACCOUNT_TYPES),
-    owner: z.enum(OWNERS),
+    owner: ownerSchema(),
     currency: z.enum(SUPPORTED_CURRENCIES),
     initialBalance: tomanAmount,
   })
@@ -83,7 +84,7 @@ const queryFlag = z
   );
 
 export const accountFiltersSchema = z.object({
-  owner: z.enum(OWNERS).optional(),
+  owner: ownerSchema().optional(),
   type: z.enum(ACCOUNT_TYPES).optional(),
   /** Archived accounts are hidden unless explicitly asked for. */
   includeArchived: queryFlag,

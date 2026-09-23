@@ -1,4 +1,5 @@
-import type { GoalKind, GoalStatus, Owner } from "@/generated/prisma/enums";
+import type { GoalKind, GoalStatus } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 
 import type { GoalState } from "@/features/goals/progress";
 

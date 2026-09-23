@@ -15,9 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fromAbsoluteJalaliMonth, jalaliMonthLabel } from "@/utils/date";
-import { OWNERS, OWNER_LABELS, type AccountDto } from "@/features/accounts/types";
+import { type AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import type { ReportsDto } from "@/features/reports/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 const ANY = "__all__";
 
@@ -49,6 +50,7 @@ export function ReportFilterBar({
   accounts: AccountDto[];
   categories: CategoryTreeNode[];
 }) {
+  const owners = useOwners();
   const router = useRouter();
 
   function apply(changes: Record<string, string | null>) {
@@ -132,27 +134,29 @@ export function ReportFilterBar({
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="report-owner">مالک</Label>
-          <Select
-            value={reports.filters.owner ?? ANY}
-            onValueChange={(value) => {
-              apply({ owner: value === ANY ? null : value });
-            }}
-          >
-            <SelectTrigger id="report-owner">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ANY}>همه</SelectItem>
-              {OWNERS.map((owner) => (
-                <SelectItem key={owner} value={owner}>
-                  {OWNER_LABELS[owner]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {owners.enabled ? (
+          <div className="space-y-2">
+            <Label htmlFor="report-owner">مالک</Label>
+            <Select
+              value={reports.filters.owner ?? ANY}
+              onValueChange={(value) => {
+                apply({ owner: value === ANY ? null : value });
+              }}
+            >
+              <SelectTrigger id="report-owner">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>همه</SelectItem>
+                {owners.options.map(({ value: owner }) => (
+                  <SelectItem key={owner} value={owner}>
+                    {owners.label(owner)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
         <div className="space-y-2">
           <Label htmlFor="report-account">حساب</Label>

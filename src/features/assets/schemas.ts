@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { parseTomanToRial } from "@/utils/money";
 import { ONE_QUANTITY, parseQuantity } from "@/utils/quantity";
-import { OWNERS } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 import { ASSET_TYPES } from "@/features/assets/types";
 
 /**
@@ -97,7 +97,7 @@ export const assetNameSchema = z
 export const createAssetSchema = z.object({
   name: assetNameSchema,
   type: z.enum(ASSET_TYPES, { message: "نوع دارایی را انتخاب کنید." }),
-  owner: z.enum(OWNERS, { message: "مالک دارایی را انتخاب کنید." }),
+  owner: ownerSchema("مالک دارایی را انتخاب کنید."),
   /** Ignored for fixed-value assets, which are always exactly one. */
   quantity: assetQuantity.default(String(ONE_QUANTITY / 100_000_000n)),
   unit: optionalText(MAX_UNIT_LENGTH, "واحد"),
@@ -129,7 +129,7 @@ export const createAssetSchema = z.object({
 export const updateAssetSchema = z
   .object({
     name: assetNameSchema,
-    owner: z.enum(OWNERS),
+    owner: ownerSchema(),
     quantity: assetQuantity,
     unit: optionalText(MAX_UNIT_LENGTH, "واحد"),
     purchaseUnitPrice: assetPrice,
@@ -170,7 +170,7 @@ const queryFlag = z
   );
 
 export const assetFiltersSchema = z.object({
-  owner: z.enum(OWNERS).optional(),
+  owner: ownerSchema().optional(),
   type: z.enum(ASSET_TYPES).optional(),
   /** Archived assets are hidden unless explicitly asked for. */
   includeArchived: queryFlag,

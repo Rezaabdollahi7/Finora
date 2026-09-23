@@ -9,17 +9,13 @@ import { AnimatedList } from "@/components/common/animated-list";
 import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
 import { HeroCard } from "@/components/common/hero-card";
-import {
-  OWNERS,
-  OWNER_LABELS,
-  type AccountDto,
-  type Owner,
-} from "@/features/accounts/types";
+import { type AccountDto, type Owner } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import { RecurringCard } from "@/features/recurring/components/recurring-card";
 import { RecurringDialog } from "@/features/recurring/components/recurring-dialog";
 import { summariseRecurring } from "@/features/recurring/summary";
 import type { OccurrenceDto, RecurringPaymentDto } from "@/features/recurring/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The recurring payments screen (task 5.5).
@@ -53,6 +49,7 @@ export function RecurringList({
   /** The server's "now", so the client renders the same statuses it did. */
   nowIso: string;
 }) {
+  const owners = useOwners();
   const [owner, setOwner] = React.useState<Owner | "ALL">("ALL");
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const now = React.useMemo(() => new Date(nowIso), [nowIso]);
@@ -87,7 +84,7 @@ export function RecurringList({
         label={
           owner === "ALL"
             ? "پرداخت‌های ۳۰ روز آینده"
-            : `پرداخت‌های ۳۰ روز آینده ${OWNER_LABELS[owner]}`
+            : `پرداخت‌های ۳۰ روز آینده ${owners.label(owner)}`
         }
         icon={Repeat}
         value={totals.upcoming}
@@ -107,21 +104,25 @@ export function RecurringList({
       />
 
       <Toolbar>
-        <Tabs
-          value={owner}
-          onValueChange={(value) => {
-            setOwner(value as Owner | "ALL");
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">همه</TabsTrigger>
-            {OWNERS.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {OWNER_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {owners.enabled ? (
+          <Tabs
+            value={owner}
+            onValueChange={(value) => {
+              setOwner(value as Owner | "ALL");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">همه</TabsTrigger>
+              {owners.options.map(({ value: value }) => (
+                <TabsTrigger key={value} value={value}>
+                  {owners.label(value)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         {addButton}
       </Toolbar>
 

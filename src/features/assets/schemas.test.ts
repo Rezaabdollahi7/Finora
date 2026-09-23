@@ -108,7 +108,7 @@ describe("createAssetSchema", () => {
     expect(createAssetSchema.safeParse({ ...valid, type: "HOUSE" }).success).toBe(
       false,
     );
-    expect(createAssetSchema.safeParse({ ...valid, owner: "ALI" }).success).toBe(false);
+    expect(createAssetSchema.safeParse({ ...valid, owner: "" }).success).toBe(false);
   });
 
   it("turns blank optional text into null rather than an empty string", () => {
@@ -190,8 +190,8 @@ describe("assetFiltersSchema", () => {
     );
   });
 
-  it("rejects an owner or type it does not know", () => {
-    expect(assetFiltersSchema.safeParse({ owner: "ALI" }).success).toBe(false);
+  it("rejects an empty owner or a type it does not know", () => {
+    expect(assetFiltersSchema.safeParse({ owner: "" }).success).toBe(false);
     expect(assetFiltersSchema.safeParse({ type: "HOUSE" }).success).toBe(false);
   });
 });

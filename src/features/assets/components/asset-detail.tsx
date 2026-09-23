@@ -70,7 +70,7 @@ export function AssetDetail({
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Field label="نوع دارایی">{ASSET_TYPE_LABELS[asset.type]}</Field>
           <Field label="مالک">
-            <OwnerBadge owner={asset.owner} />
+            <OwnerBadge owner={asset.owner} always />
           </Field>
           {perUnit ? (
             <>

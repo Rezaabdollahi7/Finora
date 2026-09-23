@@ -1,4 +1,4 @@
-import type { Owner } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 
 import type { TrendDirection } from "@/features/reports/reporting";
 

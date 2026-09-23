@@ -125,7 +125,7 @@ describe("createLoanSchema", () => {
   it("requires a name, a provider and an owner", () => {
     expect(createLoanSchema.safeParse({ ...valid, name: "  " }).success).toBe(false);
     expect(createLoanSchema.safeParse({ ...valid, provider: "" }).success).toBe(false);
-    expect(createLoanSchema.safeParse({ ...valid, owner: "ALI" }).success).toBe(false);
+    expect(createLoanSchema.safeParse({ ...valid, owner: "" }).success).toBe(false);
   });
 
   it("rejects an unreadable date rather than defaulting to today", () => {
@@ -206,8 +206,8 @@ describe("loanFiltersSchema", () => {
     );
   });
 
-  it("rejects a status or owner it does not know", () => {
+  it("rejects a status it does not know or an empty owner", () => {
     expect(loanFiltersSchema.safeParse({ status: "PAID" }).success).toBe(false);
-    expect(loanFiltersSchema.safeParse({ owner: "ALI" }).success).toBe(false);
+    expect(loanFiltersSchema.safeParse({ owner: "" }).success).toBe(false);
   });
 });

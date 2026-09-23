@@ -2,11 +2,19 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Gem, Landmark, Users } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Gem,
+  Landmark,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +22,6 @@ import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
 import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import { ContributionPanel } from "@/features/household/components/contribution-panel";
 import { MemberPanel } from "@/features/household/components/member-panel";
 import type { HouseholdMember, HouseholdMonthDto } from "@/features/household/types";
@@ -26,7 +33,7 @@ import type { HouseholdMember, HouseholdMonthDto } from "@/features/household/ty
  * household earn and spend" only means anything against a month.
  *
  * The tabs switch between the household's own picture and each person's.
- * They are a scope, not a filter: the household tab shows what the two
+ * They are a scope, not a filter: the household tab shows what the
  * people share, and a person's tab shows what is theirs. Neither is a subset
  * of the other, which is the whole point of the sprint.
  */
@@ -75,7 +82,7 @@ export function HouseholdView({
       <HeroCard
         label={
           member
-            ? `باقی‌مانده برای ${OWNER_LABELS[member.owner]} در ${household.label}`
+            ? `باقی‌مانده برای ${member.name} در ${household.label}`
             : `پس‌انداز خانه در ${household.label}`
         }
         icon={Users}
@@ -98,21 +105,25 @@ export function HouseholdView({
       />
 
       <Toolbar>
-        <Tabs
-          value={scope}
-          onValueChange={(value) => {
-            setScope(value as "HOUSEHOLD" | HouseholdMember);
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="HOUSEHOLD">خانه</TabsTrigger>
-            {household.members.map((member) => (
-              <TabsTrigger key={member.owner} value={member.owner}>
-                {OWNER_LABELS[member.owner]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {household.members.length === 0 ? (
+          <p className="px-2 text-body text-muted-foreground">همه‌چیز به نام خانه</p>
+        ) : (
+          <Tabs
+            value={scope}
+            onValueChange={(value) => {
+              setScope(value as "HOUSEHOLD" | HouseholdMember);
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="HOUSEHOLD">خانه</TabsTrigger>
+              {household.members.map((member) => (
+                <TabsTrigger key={member.owner} value={member.owner}>
+                  {member.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        )}
 
         <div className="flex items-center gap-1">
           {/* In RTL the earlier month is to the right, so the arrows swap. */}
@@ -172,19 +183,36 @@ export function HouseholdView({
           </div>
 
           <Card variant="featured" className="gap-4">
-            <div className="grid gap-x-6 gap-y-3 sm:grid-cols-3">
+            <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
               <Split label="خرج مشترک خانه" rial={household.shared.expenses} />
               {household.members.map((member) => (
                 <Split
                   key={member.owner}
-                  label={`خرج شخصی ${OWNER_LABELS[member.owner]}`}
+                  label={`خرج شخصی ${member.name}`}
                   rial={member.totals.expenses}
                 />
               ))}
             </div>
           </Card>
 
-          <ContributionPanel contributions={household.contributions} />
+          {household.members.length === 0 ? (
+            <Alert variant="info">
+              <UserPlus />
+              <AlertTitle>خانوار شما هنوز عضوی ندارد</AlertTitle>
+              <AlertDescription>
+                اگر پول را با کسی شریک هستید — همسر، فرزند یا پدر و مادر — او را در{" "}
+                <Link
+                  href="/settings#members"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  تنظیمات
+                </Link>{" "}
+                اضافه کنید تا خرج و سهم هر نفر جدا دیده شود.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <ContributionPanel contributions={household.contributions} />
+          )}
         </>
       ) : (
         <MemberPanel member={member!} />

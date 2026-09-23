@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { parseTomanToRial } from "@/utils/money";
-import { OWNERS } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 import { RECURRENCE_FREQUENCIES } from "@/features/recurring/recurrence";
 
 /**
@@ -107,7 +107,7 @@ const fields = {
     .default(null),
   categoryId: z.string().min(1).nullable().default(null),
   accountId: z.string().min(1).nullable().default(null),
-  owner: z.enum(OWNERS, { message: "مالک را انتخاب کنید." }),
+  owner: ownerSchema("مالک را انتخاب کنید."),
   notes: optionalText(MAX_NOTES_LENGTH, "یادداشت"),
 };
 
@@ -170,7 +170,7 @@ const queryFlag = z
   );
 
 export const recurringFiltersSchema = z.object({
-  owner: z.enum(OWNERS).optional(),
+  owner: ownerSchema().optional(),
   /** Inactive rules are hidden unless explicitly asked for. */
   includeInactive: queryFlag,
 });

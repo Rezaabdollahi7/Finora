@@ -23,6 +23,7 @@ import {
   type UpdateTransactionInput,
 } from "@/features/transactions/schemas";
 import type { TransactionDto } from "@/features/transactions/types";
+import { assertOwner } from "@/features/members/server/member-service";
 
 /**
  * Transaction data access and business rules (tasks 1.5 and 1.6).
@@ -191,6 +192,7 @@ async function currentBalance(
 export async function createTransaction(
   input: CreateTransactionInput,
 ): Promise<TransactionDto> {
+  await assertOwner(input.owner);
   const created = await prisma.$transaction(async (tx) => {
     await assertAccountsAccept(tx, toMovement(input), null);
     await assertCategoryFits(tx, input.type, input.categoryId);
@@ -261,6 +263,7 @@ export async function updateTransaction(
   id: string,
   input: UpdateTransactionInput,
 ): Promise<TransactionDto> {
+  if (input.owner !== undefined) await assertOwner(input.owner);
   const updated = await prisma.$transaction(async (tx) => {
     const existing = await tx.transaction.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("تراکنش پیدا نشد.");

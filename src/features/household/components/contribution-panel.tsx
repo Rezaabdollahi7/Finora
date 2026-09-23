@@ -3,8 +3,6 @@ import { HandCoins, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Money } from "@/components/common/money";
-import { OWNER_LABELS } from "@/features/accounts/types";
-import { OwnerBadge } from "@/features/accounts/components/owner-badge";
 import type { ContributionDto } from "@/features/household/types";
 
 /**
@@ -40,19 +38,16 @@ export function ContributionPanel({
       </CardHeader>
 
       {/*
-        A fixed two-column grid rather than a list ordered by size: the order
-        is alphabetical-by-enum and stays that way whoever paid more.
+        A fixed grid rather than a list ordered by size: the order is the
+        order people were added in, and stays that way whoever paid more.
       */}
-      <ul className="grid gap-4 sm:grid-cols-2">
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {contributions.map((contribution) => (
           <li key={contribution.owner}>
             <div className="flex h-full flex-col gap-3 rounded-lg border border-border p-4">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-body font-semibold">
-                  {OWNER_LABELS[contribution.owner]}
-                </span>
-                <OwnerBadge owner={contribution.owner} />
-              </div>
+              <span className="truncate text-body font-semibold">
+                {contribution.name}
+              </span>
 
               <Money rial={contribution.total} className="text-h3 font-light" />
 

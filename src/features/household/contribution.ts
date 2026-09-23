@@ -1,4 +1,4 @@
-import type { Owner } from "@/generated/prisma/enums";
+import { SHARED_OWNER, type Owner } from "@/features/members/types";
 
 /**
  * Household arithmetic (tasks 7.3–7.7).
@@ -13,20 +13,27 @@ import type { Owner } from "@/generated/prisma/enums";
  * does more of the unpaid work is not behind on a leaderboard.
  */
 
-/** The people in the household, as distinct from the shared pot. */
-export const HOUSEHOLD_MEMBERS = ["REZA", "YEGANEH"] as const;
+/**
+ * A person in the household, by member id, as distinct from the shared pot.
+ *
+ * Who the people are is the household's to say (Settings), so every
+ * function here is handed the member ids rather than knowing them. There
+ * may be none — a household of one — and then everything is shared.
+ */
+export type HouseholdMember = string;
 
-export type HouseholdMember = (typeof HOUSEHOLD_MEMBERS)[number];
-
-export function isMember(owner: Owner): owner is HouseholdMember {
-  return (HOUSEHOLD_MEMBERS as readonly Owner[]).includes(owner);
+export function isMember(
+  owner: Owner,
+  members: readonly HouseholdMember[],
+): owner is HouseholdMember {
+  return owner !== SHARED_OWNER && members.includes(owner);
 }
 
 /** One movement of money, reduced to what the household arithmetic needs. */
 export type MovementInput = {
   type: "INCOME" | "EXPENSE" | "TRANSFER";
   amount: bigint;
-  /** Whose record it is: one of the two people, or the household. */
+  /** Whose record it is: one of the people, or the household. */
   owner: Owner;
   /** Who owns the account the money left. Null when nothing left one. */
   fromAccountOwner: Owner | null;
@@ -51,31 +58,30 @@ const zero = (): OwnerTotals => ({ income: 0n, expenses: 0n, savings: 0n });
  * would let a person inflate both sides of their own column by shuffling
  * their own money.
  *
- * The household total is every movement, not the sum of the three columns
- * plus shared — it *is* that sum, and computing it independently is what
- * makes a discrepancy visible rather than arithmetically impossible.
+ * The household total is every movement, not the sum of the people's
+ * columns plus shared — it *is* that sum, and computing it independently is
+ * what makes a discrepancy visible rather than arithmetically impossible.
  */
-export function householdTotals(movements: MovementInput[]): {
+export function householdTotals(
+  movements: MovementInput[],
+  members: readonly HouseholdMember[],
+): {
   household: OwnerTotals;
   shared: OwnerTotals;
   byMember: Record<HouseholdMember, OwnerTotals>;
 } {
   const household = zero();
   const shared = zero();
-  const byMember: Record<HouseholdMember, OwnerTotals> = {
-    REZA: zero(),
-    YEGANEH: zero(),
-  };
+  const byMember: Record<HouseholdMember, OwnerTotals> = Object.fromEntries(
+    members.map((member) => [member, zero()]),
+  );
 
   for (const movement of movements) {
     if (movement.type === "TRANSFER") continue;
 
-    const buckets = [
-      household,
-      movement.owner === "SHARED"
-        ? shared
-        : byMember[movement.owner as HouseholdMember],
-    ];
+    const buckets = [household];
+    if (movement.owner === SHARED_OWNER) buckets.push(shared);
+    else if (isMember(movement.owner, members)) buckets.push(byMember[movement.owner]!);
 
     for (const bucket of buckets) {
       if (movement.type === "INCOME") bucket.income += movement.amount;
@@ -83,7 +89,7 @@ export function householdTotals(movements: MovementInput[]): {
     }
   }
 
-  for (const bucket of [household, shared, byMember.REZA, byMember.YEGANEH]) {
+  for (const bucket of [household, shared, ...Object.values(byMember)]) {
     bucket.savings = bucket.income - bucket.expenses;
   }
 
@@ -135,31 +141,32 @@ export type Contribution = {
  */
 export function contributions(
   movements: MovementInput[],
+  members: readonly HouseholdMember[],
 ): Record<HouseholdMember, Contribution> {
-  const result: Record<HouseholdMember, Contribution> = {
-    REZA: { direct: 0n, pooled: 0n, total: 0n },
-    YEGANEH: { direct: 0n, pooled: 0n, total: 0n },
-  };
+  const result: Record<HouseholdMember, Contribution> = Object.fromEntries(
+    members.map((member) => [member, { direct: 0n, pooled: 0n, total: 0n }]),
+  );
 
   for (const movement of movements) {
     const payer = movement.fromAccountOwner;
 
     // Only a person can contribute; the household cannot contribute to
     // itself, and a movement with no paying account has no payer.
-    if (payer === null || !isMember(payer)) continue;
+    if (payer === null || !isMember(payer, members)) continue;
+    const bucket = result[payer]!;
 
-    if (movement.type === "EXPENSE" && movement.owner === "SHARED") {
-      result[payer].direct += movement.amount;
+    if (movement.type === "EXPENSE" && movement.owner === SHARED_OWNER) {
+      bucket.direct += movement.amount;
       continue;
     }
 
-    if (movement.type === "TRANSFER" && movement.toAccountOwner === "SHARED") {
-      result[payer].pooled += movement.amount;
+    if (movement.type === "TRANSFER" && movement.toAccountOwner === SHARED_OWNER) {
+      bucket.pooled += movement.amount;
     }
   }
 
-  for (const member of HOUSEHOLD_MEMBERS) {
-    result[member].total = result[member].direct + result[member].pooled;
+  for (const bucket of Object.values(result)) {
+    bucket.total = bucket.direct + bucket.pooled;
   }
 
   return result;

@@ -40,7 +40,7 @@ import {
   todayJalaliFields,
 } from "@/components/common/jalali-date-field";
 import { formatToman, parseTomanToRial } from "@/utils/money";
-import { OWNERS, OWNER_LABELS, type AccountDto } from "@/features/accounts/types";
+import { type AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import {
   TRANSACTION_TYPES,
@@ -48,6 +48,7 @@ import {
   type TransactionDto,
   type TransactionType,
 } from "@/features/transactions/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 const NO_CATEGORY = "__none__";
 
@@ -104,6 +105,7 @@ export function TransactionDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = transaction !== undefined;
   const form = useForm<FormValues>({ defaultValues: defaultsFor(undefined) });
@@ -353,29 +355,31 @@ export function TransactionDialog({
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="owner"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مالک</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {OWNERS.map((owner) => (
-                          <SelectItem key={owner} value={owner}>
-                            {OWNER_LABELS[owner]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
+              {owners.enabled ? (
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مالک</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {owners.options.map(({ value: owner }) => (
+                            <SelectItem key={owner} value={owner}>
+                              {owners.label(owner)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              ) : null}
 
               <JalaliDateField
                 id="jalali-day"

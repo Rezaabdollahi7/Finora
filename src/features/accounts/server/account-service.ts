@@ -9,6 +9,7 @@ import type {
   UpdateAccountInput,
 } from "@/features/accounts/schemas";
 import type { AccountDto } from "@/features/accounts/types";
+import { assertOwner } from "@/features/members/server/member-service";
 
 /**
  * Account data access and business rules.
@@ -131,6 +132,7 @@ export async function getAccount(id: string): Promise<AccountDto | null> {
 }
 
 export async function createAccount(input: CreateAccountInput): Promise<AccountDto> {
+  await assertOwner(input.owner);
   const account = await prisma.account.create({
     data: {
       name: input.name,
@@ -148,6 +150,7 @@ export async function updateAccount(
   id: string,
   input: UpdateAccountInput,
 ): Promise<AccountDto> {
+  if (input.owner !== undefined) await assertOwner(input.owner);
   const existing = await requireAccount(id);
 
   if (!existing.isActive) {

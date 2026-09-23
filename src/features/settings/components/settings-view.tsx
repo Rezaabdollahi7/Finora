@@ -1,12 +1,9 @@
-import Link from "next/link";
-import { Database, Globe, Info, Palette, Users } from "lucide-react";
+import { Database, Globe, Info, Palette } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatJalaliDate } from "@/utils/date";
-import { OWNERS } from "@/features/accounts/types";
-import { OwnerBadge } from "@/features/accounts/components/owner-badge";
+import { MembersCard } from "@/features/members/components/members-card";
 import type {
   DataSummary,
   DeploymentInfo,
@@ -52,11 +49,11 @@ export function SettingsView({
     <div className="space-y-6">
       <Alert variant="info">
         <Info />
-        <AlertTitle>تنظیمات این برنامه در جای خودشان هستند</AlertTitle>
+        <AlertTitle>بیشتر تنظیمات در جای خودشان هستند</AlertTitle>
         <AlertDescription>
-          پوسته روشن و تیره در نوار بالا، مالک هر رکورد روی خود آن، و دسته‌بندی‌ها در
-          صفحه دسته‌بندی‌ها تغییر می‌کنند. آنچه اینجا می‌بینید، پیکربندی ثابت این نصب و
-          خلاصه داده‌های آن است.
+          پوسته روشن و تیره در نوار بالا و مالک هر رکورد روی خود آن تغییر می‌کند. اعضای
+          خانوار را همین‌جا اضافه کنید؛ بقیه این صفحه پیکربندی ثابت این نصب و خلاصه
+          داده‌های آن است.
         </AlertDescription>
       </Alert>
 
@@ -90,36 +87,7 @@ export function SettingsView({
           </dl>
         </Card>
 
-        <Card variant="featured" className="reveal gap-5">
-          <CardHeader>
-            <div className="space-y-1">
-              <CardTitle>اعضای خانه</CardTitle>
-              <CardDescription>هر رکورد به یکی از این‌ها تعلق دارد</CardDescription>
-            </div>
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Users className="size-5" />
-            </span>
-          </CardHeader>
-
-          <ul className="flex flex-wrap gap-2">
-            {OWNERS.map((owner) => (
-              <li key={owner}>
-                <OwnerBadge owner={owner} />
-              </li>
-            ))}
-          </ul>
-
-          <p className="text-body text-muted-foreground">
-            مالک هر حساب، تراکنش، دارایی، وام، بودجه و هدف روی خود آن رکورد تعیین
-            می‌شود. برای دیدن تصویر خانه و سهم هر نفر به صفحه خانواده بروید.
-          </p>
-
-          <div className="mt-auto">
-            <Button variant="secondary" asChild>
-              <Link href="/household">خانواده</Link>
-            </Button>
-          </div>
-        </Card>
+        <MembersCard />
       </div>
 
       <Card variant="featured" className="reveal gap-5">

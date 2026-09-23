@@ -53,7 +53,7 @@ function AccountDetail({ account }: { account: AccountDto }) {
         <FactGrid
           facts={[
             { label: "نوع حساب", value: ACCOUNT_TYPE_LABELS[account.type] },
-            { label: "مالک", value: <OwnerBadge owner={account.owner} /> },
+            { label: "مالک", value: <OwnerBadge owner={account.owner} always /> },
             { label: "موجودی اولیه", value: <Money rial={account.initialBalance} /> },
             {
               label: "تعداد تراکنش",

@@ -17,12 +17,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OWNERS, OWNER_LABELS, type AccountDto } from "@/features/accounts/types";
+import { type AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import {
   TRANSACTION_TYPES,
   TRANSACTION_TYPE_LABELS,
 } from "@/features/transactions/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 const ALL = "__all__";
 const UNCATEGORISED = "none";
@@ -44,6 +45,7 @@ export function TransactionFilters({
   categories: CategoryTreeNode[];
   total: number;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -162,26 +164,28 @@ export function TransactionFilters({
             </Select>
           </Field>
 
-          <Field label="مالک">
-            <Select
-              value={get("owner") || ALL}
-              onValueChange={(value) => {
-                apply({ owner: value });
-              }}
-            >
-              <SelectTrigger size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>همه</SelectItem>
-                {OWNERS.map((owner) => (
-                  <SelectItem key={owner} value={owner}>
-                    {OWNER_LABELS[owner]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+          {owners.enabled ? (
+            <Field label="مالک">
+              <Select
+                value={get("owner") || ALL}
+                onValueChange={(value) => {
+                  apply({ owner: value });
+                }}
+              >
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>همه</SelectItem>
+                  {owners.options.map(({ value: owner }) => (
+                    <SelectItem key={owner} value={owner}>
+                      {owners.label(owner)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          ) : null}
 
           <Field label="دسته‌بندی">
             <Select

@@ -12,8 +12,8 @@ self-hosted household tool is the same person who uses it.
 the port has full read and write access to every household record.
 
 This is deliberate and it is the single most important thing on this page.
-The roadmap models ownership as an `owner` field (Reza / Yeganeh / Shared)
-rather than a user table, and never asks for a login — Sprint 8 asks for
+The roadmap models ownership as an `owner` field (a household member or
+Shared) rather than a login, and never asks for a login — Sprint 8 asks for
 authentication to be *reviewed*, which is what this section is. Adding
 accounts would mean a user table, sessions, password storage and a recovery
 path, none of which the household asked for and all of which would be

@@ -12,12 +12,8 @@ import { Toolbar } from "@/components/common/toolbar";
 import { sumRial } from "@/utils/money";
 import { AccountCard } from "@/features/accounts/components/account-card";
 import { AccountDialog } from "@/features/accounts/components/account-dialog";
-import {
-  OWNERS,
-  OWNER_LABELS,
-  type AccountDto,
-  type Owner,
-} from "@/features/accounts/types";
+import { type AccountDto, type Owner } from "@/features/accounts/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The accounts screen: a household total, an owner filter, and the grid.
@@ -28,6 +24,7 @@ import {
  * filtering where the data volume actually needs it.
  */
 function AccountList({ accounts }: { accounts: AccountDto[] }) {
+  const owners = useOwners();
   const [owner, setOwner] = React.useState<Owner | "ALL">("ALL");
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -50,9 +47,9 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
   // With every owner showing, the hero breaks the total down by owner; with
   // one selected, the breakdown would be the total again, so it is omitted.
   const stats: HeroStat[] | undefined =
-    owner === "ALL"
-      ? OWNERS.map((value) => ({
-          label: OWNER_LABELS[value],
+    owner === "ALL" && owners.enabled
+      ? owners.options.map(({ value: value }) => ({
+          label: owners.label(value),
           rial: sumRial(
             accounts
               .filter((a) => a.isActive && a.owner === value)
@@ -76,7 +73,7 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
   return (
     <div className="space-y-6">
       <HeroCard
-        label={owner === "ALL" ? "موجودی کل" : `موجودی ${OWNER_LABELS[owner]}`}
+        label={owner === "ALL" ? "موجودی کل" : `موجودی ${owners.label(owner)}`}
         icon={Wallet}
         value={total}
         negative={BigInt(total) < 0n}
@@ -85,21 +82,25 @@ function AccountList({ accounts }: { accounts: AccountDto[] }) {
       />
 
       <Toolbar>
-        <Tabs
-          value={owner}
-          onValueChange={(value) => {
-            setOwner(value as Owner | "ALL");
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">همه</TabsTrigger>
-            {OWNERS.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {OWNER_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {owners.enabled ? (
+          <Tabs
+            value={owner}
+            onValueChange={(value) => {
+              setOwner(value as Owner | "ALL");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">همه</TabsTrigger>
+              {owners.options.map(({ value: value }) => (
+                <TabsTrigger key={value} value={value}>
+                  {owners.label(value)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         {addButton}
       </Toolbar>
 

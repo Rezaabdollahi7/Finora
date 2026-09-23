@@ -10,10 +10,11 @@ import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
 import { HeroCard } from "@/components/common/hero-card";
 import { sumRial } from "@/utils/money";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import { GoalCard } from "@/features/goals/components/goal-card";
 import { GoalDialog } from "@/features/goals/components/goal-dialog";
 import type { GoalDto } from "@/features/goals/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The goals screen (task 6.5).
@@ -29,6 +30,7 @@ import type { GoalDto } from "@/features/goals/types";
  * a household has a handful of goals — a round trip per tab would flash.
  */
 export function GoalList({ goals }: { goals: GoalDto[] }) {
+  const owners = useOwners();
   const [owner, setOwner] = React.useState<Owner | "ALL">("ALL");
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -73,7 +75,7 @@ export function GoalList({ goals }: { goals: GoalDto[] }) {
         label={
           owner === "ALL"
             ? "پس‌انداز ماهانه لازم"
-            : `پس‌انداز ماهانه ${OWNER_LABELS[owner]}`
+            : `پس‌انداز ماهانه ${owners.label(owner)}`
         }
         icon={Target}
         value={totals.monthly}
@@ -91,21 +93,25 @@ export function GoalList({ goals }: { goals: GoalDto[] }) {
       </HeroCard>
 
       <Toolbar>
-        <Tabs
-          value={owner}
-          onValueChange={(value) => {
-            setOwner(value as Owner | "ALL");
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">همه</TabsTrigger>
-            {OWNERS.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {OWNER_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {owners.enabled ? (
+          <Tabs
+            value={owner}
+            onValueChange={(value) => {
+              setOwner(value as Owner | "ALL");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">همه</TabsTrigger>
+              {owners.options.map(({ value: value }) => (
+                <TabsTrigger key={value} value={value}>
+                  {owners.label(value)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         {addButton}
       </Toolbar>
 

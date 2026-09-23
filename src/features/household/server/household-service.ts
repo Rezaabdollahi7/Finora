@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Owner } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 import { prisma } from "@/lib/prisma";
 import {
   absoluteJalaliMonth,
@@ -19,11 +19,12 @@ import { listLoans } from "@/features/loans/server/loan-service";
 import { goalFiltersSchema } from "@/features/goals/schemas";
 import { listGoals } from "@/features/goals/server/goal-service";
 import { getBudgetMonth } from "@/features/budgets/server/budget-service";
+import { listMembers } from "@/features/members/server/member-service";
+import { SHARED_OWNER } from "@/features/members/types";
 import {
   contributions,
   householdTotals,
   retained,
-  HOUSEHOLD_MEMBERS,
   type Contribution,
   type HouseholdMember,
   type MovementInput,
@@ -46,8 +47,8 @@ import type {
  * **two** owners, and they mean different things. `transaction.owner` says
  * whose record it is — a household cost or one person's. The owner of the
  * *account* says whose pocket the money came out of. A shared rent paid from
- * Reza's account is `owner: SHARED` with a REZA account, and it takes both
- * facts to say that the household spent it and Reza provided it.
+ * one person's account is `owner: SHARED` on that person's account, and it
+ * takes both facts to say that the household spent it and they provided it.
  */
 
 function toTotalsDto(totals: OwnerTotals): OwnerTotalsDto {
@@ -60,10 +61,12 @@ function toTotalsDto(totals: OwnerTotals): OwnerTotalsDto {
 
 function toContributionDto(
   owner: HouseholdMember,
+  name: string,
   contribution: Contribution,
 ): ContributionDto {
   return {
     owner,
+    name,
     direct: contribution.direct.toString(),
     pooled: contribution.pooled.toString(),
     total: contribution.total.toString(),
@@ -73,9 +76,9 @@ function toContributionDto(
 /**
  * One month of the household, in full.
  *
- * Six queries regardless of how much the household has: the month's
- * movements, the accounts, the assets, the loans, the goals, and one budget
- * read per person for their personal budgets.
+ * Seven reads regardless of how much the household has — the members, the
+ * month's movements, the accounts, the assets, the loans, the goals — plus
+ * one budget read per person for their personal budgets.
  */
 export async function getHouseholdMonth(
   month?: number,
@@ -84,7 +87,8 @@ export async function getHouseholdMonth(
   const target = month ?? absoluteJalaliMonth(jalaliMonthOf(now));
   const { start, end } = jalaliMonthRange(fromAbsoluteJalaliMonth(target));
 
-  const [rows, accounts, assets, loans, goals] = await Promise.all([
+  const [people, rows, accounts, assets, loans, goals] = await Promise.all([
+    listMembers(),
     prisma.transaction.findMany({
       where: { date: { gte: start, lt: end } },
       select: {
@@ -109,26 +113,31 @@ export async function getHouseholdMonth(
     toAccountOwner: row.toAccount?.owner ?? null,
   }));
 
-  const totals = householdTotals(movements);
-  const byMember = contributions(movements);
+  const ids = people.map((member) => member.id);
+  const totals = householdTotals(movements, ids);
+  const byMember = contributions(movements, ids);
 
   // One budget read per person: a personal budget is scoped to its owner
   // (task 7.5), so the household's own budgets say nothing about it.
   const budgets = await Promise.all(
-    HOUSEHOLD_MEMBERS.map((owner) => getBudgetMonth(target, now, owner)),
+    ids.map((owner) => getBudgetMonth(target, now, owner)),
   );
 
-  const members: MemberViewDto[] = HOUSEHOLD_MEMBERS.map((owner, index) => {
+  const members: MemberViewDto[] = people.map(({ id: owner, name }, index) => {
     const budget = budgets[index]!;
     const theirGoals = goals.filter(
       (goal) => goal.owner === owner && goal.status === "ACTIVE",
     );
 
+    const theirTotals = totals.byMember[owner]!;
+    const theirContribution = byMember[owner]!;
+
     return {
       owner,
-      totals: toTotalsDto(totals.byMember[owner]),
-      contribution: toContributionDto(owner, byMember[owner]),
-      retained: retained(totals.byMember[owner], byMember[owner]).toString(),
+      name,
+      totals: toTotalsDto(theirTotals),
+      contribution: toContributionDto(owner, name, theirContribution),
+      retained: retained(theirTotals, theirContribution).toString(),
       accountBalance: balanceOf(accounts, owner),
       budget:
         budget.lines.length === 0
@@ -158,20 +167,20 @@ export async function getHouseholdMonth(
     label: jalaliMonthLabel({ year, month: monthOfYear }),
     household: toTotalsDto(totals.household),
     shared: toTotalsDto(totals.shared),
-    contributions: HOUSEHOLD_MEMBERS.map((owner) =>
-      toContributionDto(owner, byMember[owner]),
+    contributions: people.map(({ id, name }) =>
+      toContributionDto(id, name, byMember[id]!),
     ),
     members,
     // What the household holds jointly, as distinct from what either person
     // owns. An archived asset or loan is out of play and is not listed here.
     sharedAssets: sumRial(
       assets
-        .filter((asset) => asset.owner === "SHARED")
+        .filter((asset) => asset.owner === SHARED_OWNER)
         .map((asset) => BigInt(asset.currentValue)),
     ).toString(),
     sharedLiabilities: sumRial(
       loans
-        .filter((loan) => loan.owner === "SHARED" && loan.status !== "ARCHIVED")
+        .filter((loan) => loan.owner === SHARED_OWNER && loan.status !== "ARCHIVED")
         .map((loan) => BigInt(loan.progress.remainingAmount)),
     ).toString(),
   };

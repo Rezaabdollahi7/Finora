@@ -3,7 +3,6 @@
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatJalaliDate } from "@/utils/date";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import { TransactionAmount } from "@/features/transactions/components/transaction-amount";
 import {
   TransactionIcon,
@@ -13,6 +12,7 @@ import {
   TRANSACTION_TYPE_LABELS,
   type TransactionDto,
 } from "@/features/transactions/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /** One transaction as a table row. Desktop and tablet; phones get cards. */
 export function TransactionRow({
@@ -22,6 +22,7 @@ export function TransactionRow({
   transaction: TransactionDto;
   onSelect: (transaction: TransactionDto) => void;
 }) {
+  const owners = useOwners();
   return (
     <TableRow
       tabIndex={0}
@@ -57,7 +58,7 @@ export function TransactionRow({
       </TableCell>
       <TableCell>
         <Badge variant={transaction.owner === "SHARED" ? "default" : "neutral"}>
-          {OWNER_LABELS[transaction.owner]}
+          {owners.label(transaction.owner)}
         </Badge>
       </TableCell>
       <TableCell className="whitespace-nowrap text-muted-foreground">

@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeroCard } from "@/components/common/hero-card";
 import { formatPercent } from "@/utils/number";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import type { AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import { ReportFilterBar } from "@/features/reports/components/report-filters";
@@ -21,6 +20,7 @@ import {
   NetWorthSection,
 } from "@/features/reports/components/report-sections";
 import type { ReportsDto } from "@/features/reports/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 const TABS = [
   { value: "MONTHLY", label: "ماهانه" },
@@ -58,13 +58,14 @@ export function ReportsView({
   accounts: AccountDto[];
   categories: CategoryTreeNode[];
 }) {
+  const owners = useOwners();
   const [tab, setTab] = React.useState<TabValue>("MONTHLY");
 
   const savings = BigInt(reports.savings.savings);
   const overspent = savings < 0n;
 
   const filterSummary = [
-    reports.filters.owner ? OWNER_LABELS[reports.filters.owner] : null,
+    reports.filters.owner ? owners.label(reports.filters.owner) : null,
     reports.filters.accountId
       ? (accounts.find((a) => a.id === reports.filters.accountId)?.name ?? null)
       : null,

@@ -34,16 +34,27 @@ model AppSetting {
   @@map("app_settings")
 }
 
-/// Who a financial record belongs to.
+/// A person in the household.
 ///
-/// The household is two people plus everything they share, so ownership is a
-/// fixed set rather than a user table: Finora is a self-hosted deployment for
-/// one household (see docs/ARCHITECTURE.md). Sprint 7 builds the household
-/// views on top of this.
-enum Owner {
-  SHARED
-  REZA
-  YEGANEH
+/// Finora ships with nobody in it: whoever runs it adds themselves, and then
+/// anyone they share money with — a partner, a child, a parent — under the
+/// names they choose (Settings → اعضای خانوار). A household of one never
+/// has to add anyone at all; everything is then simply the household's.
+///
+/// Every financial record has an `owner`, which is either the literal
+/// `"SHARED"` (the household's own money) or a member's id. It is a plain
+/// text column rather than a foreign key because "shared" is not a person,
+/// and a nullable key would turn every "whose is this" question into a null
+/// check. The services check the value against this table on every write
+/// (features/members/server), and a member who still owns records cannot
+/// be deleted, so the column never points at nobody.
+model Member {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("members")
 }
 
 enum AccountType {
@@ -69,7 +80,7 @@ model Account {
   id             String      @id @default(cuid())
   name           String
   type           AccountType
-  owner          Owner
+  owner          String
   /// ISO 4217 code. Only IRR is supported: all monetary values in the
   /// application are Rial, and mixing currencies would make household totals
   /// silently wrong. Foreign holdings are modelled as assets in Sprint 3.
@@ -137,7 +148,7 @@ model Transaction {
   /// Transfers are never categorised; the database enforces that.
   categoryId  String?
   category    Category?       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  owner       Owner
+  owner       String
   description String?
   /// When the money actually moved, in UTC. Displayed as Jalali (rule G.5).
   date        DateTime
@@ -259,7 +270,7 @@ model Asset {
   name              String
   type              AssetType
   kind              AssetKind
-  owner             Owner
+  owner             String
   /// Scaled by 10^8, the same way money is scaled to Rial: an exact integer
   /// rather than a float, because this number is multiplied by money
   /// (rule G.2, see utils/quantity). FIXED assets hold exactly 100000000.
@@ -368,7 +379,7 @@ model Loan {
   /// Day of the **Jalali** month the instalment falls on, 1-31. A month
   /// shorter than this takes its last day instead; see features/loans/schedule.
   paymentDay        Int
-  owner             Owner
+  owner             String
   status            LoanStatus @default(ACTIVE)
   /// Which category the instalment expenses are filed under. Optional, and
   /// RESTRICT, so retiring a category cannot orphan a loan's history (G.4).
@@ -474,7 +485,7 @@ model RecurringPayment {
   /// Which account it is paid from, by default.
   accountId  String?
   account    Account?            @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  owner      Owner
+  owner      String
   /// An inactive rule stops producing expected payments but keeps every
   /// occurrence already paid. Rules are never deleted (rule G.4).
   isActive   Boolean             @default(true)
@@ -546,7 +557,7 @@ model Budget {
   /// expenses; a personal budget counts only that person's. Without this a
   /// gadget Reza bought for himself would eat the household's food budget,
   /// which is the whole of task 7.5.
-  owner      Owner    @default(SHARED)
+  owner      String   @default("SHARED")
   /// Whether what is left over carries into the next month (task 5.9).
   rollover   Boolean  @default(false)
   /// First Jalali month this limit applies to, as an absolute month.
@@ -595,7 +606,7 @@ model Goal {
   /// When it should be reached, in UTC. Displayed as Jalali (rule G.5).
   /// Optional: "an emergency fund of 100M" is a goal with no deadline.
   targetDate   DateTime?
-  owner        Owner
+  owner        String
   status       GoalStatus @default(ACTIVE)
   /// Key into the icon map in the UI, not a component or a path.
   icon         String?

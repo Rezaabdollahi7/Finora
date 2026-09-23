@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Money } from "@/components/common/money";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import type { MemberViewDto } from "@/features/household/types";
 
 function Figure({
@@ -47,7 +46,7 @@ export function MemberPanel({ member }: { member: MemberViewDto }) {
     <Card variant="featured" className="gap-6">
       <CardHeader>
         <div className="space-y-1">
-          <CardTitle>{OWNER_LABELS[member.owner]}</CardTitle>
+          <CardTitle>{member.name}</CardTitle>
           <CardDescription>درآمد، خرج و سهم شخصی در این ماه</CardDescription>
         </div>
       </CardHeader>
@@ -129,7 +128,7 @@ export function MemberPanel({ member }: { member: MemberViewDto }) {
       <Button variant="secondary" size="sm" className="self-start" asChild>
         <Link href={`/transactions?owner=${member.owner}`}>
           <Wallet />
-          تراکنش‌های {OWNER_LABELS[member.owner]}
+          تراکنش‌های {member.name}
         </Link>
       </Button>
     </Card>

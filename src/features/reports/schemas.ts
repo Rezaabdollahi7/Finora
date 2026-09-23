@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { OWNERS } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 
 /**
  * Report filters (task 8.9).
@@ -26,7 +26,7 @@ export const reportFiltersSchema = z
     fromMonth: absoluteMonth.optional(),
     /** Last Jalali month, inclusive. Defaults to the current one. */
     toMonth: absoluteMonth.optional(),
-    owner: z.enum(OWNERS).optional(),
+    owner: ownerSchema().optional(),
     accountId: z.string().min(1).optional(),
     categoryId: z.string().min(1).optional(),
   })

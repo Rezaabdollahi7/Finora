@@ -23,6 +23,7 @@ import {
   type AssetValuationDto,
   type PortfolioSummary,
 } from "@/features/assets/types";
+import { assertOwner } from "@/features/members/server/member-service";
 
 /**
  * Asset data access and business rules (tasks 3.2 and 3.8).
@@ -181,6 +182,7 @@ export async function getAsset(id: string): Promise<AssetDto | null> {
  * from what was paid. Inventing one would show a profit nobody made.
  */
 export async function createAsset(input: CreateAssetInput): Promise<AssetDto> {
+  await assertOwner(input.owner);
   const kind = assetKindOf(input.type);
   const quantity = resolveQuantity(input.type, input.quantity);
   const unit = resolveUnit(input.type, input.unit);
@@ -248,6 +250,7 @@ export async function updateAsset(
   id: string,
   input: UpdateAssetInput,
 ): Promise<AssetDto> {
+  if (input.owner !== undefined) await assertOwner(input.owner);
   const existing = await requireAsset(id);
 
   if (!existing.isActive) {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Owner } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 import { prisma } from "@/lib/prisma";
 import {
   absoluteJalaliMonth,

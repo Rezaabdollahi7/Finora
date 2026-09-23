@@ -102,7 +102,7 @@ export function GoalDetail({ goal }: { goal: GoalDetailDto }) {
           </Field>
           <Field label="نوع">{GOAL_KIND_LABELS[goal.kind]}</Field>
           <Field label="مالک">
-            <OwnerBadge owner={goal.owner} />
+            <OwnerBadge owner={goal.owner} always />
           </Field>
           <Field label="مبلغ هدف">
             <Money rial={goal.progress.targetAmount} />

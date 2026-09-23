@@ -1,7 +1,9 @@
 # Finora — Project Rules
 
-Finora is a Persian-first personal and household finance application for a
-two-person household (Reza, Yeganeh, and Shared).
+Finora is a Persian-first personal and household finance application. It
+ships with no people built in: the household adds its own members (Settings →
+اعضای خانوار), and every record belongs either to one of them or to the
+household as a whole (`owner: "SHARED"`).
 
 Companion documents:
 

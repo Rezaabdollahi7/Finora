@@ -33,8 +33,9 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import type { CategoryTreeNode } from "@/features/categories/types";
-import { OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import type { BudgetLineDto } from "@/features/budgets/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 const NO_CATEGORY = "";
 
@@ -88,6 +89,7 @@ export function BudgetDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = line !== undefined;
   const form = useForm<FormValues>({
@@ -156,7 +158,7 @@ export function BudgetDialog({
           <DialogDescription>
             {owner === "SHARED"
               ? `این بودجه مشترک از ${monthLabel} به بعد اعمال می‌شود و فقط خرج مشترک خانه را می‌سنجد.`
-              : `این بودجه شخصی ${OWNER_LABELS[owner]} از ${monthLabel} به بعد اعمال می‌شود و روی بودجه مشترک اثری ندارد.`}{" "}
+              : `این بودجه شخصی ${owners.label(owner)} از ${monthLabel} به بعد اعمال می‌شود و روی بودجه مشترک اثری ندارد.`}{" "}
             ماه‌های پیش از آن با همان سقف قبلی خود باقی می‌مانند.
           </DialogDescription>
         </DialogHeader>
