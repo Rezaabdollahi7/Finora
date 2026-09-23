@@ -154,15 +154,19 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
       .waitFor({ timeout: 5000 });
   });
 
-  await check(name, `[${name}] document is RTL Persian with Vazirmatn`, async () => {
+  await check(name, `[${name}] document is RTL Persian in Dana`, async () => {
     const info = await page.evaluate(() => ({
       dir: document.documentElement.dir,
       lang: document.documentElement.lang,
       font: getComputedStyle(document.body).fontFamily,
+      // next/font renames the family, so ask the font set what loaded.
+      loaded: [...document.fonts].some(
+        (face) => face.status === "loaded" && /dana/i.test(face.family),
+      ),
     }));
     if (info.dir !== "rtl") throw new Error(`dir="${info.dir}"`);
     if (info.lang !== "fa") throw new Error(`lang="${info.lang}"`);
-    if (!info.font.includes("Vazirmatn")) throw new Error(`font: ${info.font}`);
+    if (!/dana/i.test(info.font) || !info.loaded) throw new Error(`font: ${info.font}`);
     return `dir=${info.dir} lang=${info.lang}`;
   });
 

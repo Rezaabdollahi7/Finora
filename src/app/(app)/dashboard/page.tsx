@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/common/page-header";
-import { Badge } from "@/components/ui/badge";
 import { requireNavItem } from "@/config/navigation";
 import { transactionFiltersSchema } from "@/features/transactions/schemas";
 import { listTransactions } from "@/features/transactions/server/transaction-service";
@@ -14,11 +13,15 @@ import {
   getNetWorthHistory,
 } from "@/features/dashboard/server/dashboard-service";
 import { AccountDistribution } from "@/features/dashboard/components/account-distribution";
+import { BalanceHero } from "@/features/dashboard/components/balance-hero";
+import { BentoCell, BentoGrid } from "@/features/dashboard/components/bento";
 import { CashFlowChart } from "@/features/dashboard/components/cash-flow-chart";
+import { DashboardOverview } from "@/features/dashboard/components/dashboard-overview";
 import { ExpenseCategoryChart } from "@/features/dashboard/components/expense-category-chart";
+import { MonthPace } from "@/features/dashboard/components/month-pace";
 import { NetWorthChart } from "@/features/dashboard/components/net-worth-chart";
+import { NetWorthComposition } from "@/features/dashboard/components/net-worth-composition";
 import { RecentTransactions } from "@/features/dashboard/components/recent-transactions";
-import { SummaryCards } from "@/features/dashboard/components/summary-cards";
 import { UpcomingPayments } from "@/features/dashboard/components/upcoming-payments";
 import DashboardLoading from "./loading";
 
@@ -55,49 +58,58 @@ async function DashboardContent() {
     listTransactions(transactionFiltersSchema.parse({ pageSize: 6 })),
   ]);
 
+  /*
+   * The bento (docs/DESIGN_SYSTEM.md §0.9). Reading order is the same at
+   * every width, because the phone column is the desktop grid read top to
+   * bottom: the month at a glance, how much there is, how the months have
+   * gone, the month's pace, what it all adds up to and where it is heading, where
+   * the money went, what just happened, what is due next, and where the
+   * money sits. Spans live here, in one place, not inside the cards.
+   */
   return (
-    <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <h2 className="text-h3">وضعیت مالی</h2>
-        <Badge variant="neutral">{summary.period.label}</Badge>
-      </div>
+    <BentoGrid>
+      <BentoCell className="md:col-span-6 xl:col-span-12">
+        <DashboardOverview
+          period={summary.period}
+          current={summary.current}
+          previous={summary.previous}
+        />
+      </BentoCell>
 
-      <SummaryCards current={summary.current} previous={summary.previous} />
+      <BentoCell className="md:col-span-6 xl:col-span-5 xl:row-span-2">
+        <BalanceHero
+          balance={summary.current.totalBalance}
+          previous={summary.previous.totalBalance}
+          className="h-full"
+        />
+      </BentoCell>
+      <BentoCell className="md:col-span-6 xl:col-span-7">
+        <CashFlowChart points={cashFlow} />
+      </BentoCell>
+      <BentoCell className="md:col-span-3 xl:col-span-3">
+        <MonthPace period={summary.period} savings={summary.current.monthlySavings} />
+      </BentoCell>
+      <BentoCell className="md:col-span-3 xl:col-span-4">
+        <NetWorthComposition current={summary.current} previous={summary.previous} />
+      </BentoCell>
 
-      {/*
-       * Reading order is the same at every width, because the mobile column
-       * is the desktop grid read top-to-bottom: how are we doing (cash
-       * flow), where did it go (expenses), where is it (accounts), where is
-       * it heading (net worth), what just happened (recent), what is due
-       * next (upcoming). On a phone that is the order a household scrolls
-       * through, not a desktop layout squeezed narrow (task 2.9).
-       */}
-      {/*
-       * min-w-0 on every cell: a grid item defaults to min-width:auto, so a
-       * chart's measured width can push its track wider than the container
-       * and take the whole page with it. It cost 17px of horizontal scroll
-       * at 390px before this.
-       */}
-      <div className="grid gap-6 xl:grid-cols-5">
-        <div className="min-w-0 xl:col-span-3">
-          <CashFlowChart points={cashFlow} />
-        </div>
-        <div className="min-w-0 xl:col-span-2">
-          <ExpenseCategoryChart slices={expenses} periodLabel={summary.period.label} />
-        </div>
-        <div className="min-w-0 xl:col-span-2">
-          <AccountDistribution shares={accounts} />
-        </div>
-        <div className="min-w-0 xl:col-span-3">
-          <NetWorthChart initialPoints={netWorth} />
-        </div>
-        <div className="min-w-0 xl:col-span-3">
-          <RecentTransactions transactions={recent.transactions} />
-        </div>
-        <div className="min-w-0 xl:col-span-2">
-          <UpcomingPayments payments={summary.upcomingPayments} />
-        </div>
-      </div>
-    </div>
+      <BentoCell className="md:col-span-6 xl:col-span-8">
+        <NetWorthChart initialPoints={netWorth} />
+      </BentoCell>
+      <BentoCell className="md:col-span-6 xl:col-span-4">
+        <ExpenseCategoryChart slices={expenses} periodLabel={summary.period.label} />
+      </BentoCell>
+
+      <BentoCell className="md:col-span-6 xl:col-span-7">
+        <RecentTransactions transactions={recent.transactions} />
+      </BentoCell>
+      <BentoCell className="md:col-span-6 xl:col-span-5">
+        <UpcomingPayments payments={summary.upcomingPayments} />
+      </BentoCell>
+
+      <BentoCell className="md:col-span-6 xl:col-span-12">
+        <AccountDistribution shares={accounts} />
+      </BentoCell>
+    </BentoGrid>
   );
 }

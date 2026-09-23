@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Scale } from "lucide-react";
+import { LayoutGroup, motion } from "motion/react";
 import {
   Area,
   AreaChart,
@@ -12,6 +13,8 @@ import {
   YAxis,
 } from "recharts";
 
+import { cn } from "@/lib/utils";
+import { SPRING_PILL } from "@/lib/motion";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/common/empty-state";
@@ -38,7 +41,8 @@ import {
  *
  * The range selector fetches from the API rather than slicing a preloaded
  * series: "all time" can be years, and shipping every point to the browser
- * so it can throw most of them away is what task 2.10 rules out.
+ * so it can throw most of them away is what task 2.10 rules out. Its active
+ * pill slides between ranges, the same shared-layout move as the sidebar.
  */
 export function NetWorthChart({
   initialPoints,
@@ -70,7 +74,7 @@ export function NetWorthChart({
   const hasData = data.length > 1;
 
   return (
-    <Card variant="featured" className="gap-6">
+    <Card variant="featured" className="h-full gap-6 p-6">
       <CardHeader className="flex-col items-stretch gap-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
           <CardTitle>روند ارزش خالص</CardTitle>
@@ -82,19 +86,43 @@ export function NetWorthChart({
             void selectRange(value as NetWorthRange);
           }}
         >
-          <TabsList>
-            {NET_WORTH_RANGES.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {NET_WORTH_RANGE_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <LayoutGroup id="net-worth-range">
+            <TabsList>
+              {NET_WORTH_RANGES.map((value) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className={cn(
+                    "relative isolate h-8 px-3 text-caption",
+                    // The sliding pill below paints the active state.
+                    "data-[state=active]:bg-transparent",
+                  )}
+                >
+                  {range === value ? (
+                    <motion.span
+                      layoutId="range-pill"
+                      aria-hidden
+                      transition={SPRING_PILL}
+                      className="absolute inset-0 -z-10 rounded-full bg-ink-surface"
+                    />
+                  ) : null}
+                  <span
+                    className={
+                      range === value ? "text-ink-surface-foreground" : undefined
+                    }
+                  >
+                    {NET_WORTH_RANGE_LABELS[value]}
+                  </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </LayoutGroup>
         </Tabs>
       </CardHeader>
 
       {hasData ? (
         <div
-          className="h-64 w-full transition-opacity"
+          className="min-h-64 w-full flex-1 transition-opacity"
           dir="ltr"
           style={{ opacity: pending ? 0.6 : 1 }}
           aria-busy={pending}
@@ -103,8 +131,8 @@ export function NetWorthChart({
             <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
               <defs>
                 <linearGradient id="netWorthWash" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART.savings} stopOpacity={0.18} />
-                  <stop offset="100%" stopColor={CHART.savings} stopOpacity={0.02} />
+                  <stop offset="0%" stopColor={CHART.savings} stopOpacity={0.28} />
+                  <stop offset="100%" stopColor={CHART.savings} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke={CHART.grid} vertical={false} />
@@ -130,7 +158,7 @@ export function NetWorthChart({
                 }
               />
               <Tooltip
-                cursor={{ stroke: CHART.grid, strokeWidth: 1 }}
+                cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
 
@@ -155,12 +183,13 @@ export function NetWorthChart({
                 type="monotone"
                 dataKey="value"
                 stroke={CHART.savings}
-                strokeWidth={2}
+                strokeWidth={2.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="url(#netWorthWash)"
                 dot={false}
-                activeDot={{ r: 5, stroke: CHART.surface, strokeWidth: 2 }}
+                animationDuration={1100}
+                activeDot={{ r: 6, stroke: CHART.surface, strokeWidth: 3 }}
               />
             </AreaChart>
           </ResponsiveContainer>

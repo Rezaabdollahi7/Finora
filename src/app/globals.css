@@ -1,9 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/vazirmatn";
 
 /*
- * Design tokens — see docs/DESIGN_SYSTEM.md.
+ * Design tokens — see docs/DESIGN_SYSTEM.md (§0 is the current visual
+ * language; it supersedes the older values further down that document).
  *
  * Two layers:
  *   1. Brand primitives  (--brand-*)  never change between themes.
@@ -18,187 +18,227 @@
 
 :root {
   /* --- Brand primitives ------------------------------------------------ */
-  --brand-ink: #1f2033;
-  --brand-primary: #5346f0;
-  --brand-secondary: #7f7cc9;
-  --brand-surface: #fdfeff;
-  --brand-success: #2e9b6f;
-  --brand-danger: #e5484d;
-  --brand-warning: #d99a24;
+  --brand-ink: #0b1220;
+  --brand-primary: #2563ff;
+  --brand-deep: #0a01fc;
+  --brand-sky: #60a5fa;
+  --brand-violet: oklch(49.1% 0.27 292.581);
+  /* The warm highlight of the reference boards. Decorative and for
+     highlight pills only; it never carries body text of its own colour. */
+  --brand-sun: #ffc93c;
+  --brand-surface: #f5f7fa;
+  --brand-white: #ffffff;
 
   /* --- Surfaces -------------------------------------------------------- */
   --background: var(--brand-surface);
   --foreground: var(--brand-ink);
-  --card: #ffffff;
+  /*
+   * Cards are translucent white over the ambient background. The background
+   * is made of soft radial gradients only, so no backdrop blur is needed
+   * behind a card: translucency alone reads as frosted, and nothing has to
+   * be re-blurred every frame while the background drifts.
+   */
+  --card: rgb(255 255 255 / 0.78);
   --card-foreground: var(--brand-ink);
-  --popover: #ffffff;
+  /* Opaque twin of --card, for rings around chart markers and anything
+     that must cover what is underneath. */
+  --card-solid: var(--brand-white);
+  /* The 1px light edge along a glass surface. */
+  --card-edge: rgb(255 255 255 / 0.9);
+  --popover: var(--brand-white);
   --popover-foreground: var(--brand-ink);
+  /* Header, sidebar and dock: the only surfaces that blur what scrolls
+     beneath them. */
+  --glass: rgb(255 255 255 / 0.62);
 
   /*
-   * The dark feature card from the reference. It is deliberately identical
-   * in both themes: it is a brand element, not a themed surface.
+   * The dark feature card (the "task list" card of the reference). Ink in
+   * the light theme; an elevated navy in the dark theme, where ink itself
+   * would vanish into the page.
    */
   --ink-surface: var(--brand-ink);
   --ink-surface-foreground: var(--brand-surface);
-  --ink-surface-muted: rgb(253 254 255 / 0.65);
-  --ink-surface-subtle: rgb(253 254 255 / 0.45);
+  --ink-surface-muted: rgb(245 247 250 / 0.68);
+  --ink-surface-subtle: rgb(245 247 250 / 0.12);
 
   /* --- Actions --------------------------------------------------------- */
   --primary: var(--brand-primary);
-  --primary-foreground: var(--brand-surface);
-  --secondary: var(--brand-secondary);
-  --secondary-foreground: var(--brand-surface);
+  --primary-foreground: var(--brand-white);
+  --primary-strong: #1d4fe0;
+  --secondary: var(--brand-deep);
+  --secondary-foreground: var(--brand-white);
+  --highlight: var(--brand-sun);
+  --highlight-foreground: var(--brand-ink);
 
-  /* Purple alpha ramp: subtle surfaces built from the primary colour. */
-  --primary-subtle: rgb(83 70 240 / 0.05);
-  --primary-soft: rgb(83 70 240 / 0.08);
-  --primary-muted: rgb(83 70 240 / 0.12);
+  /* Blue alpha ramp: subtle surfaces built from the primary colour. */
+  --primary-subtle: rgb(37 99 255 / 0.05);
+  --primary-soft: rgb(37 99 255 / 0.09);
+  --primary-muted: rgb(37 99 255 / 0.16);
 
   --accent: var(--primary-soft);
-  --accent-foreground: var(--brand-primary);
-  --muted: var(--primary-subtle);
-  --muted-foreground: rgb(31 32 51 / 0.65);
+  --accent-foreground: var(--primary-strong);
+  --muted: rgb(11 18 32 / 0.04);
+  --muted-foreground: rgb(11 18 32 / 0.62);
 
   /* --- Text ------------------------------------------------------------ */
-  --text-secondary: rgb(31 32 51 / 0.65);
-  --text-muted: rgb(31 32 51 / 0.45);
-  --text-disabled: rgb(31 32 51 / 0.3);
+  --text-secondary: rgb(11 18 32 / 0.62);
+  --text-muted: rgb(11 18 32 / 0.5);
+  --text-disabled: rgb(11 18 32 / 0.3);
 
   /* --- Semantic -------------------------------------------------------- */
-  --success: var(--brand-success);
-  --success-foreground: var(--brand-surface);
-  --success-subtle: rgb(46 155 111 / 0.12);
-  --danger: var(--brand-danger);
-  --danger-foreground: var(--brand-surface);
-  --danger-subtle: rgb(229 72 77 / 0.12);
-  --warning: var(--brand-warning);
-  --warning-foreground: var(--brand-surface);
-  --warning-subtle: rgb(217 154 36 / 0.12);
+  /* Text-grade steps: each clears 4.5:1 on a card. */
+  --success: #087a4b;
+  --success-foreground: var(--brand-white);
+  --success-subtle: rgb(8 122 75 / 0.1);
+  --danger: #d92d3f;
+  --danger-foreground: var(--brand-white);
+  --danger-subtle: rgb(217 45 63 / 0.1);
+  --warning: #a15f00;
+  --warning-foreground: var(--brand-white);
+  --warning-subtle: rgb(232 155 0 / 0.14);
   /* shadcn/ui calls this slot `destructive`. */
-  --destructive: var(--brand-danger);
-  --destructive-foreground: var(--brand-surface);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--brand-white);
 
   /* --- Lines and focus -------------------------------------------------- */
-  --border: rgb(31 32 51 / 0.08);
-  --border-strong: rgb(31 32 51 / 0.12);
-  --input: rgb(31 32 51 / 0.1);
+  --border: rgb(11 18 32 / 0.07);
+  --border-strong: rgb(11 18 32 / 0.12);
+  --input: rgb(11 18 32 / 0.1);
   --ring: var(--brand-primary);
-  --ring-offset: rgb(83 70 240 / 0.15);
+  --ring-offset: rgb(37 99 255 / 0.28);
+
+  /* --- Brand gradients -------------------------------------------------- */
+  --gradient-brand: linear-gradient(135deg, var(--brand-primary), var(--brand-deep));
+
+  /* --- Ambient background ----------------------------------------------- */
+  --ambient-1: rgb(37 99 255 / 0.2);
+  --ambient-2: rgb(96 165 250 / 0.28);
+  --ambient-3: rgb(255 201 60 / 0.3);
+  --ambient-4: rgb(10 1 252 / 0.1);
+  --ambient-grain-opacity: 0.035;
 
   /* --- Charts ----------------------------------------------------------- */
-  --chart-1: var(--brand-primary);
-  --chart-2: var(--brand-secondary);
-  --chart-3: var(--brand-success);
-  --chart-4: var(--brand-warning);
-  --chart-5: var(--brand-danger);
-  --chart-grid: rgb(31 32 51 / 0.06);
-  --chart-axis: rgb(31 32 51 / 0.5);
-
   /*
-   * Cash-flow series.
-   *
-   * Deliberately not the semantic success/danger steps. Those are tuned for
-   * text and badges, where they appear alone beside an icon; side by side in
-   * a chart they are the classic red/green pair and separate by only ΔE 6.7
-   * under deuteranopia. These steps push the positive hue toward teal, which
-   * lifts the worst adjacent pair to ΔE 11.5. Verified with the palette
-   * validator; see docs/DESIGN_SYSTEM.md §59.
+   * Categorical, in this fixed order and never cycled (docs §0.6). The
+   * order is what keeps neighbours apart under colour vision deficiency:
+   * validated worst adjacent ΔE 18.8 (protan) in light, 18.5 in dark.
    */
-  --chart-income: #0e9280;
-  --chart-expense: #e05038;
-  --chart-savings: var(--brand-primary);
+  --chart-1: #2563ff; /* blue */
+  --chart-2: #f0641e; /* orange */
+  --chart-3: #0891b2; /* cyan */
+  --chart-4: #e89b00; /* yellow */
+  --chart-5: #7c3aed; /* violet */
+  --chart-6: #0f9d58; /* green */
+  --chart-grid: rgb(11 18 32 / 0.06);
+  --chart-axis: rgb(11 18 32 / 0.5);
 
-  /*
-   * Sequential purple ramp for magnitude, darkest = largest. One hue,
-   * monotone lightness, even steps of ~0.065 OKLCH L.
-   */
-  --chart-seq-1: #352aa1;
-  --chart-seq-2: #4436c9;
-  --chart-seq-3: #5346f0;
-  --chart-seq-4: #6e5ff3;
-  --chart-seq-5: #8579f5;
-  --chart-seq-6: #9c92f7;
+  /* Cash-flow trio. Validated as its own set: worst adjacent ΔE 9.9. */
+  --chart-income: #0ea572;
+  --chart-expense: #f36b21;
+  --chart-savings: #2563ff;
+
+  /* Sequential blue ramp for magnitude, darkest = largest. */
+  --chart-seq-1: #0a2fb8;
+  --chart-seq-2: #1644e0;
+  --chart-seq-3: #2563ff;
+  --chart-seq-4: #4f82ff;
+  --chart-seq-5: #7aa1ff;
+  --chart-seq-6: #a4c0ff;
   /** For a slice that is an absence of data rather than a category. */
-  --chart-neutral: rgb(31 32 51 / 0.28);
+  --chart-neutral: rgb(11 18 32 / 0.22);
 
   /* --- Skeleton ---------------------------------------------------------- */
-  --skeleton: rgb(31 32 51 / 0.06);
+  --skeleton: rgb(11 18 32 / 0.06);
+  --skeleton-shine: rgb(255 255 255 / 0.7);
 }
 
 /*
- * Dark theme.
- *
- * The design system does not specify a dark palette, so it is derived from
- * the brand ink rather than invented: the app background is ink darkened,
- * cards are ink itself, and primary is lifted just enough to clear contrast
- * requirements on a dark surface. Documented in docs/DESIGN_SYSTEM.md.
+ * Dark theme: navy ink, the same electric blue, sky blue for text-grade
+ * accents, and violet for depth. Documented in docs/DESIGN_SYSTEM.md §0.3.
  */
 .dark {
-  --background: #14151f;
+  --background: var(--brand-ink);
   --foreground: var(--brand-surface);
-  --card: #1f2033;
+  --card: rgb(22 33 58 / 0.64);
   --card-foreground: var(--brand-surface);
-  --popover: #262739;
+  --card-solid: #131c30;
+  --card-edge: rgb(255 255 255 / 0.07);
+  --popover: #131c30;
   --popover-foreground: var(--brand-surface);
+  --glass: rgb(11 18 32 / 0.6);
 
-  --primary: #6d62f3;
-  --primary-foreground: var(--brand-surface);
-  --secondary: #9a97d8;
-  --secondary-foreground: var(--brand-ink);
+  --ink-surface: #1a2644;
+  --ink-surface-foreground: var(--brand-surface);
+  --ink-surface-muted: rgb(245 247 250 / 0.66);
+  --ink-surface-subtle: rgb(245 247 250 / 0.1);
 
-  --primary-subtle: rgb(109 98 243 / 0.08);
-  --primary-soft: rgb(109 98 243 / 0.14);
-  --primary-muted: rgb(109 98 243 / 0.22);
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--brand-white);
+  --primary-strong: var(--brand-sky);
+  --secondary: var(--brand-violet);
+  --secondary-foreground: var(--brand-white);
+
+  --primary-subtle: rgb(96 165 250 / 0.06);
+  --primary-soft: rgb(96 165 250 / 0.12);
+  --primary-muted: rgb(96 165 250 / 0.2);
 
   --accent: var(--primary-soft);
-  --accent-foreground: #b3abff;
-  --muted: var(--primary-subtle);
-  --muted-foreground: rgb(253 254 255 / 0.65);
+  --accent-foreground: var(--brand-sky);
+  --muted: rgb(245 247 250 / 0.05);
+  --muted-foreground: rgb(245 247 250 / 0.64);
 
-  --text-secondary: rgb(253 254 255 / 0.65);
-  --text-muted: rgb(253 254 255 / 0.45);
-  --text-disabled: rgb(253 254 255 / 0.3);
+  --text-secondary: rgb(245 247 250 / 0.64);
+  --text-muted: rgb(245 247 250 / 0.5);
+  --text-disabled: rgb(245 247 250 / 0.3);
 
-  --success: #3bb684;
-  --success-subtle: rgb(59 182 132 / 0.16);
-  --danger: #ff6369;
-  --danger-subtle: rgb(255 99 105 / 0.16);
-  --warning: #e8ae3c;
-  --warning-subtle: rgb(232 174 60 / 0.16);
-  --destructive: #ff6369;
+  --success: #34c47c;
+  --success-subtle: rgb(52 196 124 / 0.14);
+  --danger: #ff6b7a;
+  --danger-subtle: rgb(255 107 122 / 0.14);
+  --warning: #f5b13d;
+  --warning-subtle: rgb(245 177 61 / 0.14);
+  --destructive: #ff6b7a;
 
-  --border: rgb(253 254 255 / 0.1);
-  --border-strong: rgb(253 254 255 / 0.16);
-  --input: rgb(253 254 255 / 0.14);
-  --ring: #6d62f3;
-  --ring-offset: rgb(109 98 243 / 0.25);
+  --border: rgb(245 247 250 / 0.08);
+  --border-strong: rgb(245 247 250 / 0.14);
+  --input: rgb(245 247 250 / 0.12);
+  --ring: var(--brand-sky);
+  --ring-offset: rgb(96 165 250 / 0.35);
 
-  --chart-1: #6d62f3;
-  --chart-2: #9a97d8;
-  --chart-3: #3bb684;
-  --chart-4: #e8ae3c;
-  --chart-5: #ff6369;
-  --chart-grid: rgb(253 254 255 / 0.08);
-  --chart-axis: rgb(253 254 255 / 0.5);
+  --gradient-brand: linear-gradient(135deg, var(--brand-primary), var(--brand-violet));
 
-  /* Re-stepped for the dark surface rather than reused from light: the light
-     steps fall outside the dark lightness band and drop to ΔE 5.6 under
-     deuteranopia, which fails outright. These reach ΔE 10.8. */
-  --chart-income: #0faa93;
-  --chart-expense: #e85f4a;
-  --chart-savings: #6d62f3;
+  --ambient-1: rgb(37 99 255 / 0.3);
+  --ambient-2: rgb(112 8 231 / 0.32);
+  --ambient-3: rgb(96 165 250 / 0.14);
+  --ambient-4: rgb(37 99 255 / 0.16);
+  --ambient-grain-opacity: 0.05;
+
+  /* Re-stepped for the dark surface (L 0.48-0.67), not reused from light. */
+  --chart-1: #4a80ff;
+  --chart-2: #e8691f;
+  --chart-3: #1aa3b8;
+  --chart-4: #bd8b00;
+  --chart-5: #9061f9;
+  --chart-6: #23a565;
+  --chart-grid: rgb(245 247 250 / 0.07);
+  --chart-axis: rgb(245 247 250 / 0.5);
+
+  --chart-income: #23a878;
+  --chart-expense: #e8691f;
+  --chart-savings: #4a80ff;
 
   /* The ramp runs the other way on a dark surface: the largest value takes
      the lightest step, because that is the one with the most contrast. */
-  --chart-seq-1: #c9c4fb;
-  --chart-seq-2: #b3abf9;
-  --chart-seq-3: #9c92f7;
-  --chart-seq-4: #8579f5;
-  --chart-seq-5: #6e5ff3;
-  --chart-seq-6: #5346f0;
-  --chart-neutral: rgb(253 254 255 / 0.32);
+  --chart-seq-1: #c2d4ff;
+  --chart-seq-2: #9bb7ff;
+  --chart-seq-3: #749bff;
+  --chart-seq-4: #4f82ff;
+  --chart-seq-5: #2f6aff;
+  --chart-seq-6: #1f52e6;
+  --chart-neutral: rgb(245 247 250 / 0.26);
 
-  --skeleton: rgb(253 254 255 / 0.08);
+  --skeleton: rgb(245 247 250 / 0.07);
+  --skeleton-shine: rgb(245 247 250 / 0.08);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -210,8 +250,11 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-card-solid: var(--card-solid);
+  --color-card-edge: var(--card-edge);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-glass: var(--glass);
 
   --color-ink-surface: var(--ink-surface);
   --color-ink-surface-foreground: var(--ink-surface-foreground);
@@ -220,11 +263,14 @@
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
   --color-primary-subtle: var(--primary-subtle);
   --color-primary-soft: var(--primary-soft);
   --color-primary-muted: var(--primary-muted);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -258,6 +304,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
   --color-chart-grid: var(--chart-grid);
   --color-chart-axis: var(--chart-axis);
   --color-chart-income: var(--chart-income);
@@ -265,26 +312,29 @@
   --color-chart-savings: var(--chart-savings);
   --color-chart-neutral: var(--chart-neutral);
 
-  /* Persian-first type stack. Vazirmatn is self-hosted, so neither the
+  /* Dana, self-hosted through next/font (src/app/fonts.ts), so neither the
      production build nor the Docker image needs network access for it. */
-  --font-sans: "Vazirmatn Variable", system-ui, sans-serif;
+  --font-sans: var(--font-dana), "Dana", system-ui, sans-serif;
 
-  /* Type scale (docs/DESIGN_SYSTEM.md §10). */
-  --text-display: 3rem; /* 48px */
+  /* Type scale (docs/DESIGN_SYSTEM.md §0.4). */
+  --text-hero: 3.5rem; /* 56px: the one headline figure per screen */
+  --text-hero--line-height: 1.05;
+  --text-hero--font-weight: 300;
+  --text-display: 2.75rem; /* 44px */
   --text-display--line-height: 1.1;
-  --text-display--font-weight: 700;
-  --text-h1: 2rem; /* 32px */
+  --text-display--font-weight: 300;
+  --text-h1: 2.25rem; /* 36px */
   --text-h1--line-height: 1.2;
-  --text-h1--font-weight: 700;
+  --text-h1--font-weight: 400;
   --text-h2: 1.5rem; /* 24px */
   --text-h2--line-height: 1.3;
-  --text-h2--font-weight: 700;
+  --text-h2--font-weight: 500;
   --text-h3: 1.25rem; /* 20px */
   --text-h3--line-height: 1.35;
-  --text-h3--font-weight: 600;
+  --text-h3--font-weight: 500;
   --text-h4: 1.125rem; /* 18px */
   --text-h4--line-height: 1.4;
-  --text-h4--font-weight: 600;
+  --text-h4--font-weight: 500;
   --text-body-lg: 1rem; /* 16px */
   --text-body-lg--line-height: 1.7;
   --text-body: 0.875rem; /* 14px */
@@ -292,22 +342,90 @@
   --text-caption: 0.75rem; /* 12px */
   --text-caption--line-height: 1.5;
 
-  /* Radius scale (§13). The 8px spacing system already matches Tailwind's
-     default scale, so spacing is left untouched. */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  /*
+   * Radius scale (§0.5). One documented rule: interactive controls are full
+   * pills, inputs and small tiles use md, cards use 2xl, the app shell 3xl.
+   */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+  --radius-3xl: 36px;
 
-  /* Soft, diffused shadows (§15) — never heavy black. */
-  --shadow-sm: 0 2px 8px rgb(31 32 51 / 0.04);
-  --shadow-md: 0 8px 24px rgb(31 32 51 / 0.06);
-  --shadow-lg: 0 16px 40px rgb(31 32 51 / 0.08);
-  --shadow-floating: 0 20px 50px rgb(31 32 51 / 0.1);
+  /* Soft, blue-tinted shadows (§0.5) — never heavy black. */
+  --shadow-sm: 0 1px 2px rgb(11 18 32 / 0.04), 0 4px 12px -4px rgb(37 99 255 / 0.08);
+  --shadow-md: 0 1px 2px rgb(11 18 32 / 0.04), 0 12px 32px -12px rgb(37 99 255 / 0.18);
+  --shadow-lg: 0 2px 4px rgb(11 18 32 / 0.04), 0 24px 48px -16px rgb(37 99 255 / 0.24);
+  --shadow-floating:
+    0 2px 6px rgb(11 18 32 / 0.06), 0 28px 64px -18px rgb(10 1 252 / 0.3);
+  --shadow-glow: 0 10px 30px -10px rgb(37 99 255 / 0.55);
 
-  /* Motion (§43). */
+  /* Motion (§0.7). The JS side mirrors these in src/lib/motion.ts. */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --animate-drift-a: drift-a 38s ease-in-out infinite alternate;
+  --animate-drift-b: drift-b 46s ease-in-out infinite alternate;
+  --animate-drift-c: drift-c 54s ease-in-out infinite alternate;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes drift-a {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    100% {
+      transform: translate3d(-12vw, 10vh, 0) scale(1.15);
+    }
+  }
+
+  @keyframes drift-b {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1.1);
+    }
+    100% {
+      transform: translate3d(14vw, -8vh, 0) scale(0.92);
+    }
+  }
+
+  @keyframes drift-c {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    100% {
+      transform: translate3d(-8vw, -12vh, 0) rotate(18deg);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+}
+
+/*
+ * Hatched fill for "the rest of the bar" — the remainder of a budget, the
+ * part of the income not spent — as in the reference boards. A texture
+ * rather than a colour, so it never competes with a series hue and still
+ * reads in print and in forced-colours mode.
+ */
+@utility bg-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--border-strong) 0 1.5px,
+    transparent 1.5px 7px
+  );
+}
+
+/* The 1px light edge along the top of a glass surface. */
+@utility glass-edge {
+  box-shadow:
+    inset 0 1px 0 var(--card-edge),
+    var(--shadow-md);
 }
 
 @layer base {
@@ -325,7 +443,6 @@
     font-family: var(--font-sans);
     font-size: var(--text-body);
     line-height: 1.7;
-    /* Persian text renders better with these disabled. */
     font-variant-ligatures: common-ligatures;
     -webkit-font-smoothing: antialiased;
   }
@@ -336,14 +453,33 @@
    */
   :focus-visible {
     outline: 3px solid var(--ring-offset);
-    outline-offset: 1px;
-    border-radius: var(--radius-sm);
+    outline-offset: 2px;
   }
 
   /* Financial figures must stay scannable: fixed-width digits stop numbers
      from shifting as values update. */
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * Theme switch (§0.7). The toggle wraps the change in a view transition
+   * and grows the new theme out of the button as a circle, so both
+   * snapshots must hold still instead of cross-fading by default.
+   */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  /* Glass needs something to be glass over; without transparency it must
+     still be a solid, readable surface. */
+  @media (prefers-reduced-transparency: reduce) {
+    :root {
+      --card: var(--card-solid);
+      --glass: var(--card-solid);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -355,6 +491,63 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+/*
+ * Ambient background (docs/DESIGN_SYSTEM.md §0.8).
+ *
+ * Four soft light sources drifting behind the interface, plus a film of
+ * grain so the gradients do not band on cheap panels. Everything here is a
+ * radial gradient moved by transform, so the compositor animates it on the
+ * GPU with no layout, no paint and no blur filter. Reduced motion stops the
+ * drift (the base layer's rule); the light stays.
+ */
+@layer components {
+  .ambient-blob {
+    position: absolute;
+    width: 70vmax;
+    height: 70vmax;
+    border-radius: 9999px;
+    will-change: transform;
+  }
+
+  .ambient-blob-1 {
+    inset-block-start: -30vmax;
+    inset-inline-start: -20vmax;
+    background: radial-gradient(closest-side, var(--ambient-1), transparent);
+    animation: var(--animate-drift-a);
+  }
+
+  .ambient-blob-2 {
+    inset-block-start: -25vmax;
+    inset-inline-end: -30vmax;
+    background: radial-gradient(closest-side, var(--ambient-2), transparent);
+    animation: var(--animate-drift-b);
+  }
+
+  .ambient-blob-3 {
+    inset-block-end: -35vmax;
+    inset-inline-end: -15vmax;
+    background: radial-gradient(closest-side, var(--ambient-3), transparent);
+    animation: var(--animate-drift-c);
+  }
+
+  .ambient-blob-4 {
+    inset-block-end: -30vmax;
+    inset-inline-start: 10vmax;
+    width: 55vmax;
+    height: 55vmax;
+    background: radial-gradient(closest-side, var(--ambient-4), transparent);
+    animation: var(--animate-drift-b);
+    animation-direction: alternate-reverse;
+  }
+
+  .ambient-grain {
+    position: absolute;
+    inset: 0;
+    opacity: var(--ambient-grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }
 
@@ -415,5 +608,24 @@
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+}
+
+/*
+ * The dashboard's entrance (§0.9). Cells start hidden only where script
+ * runs and motion is welcome; GSAP then raises them into place. If script
+ * never gets there, the failsafe shows them anyway after 2.5s — a page is
+ * never left blank waiting for an animation.
+ */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .bento-cell {
+    opacity: 0;
+    animation: bento-failsafe 0s 2.5s forwards;
+  }
+}
+
+@keyframes bento-failsafe {
+  to {
+    opacity: 1;
   }
 }

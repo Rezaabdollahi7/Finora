@@ -26,8 +26,8 @@ function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="منوی کاربر">
-          <span className="flex size-8 items-center justify-center rounded-full bg-primary-soft text-accent-foreground">
+        <Button variant="glass" size="icon-lg" aria-label="منوی کاربر" className="p-1">
+          <span className="flex size-full items-center justify-center rounded-full bg-(image:--gradient-brand) text-primary-foreground">
             <User className="size-4" />
           </span>
         </Button>

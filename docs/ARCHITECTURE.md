@@ -346,7 +346,7 @@ src/
 ├── components/
 │   ├── ui/         # shadcn/ui primitives
 │   ├── layout/     # application chrome (sidebar, header, theme)
-│   ├── charts/     # Recharts wrappers
+│   ├── charts/     # Recharts wrappers and chart tokens
 │   ├── forms/      # form building blocks
 │   └── common/     # shared composites
 ├── features/       # one folder per domain: dashboard, accounts, ...
@@ -387,6 +387,35 @@ add domains:
 The domains match the roadmap: dashboard, accounts, transactions, assets,
 loans, budgets, goals, calendar, reports. Each exists as a folder from
 Sprint 0 so later sprints add files rather than invent placement.
+
+## Motion, 3D and the client boundary
+
+The redesign (docs/DESIGN_SYSTEM.md §0) adds three client-side libraries,
+each with one job, so they never fight over the same frame:
+
+| Library | Job |
+| --- | --- |
+| `motion` (`motion/react`) | Layout animation: the sliding active pill, the sidebar width, dock magnification. |
+| `gsap` + `@gsap/react` | The dashboard's one-time entrance choreography (`features/dashboard/components/bento.tsx`). |
+| `three` | The 3D balance card, imported with `import()` from inside an effect, so it is its own chunk. |
+
+The theme switch uses the browser's View Transitions API and the ambient
+background is CSS, so neither ships any JavaScript of its own.
+
+Every animation honours `prefers-reduced-motion`: Motion through
+`MotionConfig reducedMotion="user"`, GSAP through `gsap.matchMedia`, the 3D
+scene by rendering a single still frame, CSS through the global rule.
+
+Two boundary rules came out of the redesign:
+
+1. **A server component cannot read a value from a `"use client"` module.**
+   It receives a client reference instead, which is `undefined` when read.
+   Chart colours therefore live in `components/charts/chart-tokens.ts`, a
+   plain module; `chart-primitives.tsx` re-exports them for client charts.
+2. **Anything that animates is a client leaf.** Cards stay server
+   components and mark what should move with data attributes
+   (`data-bento-cell`, `data-grow`, `data-sweep`, `data-count`); the one
+   client wrapper around the grid animates them.
 
 ## Pages that read the database
 

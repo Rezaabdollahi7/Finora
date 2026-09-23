@@ -115,6 +115,46 @@ export const mainNavigation: readonly NavItem[] = [
 ] as const;
 
 /**
+ * The sidebar's grouping of {@link mainNavigation}: what a household checks
+ * daily, what it owns and owes, what it plans, and the household itself.
+ *
+ * Groups hold hrefs rather than copies of the items, so the list above stays
+ * the single source of truth; a test checks that every item appears in
+ * exactly one group, so a new route cannot go missing from the sidebar.
+ */
+export const navigationGroups: readonly { label: string; hrefs: readonly string[] }[] =
+  [
+    {
+      label: "روزانه",
+      hrefs: ["/dashboard", "/transactions", "/accounts", "/calendar"],
+    },
+    { label: "دارایی و بدهی", hrefs: ["/assets", "/loans", "/recurring"] },
+    { label: "برنامه‌ریزی", hrefs: ["/budgets", "/goals", "/forecast", "/reports"] },
+    { label: "خانه", hrefs: ["/household", "/settings"] },
+  ] as const;
+
+/** {@link navigationGroups} resolved to their items, in order. */
+export function groupedNavigation(): { label: string; items: NavItem[] }[] {
+  return navigationGroups.map((group) => ({
+    label: group.label,
+    items: group.hrefs
+      .map((href) => mainNavigation.find((item) => item.href === href))
+      .filter((item): item is NavItem => item !== undefined),
+  }));
+}
+
+/**
+ * The four sections the phone dock carries; everything else is one tap away
+ * behind its "more" button.
+ */
+export const dockHrefs = [
+  "/dashboard",
+  "/transactions",
+  "/accounts",
+  "/calendar",
+] as const;
+
+/**
  * Resolve the navigation entry for a pathname.
  *
  * Matches nested routes too, so /accounts/<id> still highlights "حساب‌ها",

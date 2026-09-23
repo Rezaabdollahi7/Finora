@@ -22,6 +22,262 @@ It should use the same visual principles while adapting them to the Personal Fin
 
 ---
 
+# 0. Visual Language v2 (current)
+
+This section is the current visual language. It was introduced with the
+redesign of the application shell and the dashboard, and **supersedes** the
+colour, type, radius, shadow, motion and chart values in the sections below
+wherever they disagree; those sections carry a note pointing back here. The
+principles, hierarchy, accessibility, RTL and number rules below are
+unchanged.
+
+## 0.1 Direction
+
+```text
+Reading: a Persian household-finance dashboard for two people, in a soft
+bento language keyed to electric blue, with glass surfaces over moving
+light, one warm highlight, and motion that explains what just happened.
+```
+
+References: the "Crextio" dashboard boards (soft bento tiles, big light
+figures, pill bars with a hatched remainder, a dark task-list card, a
+circular time tracker, round "open" buttons in card corners). Adapted, not
+copied: the reference's yellow becomes the highlight, blue is the brand.
+
+Design dials: variance 7, motion 7, density 5 — asymmetric bento at desktop,
+a single column on phones, real motion on load, and data-app density.
+
+## 0.2 Brand colours
+
+```text
+Primary     #2563ff   brand blue: actions, active navigation, links
+Deep        #0a01fc   the far end of the brand gradient (light theme)
+Sky         #60a5fa   text-grade blue on dark, secondary card in 3D
+Violet      oklch(49.1% 0.27 292.581)   depth in the dark theme
+Sun         #ffc93c   the warm highlight: highlight pills, dial arcs, coins
+Surface     #f5f7fa   light page background
+Ink         #0b1220   text in light, page background in dark
+```
+
+Brand gradient: `135deg, primary → deep` in light, `primary → violet` in
+dark (`--gradient-brand`). It is used for the active navigation pill, the
+balance card, and the avatar — nowhere else.
+
+Semantic steps are text-grade (each clears 4.5:1 on a card):
+
+```text
+             Light      Dark
+success      #087a4b    #34c47c
+danger       #d92d3f    #ff6b7a
+warning      #a15f00    #f5b13d
+```
+
+The sun highlight never carries text of its own colour; text on it is ink
+(12.2:1).
+
+## 0.3 Dark theme
+
+```text
+--background   #0b1220 (ink)
+--card         rgb(22 33 58 / 0.64)   glass over the ambient light
+--card-solid   #131c30                opaque twin, popovers, marker rings
+--primary      #2563ff                fills with white text (4.9:1)
+--accent-fg    #60a5fa                text-grade blue on dark (7.4:1)
+--secondary    violet
+--ink-surface  #1a2644                the dark card, lifted off the page
+```
+
+Ink pills invert in dark (`dark:bg-foreground dark:text-background`) so a
+dark-on-light pill in the reference stays a high-contrast pill.
+
+## 0.4 Typography
+
+Brand typeface: **Dana**, self-hosted through `next/font/local`
+(`src/app/fonts.ts`), weights 200–900. Only the weights on the scale ship.
+
+```text
+hero      56px / 300    the one headline figure per screen
+display   44px / 300    big figures: balance, dial centres
+h1        36px / 400    page titles, overview figures on phones
+h2        24px / 500    overview figures between sm and 2xl
+h3        20px / 500
+h4        18px / 500    card titles
+body-lg   16px
+body      14px
+caption   12px
+```
+
+Large figures are **light**, not bold: weight carries hierarchy through
+contrast with the medium-weight labels around them. `cn()` knows these
+names (src/lib/utils.ts), so a size and a colour never cancel each other.
+
+## 0.5 Shape, elevation and glass
+
+One radius rule, applied everywhere:
+
+```text
+Interactive controls   full pill  (buttons, tabs, nav items, chips)
+Inputs, small tiles    md   14px
+Cards                  2xl  28px   (default/compact cards: xl 22px / lg 18px)
+App shell panels       3xl  36px   (sidebar), full pill (header, dock)
+```
+
+Radius scale: sm 10, md 14, lg 18, xl 22, 2xl 28, 3xl 36.
+
+Shadows are blue-tinted and soft (`--shadow-sm/md/lg/floating`), plus
+`--shadow-glow` under primary actions and the active pill. Never black.
+
+Glass: cards are translucent (`--card`) with a 1px light top edge
+(`glass-edge` utility). Cards do **not** use `backdrop-filter`: the ambient
+background is soft gradients only, so translucency reads as frosted without
+re-blurring a moving background every frame. Only the header, sidebar and
+dock blur (they have content scrolling beneath them). With
+`prefers-reduced-transparency`, glass falls back to solid surfaces.
+
+Textures: `bg-hatch` (a 45° hairline hatch) marks "the rest of the bar" —
+remaining income, liabilities — as in the reference. It is a texture, so it
+never competes with a series hue and survives print and forced colours.
+
+## 0.6 Chart palette
+
+Validated with the dataviz palette validator (lightness band, chroma floor,
+CVD separation, normal-vision floor, contrast), not by eye.
+
+Categorical, in this fixed order, never cycled:
+
+```text
+slot   Light      Dark       hue
+1      #2563ff    #4a80ff    blue
+2      #f0641e    #e8691f    orange
+3      #0891b2    #1aa3b8    cyan
+4      #e89b00    #bd8b00    yellow
+5      #7c3aed    #9061f9    violet
+6      #0f9d58    #23a565    green
+```
+
+Worst adjacent pair: ΔE 18.8 (protan) light, 18.5 dark; normal-vision floor
+29.4 / 22.3. Light yellow is below 3:1 on white, so every chart using slot 4
+also prints its values (the list beside the donut, the tiles under the
+account bar). A seventh series folds into "سایر" with `--chart-neutral`.
+
+Cash-flow trio, validated as its own set:
+
+```text
+            Light      Dark
+income      #0ea572    #23a878
+expense     #f36b21    #e8691f
+savings     #2563ff    #4a80ff
+```
+
+Worst adjacent ΔE 9.9 light, 11.0 dark. Sequential ramp: one blue hue,
+`#0a2fb8 → #a4c0ff` in light (largest darkest), reversed in dark.
+
+Marks: pill bars (fully rounded, ≤14px on the dashboard), 2–2.5px lines,
+the current month at full strength and earlier months at 50%, tooltips as
+ink pills (`ChartTooltip`). Colour tokens live in
+`src/components/charts/chart-tokens.ts`, importable from server components.
+
+## 0.7 Motion
+
+Motion explains, once: something arrived, something moved, something
+changed state. Tokens (`src/lib/motion.ts`, mirrored in CSS):
+
+```text
+ease-out-soft   cubic-bezier(0.22, 1, 0.36, 1)   default
+ease-emphasized cubic-bezier(0.2, 0.8, 0.2, 1)   large surfaces
+fast 180ms · base 450ms · slow 700ms
+spring (pill)    stiffness 420, damping 36
+spring (surface) stiffness 260, damping 32
+```
+
+One tool per job:
+
+```text
+Motion (motion/react)   layout: the sliding active pill in the sidebar,
+                        dock and range tabs; the sidebar width; dock
+                        magnification (motion values, never state)
+GSAP (@gsap/react)      the dashboard's entrance choreography only
+View Transitions API    the theme switch: the new theme grows out of the
+                        toggle as a circle (clip-path, 700ms)
+CSS keyframes           the ambient background, skeleton shimmer
+three.js                the 3D balance card
+```
+
+GSAP and Motion never animate the same element. `MotionConfig
+reducedMotion="user"` wraps the app; GSAP runs inside
+`gsap.matchMedia("(prefers-reduced-motion: no-preference)")`; the 3D scene
+renders one still frame; the global CSS rule stops keyframes. Under reduced
+motion nothing slides, scales or spins — the page is simply there.
+
+## 0.8 Ambient background
+
+Four large radial-gradient light sources drift slowly behind every screen
+(38–54s cycles, transform only, compositor-driven), plus a 3.5% grain film
+so the gradients do not band. Light theme: blue, sky, a warm sun corner and
+a touch of deep blue. Dark theme: blue and violet. It is a server component
+with no JavaScript, fixed, pointer-transparent, and hidden in print.
+
+## 0.9 Dashboard bento
+
+A 12-column grid at `xl`, 6 at `md`, one column on phones, in the same
+reading order at every width. Spans live in the page, not in the cards.
+
+```text
+Overview strip (no card)  income split pills + the month's three figures
+Balance hero   5×2        total balance over the 3D card
+Cash flow      7          six months, pill bars + savings line
+Month pace     3          day of month dial + what is left per day
+Net worth      4          figure + composition bars (hatched liabilities)
+Net worth trend 8         area chart with sliding range tabs
+Expenses       4          categorical donut + exact list
+Recent         7          the latest six transactions
+Upcoming       5          the dark "task list" card, first five rows
+Accounts       12         labelled pill bar + balance tiles
+```
+
+Entrance: cells rise in a wave (GSAP, 70ms stagger, expo-out), then bars
+grow from the inline start, dial arcs sweep and percentages count up. Cells
+start hidden only under `@media (scripting: enabled) and
+(prefers-reduced-motion: no-preference)`, with a 2.5s CSS failsafe, so the
+page is never blank waiting for script.
+
+## 0.10 3D
+
+The balance card carries one three.js scene: a pearl card with the extruded
+Finora mark, a gold chip and card dots, a sky card behind it, and five gold
+coins. It leans toward the pointer and breathes. Rules:
+
+* Loaded on demand (dynamic `import()`), so three.js never weighs on another
+  page's first paint.
+* Decoration only: `aria-hidden`; the figure is DOM text above it.
+* The loop runs only while the canvas is on screen and the tab is visible;
+  pixel ratio is capped at 2; everything is disposed on unmount.
+* Colours are read from the brand primitives in CSS.
+* Without WebGL the card keeps its gradient and loses nothing it needs.
+
+## 0.11 Shell
+
+* **Sidebar** (≥ lg): a floating glass panel on the inline start, sections
+  grouped (روزانه · دارایی و بدهی · برنامه‌ریزی · خانه), the active item in
+  the gradient pill that slides between items. Collapses to an icon rail
+  with tooltips from its button or Ctrl/⌘+B; the choice lives in a cookie so
+  the server renders the right width.
+* **Header**: a floating glass pill; greeting by the Tehran clock and the
+  full Jalali date at desktop, the brand below `lg`; round glass buttons for
+  notifications, theme and account.
+* **Dock** (< lg): a floating glass pill above the home indicator — four
+  daily sections and "بیشتر", which opens every section as a bottom sheet of
+  tiles. The active item wears the same sliding pill; with a mouse the
+  icons magnify toward the pointer.
+
+## 0.12 Superseded values
+
+Sections 2, 3, 6, 7, 8, 9, 13, 15, 43, 54, 57 and 59 describe the first
+visual language (ink `#1f2033`, purple `#5346f0`, Vazirmatn). Their rules
+still apply; their values are replaced by this section.
+
+---
+
 # 1. Design Principles
 
 The interface must follow these principles:
@@ -85,6 +341,8 @@ Action
 ---
 
 # 2. Brand Color System
+
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
 
 The primary color palette is based on the provided visual reference.
 
@@ -191,6 +449,8 @@ Usage:
 ---
 
 # 3. Extended Color Tokens
+
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
 
 The four core colors are the source of truth.
 
@@ -340,6 +600,8 @@ Do not make every component purple.
 
 # 6. Background System
 
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
+
 Use layered surfaces instead of excessive borders.
 
 Recommended hierarchy:
@@ -377,6 +639,8 @@ Purple feature card:
 
 # 7. Dark Cards
 
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
+
 Dark cards are a major visual element inspired by the reference.
 
 Use:
@@ -408,6 +672,8 @@ Do not use dark cards everywhere.
 
 # 8. Purple Cards / Highlight Panels
 
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
+
 Primary purple can be used for featured information.
 
 ```text
@@ -432,6 +698,8 @@ Do not use gradients on every card.
 ---
 
 # 9. Typography
+
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
 
 The application is Persian-first.
 
@@ -663,6 +931,8 @@ Large / featured:
 
 # 13. Border Radius
 
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
+
 Rounded corners are a major part of the visual identity.
 
 Use:
@@ -753,6 +1023,8 @@ Heavy border
 ---
 
 # 15. Shadows
+
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
 
 Shadows should be soft and diffused.
 
@@ -1558,6 +1830,8 @@ Choose the appropriate format based on available space.
 
 # 43. Motion
 
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
+
 Motion should be subtle.
 
 Recommended duration:
@@ -1844,6 +2118,8 @@ If a new visual treatment is required, update this Design System first.
 
 # 54. Visual Reference Summary
 
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
+
 The attached reference establishes the following visual characteristics:
 
 ```text
@@ -1922,6 +2198,8 @@ If the answer is no, revise the implementation before considering the feature co
 
 # 57. Dark Theme
 
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
+
 The sections above define the light palette. The application also ships a dark
 theme, so the dark palette is derived from the same brand primitives rather
 than invented alongside them.
@@ -1993,6 +2271,8 @@ The 8px spacing scale of section 11 already matches Tailwind's default scale
 ---
 
 # 59. Chart Palette
+
+> **Values superseded by §0** (Visual Language v2). The rules here still apply; where a value differs, §0 wins.
 
 Sections 29 and 30 set the visual language for charts. This section fixes the
 exact steps, because chart colour is the one place where "looks fine" and

@@ -21,6 +21,7 @@ import {
   ChartTooltip,
   compactToman,
 } from "@/components/charts/chart-primitives";
+import { CardLink } from "@/features/dashboard/components/bento";
 import type { CashFlowPoint } from "@/features/dashboard/types";
 
 /**
@@ -32,8 +33,10 @@ import type { CashFlowPoint } from "@/features/dashboard/types";
  * negative, and a line crossing the baseline shows that far better than a
  * bar does.
  *
- * Colours come from the validated cash-flow trio, not the semantic success
- * and danger steps — see docs/DESIGN_SYSTEM.md §59.1 for why.
+ * The bars are thin pills, as in the reference boards, and the current
+ * month — the last point — is the one at full strength: the months before
+ * it are context, drawn a step quieter. Colours are the validated cash-flow
+ * trio of docs §0.6.
  */
 
 type Point = CashFlowPoint & {
@@ -62,6 +65,32 @@ const SERIES = [
   { key: "savings", label: "پس‌انداز", color: CHART.savings },
 ] as const;
 
+/** A bar with fully rounded ends, faded unless it is the current month. */
+function PillBar(props: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  index?: number;
+  count: number;
+}) {
+  const { x = 0, y = 0, width = 0, height = 0, fill, index = 0, count } = props;
+  if (height <= 0 || width <= 0) return null;
+
+  return (
+    <rect
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      rx={width / 2}
+      fill={fill}
+      fillOpacity={index === count - 1 ? 1 : 0.5}
+    />
+  );
+}
+
 export function CashFlowChart({ points }: { points: CashFlowPoint[] }) {
   const data = toPlot(points);
   const hasData = data.some(
@@ -69,23 +98,28 @@ export function CashFlowChart({ points }: { points: CashFlowPoint[] }) {
   );
 
   return (
-    <Card variant="featured" className="gap-6">
+    <Card variant="featured" className="h-full gap-5 p-6">
       <CardHeader>
         <div className="space-y-1">
           <CardTitle>جریان نقدی</CardTitle>
           <CardDescription>درآمد، هزینه و پس‌انداز در شش ماه گذشته</CardDescription>
         </div>
+        <CardLink href="/reports" label="گزارش‌ها" />
       </CardHeader>
 
       {hasData ? (
         <>
           <ChartLegend items={SERIES.map(({ label, color }) => ({ label, color }))} />
 
-          <div className="h-72 w-full" dir="ltr">
+          {/* min-h, not h: with flex-1 the basis wins over a fixed height,
+              and an unmeasured chart has no content to hold the row open. */}
+          <div className="min-h-64 w-full flex-1" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={data}
                 margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+                barGap={4}
+                barCategoryGap="28%"
               >
                 <CartesianGrid stroke={CHART.grid} vertical={false} />
                 {/*
@@ -100,7 +134,7 @@ export function CashFlowChart({ points }: { points: CashFlowPoint[] }) {
                   tickLine={false}
                   axisLine={false}
                   tick={AXIS_TICK}
-                  tickMargin={8}
+                  tickMargin={10}
                 />
                 <YAxis
                   orientation="right"
@@ -114,7 +148,7 @@ export function CashFlowChart({ points }: { points: CashFlowPoint[] }) {
                   }
                 />
                 <Tooltip
-                  cursor={{ fill: "var(--primary-subtle)" }}
+                  cursor={{ fill: "var(--primary-subtle)", radius: 12 }}
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
 
@@ -141,18 +175,19 @@ export function CashFlowChart({ points }: { points: CashFlowPoint[] }) {
                     );
                   }}
                 />
-                {/* 4px rounded data-end, square at the baseline (§59.4). */}
                 <Bar
                   dataKey="incomeValue"
                   fill={CHART.income}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={24}
+                  maxBarSize={14}
+                  animationDuration={900}
+                  shape={(bar: object) => <PillBar {...bar} count={data.length} />}
                 />
                 <Bar
                   dataKey="expenseValue"
                   fill={CHART.expense}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={24}
+                  maxBarSize={14}
+                  animationDuration={900}
+                  shape={(bar: object) => <PillBar {...bar} count={data.length} />}
                 />
                 <Line
                   type="monotone"
@@ -161,13 +196,14 @@ export function CashFlowChart({ points }: { points: CashFlowPoint[] }) {
                   strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  animationDuration={1100}
                   dot={{
                     r: 4,
                     fill: CHART.savings,
                     stroke: CHART.surface,
                     strokeWidth: 2,
                   }}
-                  activeDot={{ r: 5, stroke: CHART.surface, strokeWidth: 2 }}
+                  activeDot={{ r: 6, stroke: CHART.surface, strokeWidth: 2 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>

@@ -23,7 +23,7 @@ function PageHeader({
       )}
     >
       <div className="space-y-1">
-        <h1 className="text-h1">{title}</h1>
+        <h1 className="text-h1 tracking-tight">{title}</h1>
         {description ? (
           <p className="text-body-lg text-muted-foreground">{description}</p>
         ) : null}

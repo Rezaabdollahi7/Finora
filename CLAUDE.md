@@ -23,6 +23,9 @@ Companion documents:
 | Database   | PostgreSQL via Prisma                    |
 | Charts     | Recharts (single charting library)       |
 | Icons      | Lucide (single icon library)             |
+| Motion     | Motion for layout, GSAP for the dashboard entrance, View Transitions for the theme |
+| 3D         | three.js (the dashboard balance card only) |
+| Typeface   | Dana, self-hosted via next/font/local     |
 | Runtime    | Docker Compose (app + postgres)          |
 
 ---
