@@ -24,6 +24,7 @@ import { prisma } from "@/lib/prisma";
  *   transaction                           holds categories and accounts
  *   {asset valuation, asset}
  *   {category, account}
+ *   member                                owns rows by id, no foreign key
  */
 export async function resetLedger(): Promise<void> {
   await prisma.goalContribution.deleteMany();
@@ -38,4 +39,15 @@ export async function resetLedger(): Promise<void> {
   await prisma.asset.deleteMany();
   await prisma.category.deleteMany();
   await prisma.account.deleteMany();
+  await prisma.member.deleteMany();
+
+  // The fixtures' two people. Owners are checked against the members table
+  // on every write, and the suites were written around a household of two,
+  // so every suite starts with the same two members under fixed ids.
+  await prisma.member.createMany({
+    data: [
+      { id: "REZA", name: "رضا" },
+      { id: "YEGANEH", name: "یگانه" },
+    ],
+  });
 }

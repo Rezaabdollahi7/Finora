@@ -1,54 +1,43 @@
 "use client";
 
-import { PieChart } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import * as React from "react";
+import { PieChart as PieIcon } from "lucide-react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 
+import { cn } from "@/lib/utils";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Money } from "@/components/common/money";
-import {
-  CHART,
-  ChartTooltip,
-  compactToman,
-} from "@/components/charts/chart-primitives";
+import { CHART, ChartTooltip } from "@/components/charts/chart-primitives";
 import { formatPercent } from "@/utils/number";
 import { sumRial } from "@/utils/money";
+import { CardLink } from "@/features/dashboard/components/bento";
 import type { CategoryExpense } from "@/features/dashboard/types";
 
 /**
  * Where the month's money went (task 2.4).
  *
- * Horizontal bars rather than a pie. The reader's job is to compare
- * magnitudes and see shares, and a bar's length is read far more accurately
- * than a slice's angle. Horizontal, because the category names are Persian
- * words that do not fit under a vertical column.
+ * A donut, because the question is part-to-whole — "what share of the
+ * month did each category take" — and each category is an identity, so it
+ * takes a categorical hue in the validated order (docs §0.6). Past six the
+ * tail folds into "سایر" in the neutral, rather than inventing a seventh
+ * hue no one with colour vision deficiency could tell apart.
  *
- * One hue at descending steps rather than a colour per category: the data's
- * job here is magnitude, not identity, and the axis label already says which
- * category each bar is. That also avoids inventing a seventh and eighth hue
- * that no reader with colour vision deficiency could tell apart
- * (docs/DESIGN_SYSTEM.md §59.2, §59.3).
+ * The donut is never the only channel: the list beside it names every
+ * slice with its exact amount and share. Hovering a slice lifts it out of
+ * the ring; hovering either a slice or a row quiets the others.
  */
 
-/** Past this many bars the card stops being scannable; the tail folds up. */
-const MAX_SLICES = 7;
+const MAX_SLICES = 6;
 
 type Slice = CategoryExpense & { value: number; color: string };
 
 function toPlot(slices: CategoryExpense[]): Slice[] {
-  const head = slices.slice(0, MAX_SLICES);
-  const tail = slices.slice(MAX_SLICES);
+  const head = slices.slice(0, MAX_SLICES - 1);
+  const tail = slices.slice(MAX_SLICES - 1);
 
   const combined: CategoryExpense[] =
-    tail.length > 0
+    tail.length > 1
       ? [
           ...head,
           {
@@ -59,19 +48,28 @@ function toPlot(slices: CategoryExpense[]): Slice[] {
             share: tail.reduce((sum, slice) => sum + slice.share, 0),
           },
         ]
-      : head;
+      : slices;
 
-  return combined.map((slice, index) => ({
+  let hue = 0;
+  return combined.map((slice) => ({
     ...slice,
+    // Recharts measures geometry in numbers; every figure shown is
+    // formatted from the original string.
     value: Number(slice.amount),
-    // Uncategorised spending is an absence of data, not a category, so it
-    // sits outside the ramp.
+    // Uncategorised spending and the folded tail are an absence of
+    // identity, not a category, so they sit outside the palette.
     color:
       slice.categoryId === null
         ? CHART.neutral
-        : (CHART.sequential[Math.min(index, CHART.sequential.length - 1)] ??
-          CHART.neutral),
+        : (CHART.categorical[hue++] ?? CHART.neutral),
   }));
+}
+
+/** The hovered slice, pulled out a little from the ring. */
+function ActiveSlice(
+  props: React.ComponentProps<typeof Sector> & { outerRadius?: number },
+) {
+  return <Sector {...props} outerRadius={(props.outerRadius ?? 0) + 6} />;
 }
 
 export function ExpenseCategoryChart({
@@ -83,77 +81,35 @@ export function ExpenseCategoryChart({
 }) {
   const data = toPlot(slices);
   const total = sumRial(data.map((slice) => BigInt(slice.amount)));
+  const [active, setActive] = React.useState<number | undefined>(undefined);
 
   return (
-    <Card variant="featured" className="gap-6">
+    <Card variant="featured" className="h-full gap-5 p-6">
       <CardHeader>
         <div className="space-y-1">
           <CardTitle>هزینه‌ها به تفکیک دسته</CardTitle>
           <CardDescription>{periodLabel}</CardDescription>
         </div>
-        {data.length > 0 ? (
-          <div className="text-end">
-            <Money rial={total.toString()} className="text-h3 font-bold" unit={false} />
-            <p className="text-caption text-muted-foreground">تومان</p>
-          </div>
-        ) : null}
+        <CardLink href="/transactions" label="تراکنش‌ها" />
       </CardHeader>
 
       {data.length === 0 ? (
         <EmptyState
-          icon={PieChart}
+          icon={PieIcon}
           title="هزینه‌ای در این ماه ثبت نشده"
           description="با ثبت هزینه‌ها، سهم هر دسته از خرج ماه اینجا دیده می‌شود."
         />
       ) : (
-        <>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center xl:flex-col xl:items-stretch">
           <div
-            className="w-full"
+            className="relative mx-auto aspect-square w-full max-w-52 shrink-0"
             dir="ltr"
-            style={{ height: `${Math.max(180, data.length * 44 + 16)}px` }}
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data}
-                layout="vertical"
-                margin={{ top: 0, right: 8, bottom: 0, left: 8 }}
-                barCategoryGap={12}
-              >
-                {/*
-                  Reversed so bars grow from the right, where their names
-                  are, toward the left. Left-anchored bars strand a short
-                  one at the far edge, far from the label it belongs to
-                  (rule G.6).
-                */}
-                <XAxis
-                  type="number"
-                  hide
-                  reversed
-                  domain={[0, "dataMax"]}
-                  tickFormatter={(value: number) =>
-                    compactToman(BigInt(Math.round(value)))
-                  }
-                />
-                {/* Names sit on the right, where an RTL reader starts. */}
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  orientation="right"
-                  tickLine={false}
-                  axisLine={false}
-                  width={96}
-                  tick={{
-                    fill: "var(--foreground)",
-                    fontSize: 13,
-                    fontFamily: "inherit",
-                    textAnchor: "start",
-                  }}
-                  tickMargin={12}
-                />
+              <PieChart>
                 <Tooltip
-                  cursor={{ fill: "var(--primary-subtle)" }}
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
+                  content={({ active: shown, payload }) => {
+                    if (!shown || !payload?.length) return null;
 
                     const slice = payload[0]?.payload as Slice | undefined;
                     if (!slice) return null;
@@ -168,32 +124,76 @@ export function ExpenseCategoryChart({
                     );
                   }}
                 />
-                {/* The rounded end is the data end, which is now on the left. */}
-                <Bar dataKey="value" radius={[4, 0, 0, 4]} maxBarSize={24}>
-                  {data.map((slice) => (
-                    <Cell key={slice.name} fill={slice.color} />
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius="68%"
+                  outerRadius="92%"
+                  paddingAngle={3}
+                  cornerRadius={8}
+                  // Clockwise from the top: where a reader starts a clock.
+                  startAngle={90}
+                  endAngle={-270}
+                  stroke="none"
+                  animationDuration={1000}
+                  activeShape={ActiveSlice}
+                  onMouseEnter={(_, index) => {
+                    setActive(index);
+                  }}
+                  onMouseLeave={() => {
+                    setActive(undefined);
+                  }}
+                >
+                  {data.map((slice, index) => (
+                    <Cell
+                      key={slice.name}
+                      fill={slice.color}
+                      // Hovering a row in the list quiets every other slice.
+                      fillOpacity={active === undefined || active === index ? 1 : 0.3}
+                      className="transition-[fill-opacity] duration-200"
+                    />
                   ))}
-                </Bar>
-              </BarChart>
+                </Pie>
+              </PieChart>
             </ResponsiveContainer>
+            <div
+              className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
+              dir="rtl"
+            >
+              <span className="text-caption text-muted-foreground">جمع</span>
+              <Money
+                rial={total.toString()}
+                className="text-h4 font-medium"
+                unit={false}
+              />
+              <span className="text-caption text-muted-foreground">تومان</span>
+            </div>
           </div>
 
-          {/*
-            The figures, in full. The chart shows proportion; this is where
-            the exact amount lives, which is also the relief the palette
-            validator's contrast warning requires for the lighter steps.
-          */}
-          <ul className="space-y-2">
-            {data.map((slice) => (
-              <li key={slice.name} className="flex items-center gap-3 text-body">
+          <ul className="flex min-w-0 flex-1 flex-col gap-1">
+            {data.map((slice, index) => (
+              <li
+                key={slice.name}
+                onMouseEnter={() => {
+                  setActive(index);
+                }}
+                onMouseLeave={() => {
+                  setActive(undefined);
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-2 py-1.5 text-body transition-colors",
+                  active === index && "bg-muted",
+                )}
+              >
                 <span
                   aria-hidden
                   className="size-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: slice.color }}
                 />
-                <span className="truncate text-muted-foreground">{slice.name}</span>
+                <span className="min-w-0 flex-1 truncate">{slice.name}</span>
                 <span
-                  className="tabular ms-auto shrink-0 text-caption text-text-muted"
+                  className="tabular shrink-0 text-caption text-text-muted"
                   dir="ltr"
                 >
                   {formatPercent(slice.share, { fractionDigits: 0 })}
@@ -206,7 +206,7 @@ export function ExpenseCategoryChart({
               </li>
             ))}
           </ul>
-        </>
+        </div>
       )}
     </Card>
   );

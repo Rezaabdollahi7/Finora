@@ -5,9 +5,8 @@ import { FileBarChart } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Money } from "@/components/common/money";
+import { HeroCard } from "@/components/common/hero-card";
 import { formatPercent } from "@/utils/number";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import type { AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import { ReportFilterBar } from "@/features/reports/components/report-filters";
@@ -21,6 +20,7 @@ import {
   NetWorthSection,
 } from "@/features/reports/components/report-sections";
 import type { ReportsDto } from "@/features/reports/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 const TABS = [
   { value: "MONTHLY", label: "ماهانه" },
@@ -58,13 +58,14 @@ export function ReportsView({
   accounts: AccountDto[];
   categories: CategoryTreeNode[];
 }) {
+  const owners = useOwners();
   const [tab, setTab] = React.useState<TabValue>("MONTHLY");
 
   const savings = BigInt(reports.savings.savings);
   const overspent = savings < 0n;
 
   const filterSummary = [
-    reports.filters.owner ? OWNER_LABELS[reports.filters.owner] : null,
+    reports.filters.owner ? owners.label(reports.filters.owner) : null,
     reports.filters.accountId
       ? (accounts.find((a) => a.id === reports.filters.accountId)?.name ?? null)
       : null,
@@ -72,57 +73,36 @@ export function ReportsView({
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          پس‌انداز {reports.from.label} تا {reports.to.label}
-        </span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money
-          rial={overspent ? (-savings).toString() : reports.savings.savings}
-          className="text-h1 sm:text-display"
-          unit={false}
-        />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex flex-wrap items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          {reports.savings.savingsRate !== null ? (
-            <>
-              <span aria-hidden>·</span>
-              <span className="tabular" dir="ltr">
-                {formatPercent(reports.savings.savingsRate, { fractionDigits: 0 })}
-              </span>
-              <span>نرخ پس‌انداز</span>
-            </>
-          ) : (
-            <>
-              <span aria-hidden>·</span>
+      <HeroCard
+        label={`پس‌انداز ${reports.from.label} تا ${reports.to.label}`}
+        icon={FileBarChart}
+        value={overspent ? (-savings).toString() : reports.savings.savings}
+        negative={overspent}
+        meta={
+          <>
+            {reports.savings.savingsRate !== null ? (
+              <>
+                <span className="tabular" dir="ltr">
+                  {formatPercent(reports.savings.savingsRate, { fractionDigits: 0 })}
+                </span>
+                <span>نرخ پس‌انداز</span>
+              </>
+            ) : (
               <span>در این بازه درآمدی ثبت نشده است</span>
-            </>
-          )}
-          {filterSummary.length > 0 ? (
-            <>
-              <span aria-hidden>·</span>
-              <span>{filterSummary.join(" · ")}</span>
-            </>
-          ) : null}
-        </span>
-        <div className="mt-3 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-caption text-ink-surface-muted">
-          <span className="flex items-baseline gap-2">
-            <span>درآمد</span>
-            <Money rial={reports.savings.income} className="font-medium" />
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span>هزینه</span>
-            <Money rial={reports.savings.expenses} className="font-medium" />
-          </span>
-        </div>
-      </Card>
+            )}
+            {filterSummary.length > 0 ? (
+              <>
+                <span aria-hidden>·</span>
+                <span>{filterSummary.join("، ")}</span>
+              </>
+            ) : null}
+          </>
+        }
+        stats={[
+          { label: "درآمد", rial: reports.savings.income },
+          { label: "هزینه", rial: reports.savings.expenses },
+        ]}
+      />
 
       <ReportFilterBar
         reports={reports}
@@ -237,7 +217,7 @@ function MonthlySection({ reports }: { reports: ReportsDto }) {
   return (
     <Card variant="featured" className="gap-6">
       <div className="space-y-1">
-        <h2 className="text-h3 font-bold">گزارش {monthly.label}</h2>
+        <h2 className="text-h3 font-light">گزارش {monthly.label}</h2>
         <p className="text-body text-muted-foreground">
           درآمد، هزینه، پس‌انداز، سرمایه‌گذاری و بازپرداخت بدهی در این ماه
         </p>
@@ -287,7 +267,7 @@ function SavingsSection({ reports }: { reports: ReportsDto }) {
     <div className="space-y-6">
       <Card variant="featured" className="gap-6">
         <div className="space-y-1">
-          <h2 className="text-h3 font-bold">پس‌انداز</h2>
+          <h2 className="text-h3 font-light">پس‌انداز</h2>
           <p className="text-body text-muted-foreground">
             درآمد منهای هزینه، و نسبت آن به درآمد
           </p>

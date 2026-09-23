@@ -1,12 +1,9 @@
-import Link from "next/link";
-import { Database, Globe, Info, Palette, Users } from "lucide-react";
+import { Database, Globe, Info, Palette } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatJalaliDate } from "@/utils/date";
-import { OWNERS } from "@/features/accounts/types";
-import { OwnerBadge } from "@/features/accounts/components/owner-badge";
+import { MembersCard } from "@/features/members/components/members-card";
 import type {
   DataSummary,
   DeploymentInfo,
@@ -14,9 +11,9 @@ import type {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border py-3 last:border-0">
-      <dt className="text-body text-muted-foreground">{label}</dt>
-      <dd className="text-body font-medium">{children}</dd>
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted px-4 py-3">
+      <dt className="truncate text-caption text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-body font-medium break-words">{children}</dd>
     </div>
   );
 }
@@ -25,7 +22,7 @@ function Count({ label, value }: { label: string; value: number }) {
   return (
     <div className="space-y-1">
       <span className="text-caption text-muted-foreground">{label}</span>
-      <span className="tabular block text-h3 font-bold">
+      <span className="tabular block text-h3 font-light">
         {value.toLocaleString("fa-IR")}
       </span>
     </div>
@@ -52,27 +49,27 @@ export function SettingsView({
     <div className="space-y-6">
       <Alert variant="info">
         <Info />
-        <AlertTitle>تنظیمات این برنامه در جای خودشان هستند</AlertTitle>
+        <AlertTitle>بیشتر تنظیمات در جای خودشان هستند</AlertTitle>
         <AlertDescription>
-          پوسته روشن و تیره در نوار بالا، مالک هر رکورد روی خود آن، و دسته‌بندی‌ها در
-          صفحه دسته‌بندی‌ها تغییر می‌کنند. آنچه اینجا می‌بینید، پیکربندی ثابت این نصب و
-          خلاصه داده‌های آن است.
+          پوسته روشن و تیره در نوار بالا و مالک هر رکورد روی خود آن تغییر می‌کند. اعضای
+          خانوار را همین‌جا اضافه کنید؛ بقیه این صفحه پیکربندی ثابت این نصب و خلاصه
+          داده‌های آن است.
         </AlertDescription>
       </Alert>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card variant="featured" className="gap-4">
+        <Card variant="featured" className="reveal gap-5">
           <CardHeader>
             <div className="space-y-1">
               <CardTitle>پیکربندی</CardTitle>
               <CardDescription>زبان، تقویم و واحد پولی این نصب</CardDescription>
             </div>
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
               <Globe className="size-5" />
             </span>
           </CardHeader>
 
-          <dl>
+          <dl className="grid grid-cols-2 gap-3">
             <Row label="زبان و قالب‌بندی">{deployment.locale}</Row>
             <Row label="جهت رابط">
               {deployment.direction === "rtl" ? "راست‌به‌چپ" : "چپ‌به‌راست"}
@@ -90,39 +87,10 @@ export function SettingsView({
           </dl>
         </Card>
 
-        <Card variant="featured" className="gap-4">
-          <CardHeader>
-            <div className="space-y-1">
-              <CardTitle>اعضای خانه</CardTitle>
-              <CardDescription>هر رکورد به یکی از این‌ها تعلق دارد</CardDescription>
-            </div>
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
-              <Users className="size-5" />
-            </span>
-          </CardHeader>
-
-          <ul className="flex flex-wrap gap-2">
-            {OWNERS.map((owner) => (
-              <li key={owner}>
-                <OwnerBadge owner={owner} />
-              </li>
-            ))}
-          </ul>
-
-          <p className="text-body text-muted-foreground">
-            مالک هر حساب، تراکنش، دارایی، وام، بودجه و هدف روی خود آن رکورد تعیین
-            می‌شود. برای دیدن تصویر خانه و سهم هر نفر به صفحه خانواده بروید.
-          </p>
-
-          <div className="mt-auto">
-            <Button variant="secondary" asChild>
-              <Link href="/household">خانواده</Link>
-            </Button>
-          </div>
-        </Card>
+        <MembersCard />
       </div>
 
-      <Card variant="featured" className="gap-4">
+      <Card variant="featured" className="reveal gap-5">
         <CardHeader>
           <div className="space-y-1">
             <CardTitle>داده‌های این نصب</CardTitle>
@@ -130,7 +98,7 @@ export function SettingsView({
               آنچه پایگاه داده نگه می‌دارد — برای پشتیبان‌گیری و انتقال
             </CardDescription>
           </div>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
             <Database className="size-5" />
           </span>
         </CardHeader>
@@ -151,7 +119,7 @@ export function SettingsView({
           <Count label="اهداف" value={data.goals} />
         </div>
 
-        <dl className="mt-2">
+        <dl className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Row label="نخستین تراکنش">
             {data.firstTransaction
               ? formatJalaliDate(new Date(data.firstTransaction))
@@ -171,20 +139,21 @@ export function SettingsView({
         </p>
       </Card>
 
-      <Card variant="featured" className="gap-4">
+      <Card variant="featured" className="reveal gap-5">
         <CardHeader>
           <div className="space-y-1">
             <CardTitle>ظاهر</CardTitle>
-            <CardDescription>پوسته روشن، تیره یا هماهنگ با سیستم</CardDescription>
+            <CardDescription>پوسته روشن یا تیره</CardDescription>
           </div>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
             <Palette className="size-5" />
           </span>
         </CardHeader>
 
         <p className="text-body text-muted-foreground">
-          کلید تغییر پوسته در نوار بالای صفحه است و انتخاب شما در همین مرورگر نگه داشته
-          می‌شود.
+          در ابتدا پوسته با تنظیم سیستم شما هماهنگ است. با هر کلیک روی دکمه خورشید و ماه
+          در نوار بالای صفحه، پوسته بین روشن و تیره عوض می‌شود و انتخاب شما در همین
+          مرورگر نگه داشته می‌شود.
         </p>
       </Card>
     </div>

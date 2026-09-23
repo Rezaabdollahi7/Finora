@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Owner } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 import type { BudgetModel } from "@/generated/prisma/models";
 import { NotFoundError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
@@ -28,6 +28,7 @@ import type { ClearBudgetInput, SetBudgetInput } from "@/features/budgets/schema
 import { getUpcomingObligations } from "@/features/calendar/server/calendar-service";
 import { listAccounts } from "@/features/accounts/server/account-service";
 import { accountFiltersSchema } from "@/features/accounts/schemas";
+import { assertOwner } from "@/features/members/server/member-service";
 
 /**
  * Budget data access (tasks 5.6–5.10).
@@ -221,6 +222,7 @@ export async function getBudgetHistory(
  * twice edits that window rather than stacking a second one on it.
  */
 export async function setBudget(input: SetBudgetInput): Promise<void> {
+  await assertOwner(input.owner);
   const category = await prisma.category.findUnique({
     where: { id: input.categoryId },
     select: { id: true, kind: true },

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { parseNumber } from "@/utils/number";
 import { parseTomanToRial } from "@/utils/money";
-import { OWNERS } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 import { MAX_PAYMENT_DAY } from "@/features/loans/schedule";
 import { LOAN_STATUSES } from "@/features/loans/types";
 
@@ -112,7 +112,7 @@ const descriptiveFields = {
     .trim()
     .min(1, "نام بانک یا وام‌دهنده را وارد کنید.")
     .max(MAX_NAME_LENGTH, `نام وام‌دهنده حداکثر ${MAX_NAME_LENGTH} نویسه است.`),
-  owner: z.enum(OWNERS, { message: "مالک وام را انتخاب کنید." }),
+  owner: ownerSchema("مالک وام را انتخاب کنید."),
   categoryId: z.string().min(1).nullable().default(null),
   accountId: z.string().min(1).nullable().default(null),
   notes: optionalText(MAX_NOTES_LENGTH, "یادداشت"),
@@ -182,7 +182,7 @@ const queryFlag = z
   );
 
 export const loanFiltersSchema = z.object({
-  owner: z.enum(OWNERS).optional(),
+  owner: ownerSchema().optional(),
   status: z.enum(LOAN_STATUSES).optional(),
   /** Archived loans are hidden unless explicitly asked for. */
   includeArchived: queryFlag,

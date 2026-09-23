@@ -90,8 +90,8 @@ export function NotificationBell({ initial }: { initial: Payload }) {
     >
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
-          size="icon"
+          variant="glass"
+          size="icon-lg"
           className="relative"
           aria-label={
             total === 0 ? "اعلان‌ها" : `اعلان‌ها، ${total.toLocaleString("fa-IR")} مورد`
@@ -101,7 +101,7 @@ export function NotificationBell({ initial }: { initial: Payload }) {
           {urgent > 0 ? (
             <span
               className={cn(
-                "absolute end-1.5 top-1.5 size-2 rounded-full",
+                "absolute end-2.5 top-2.5 size-2 rounded-full ring-2 ring-card-solid",
                 payload.counts.CRITICAL > 0 ? "bg-danger" : "bg-warning",
               )}
               aria-hidden

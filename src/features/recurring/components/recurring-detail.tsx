@@ -1,9 +1,10 @@
-import { PauseCircle } from "lucide-react";
+import { PauseCircle, Repeat } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
 import { formatJalaliDate, formatRelativeDay } from "@/utils/date";
 import { OwnerBadge } from "@/features/accounts/components/owner-badge";
@@ -16,11 +17,15 @@ import { OccurrenceList } from "@/features/recurring/components/occurrence-list"
 import { RecurringActions } from "@/features/recurring/components/recurring-actions";
 import type { RecurringPaymentDetailDto } from "@/features/recurring/types";
 
+/**
+ * One fact of the record as a small tile (§0.13), the same shape as
+ * FactGrid's, kept local so the conditional rows above can stay inline.
+ */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border py-3 last:border-0">
-      <dt className="text-body text-muted-foreground">{label}</dt>
-      <dd className="text-body font-medium">{children}</dd>
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted px-4 py-3">
+      <dt className="truncate text-caption text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-body font-medium break-words">{children}</dd>
     </div>
   );
 }
@@ -54,28 +59,18 @@ export function RecurringDetail({
         </Alert>
       ) : null}
 
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">مبلغ هر دوره</span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money rial={payment.amount} className="text-h1 sm:text-display" unit={false} />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>{cadenceLabel(payment)}</span>
-        </span>
+      <HeroCard
+        label="مبلغ هر دوره"
+        icon={Repeat}
+        value={payment.amount}
+        meta={<span>{cadenceLabel(payment)}</span>}
+      >
         {nextDue ? (
           <span
             className={cn(
-              "mt-2 flex flex-wrap items-center gap-2 text-caption",
+              "flex flex-wrap items-center gap-2 text-caption",
               // A date that has passed is not "next", it is late.
-              isLate ? "text-danger" : "text-ink-surface-muted",
+              isLate ? "text-danger" : "text-on-brand/75",
             )}
           >
             <span>{isLate ? "سررسید گذشته" : "پرداخت بعدی"}</span>
@@ -84,12 +79,13 @@ export function RecurringDetail({
             <span>{formatRelativeDay(nextDue, { now })}</span>
           </span>
         ) : null}
-      </Card>
+      </HeroCard>
 
       <RecurringActions payment={payment} accounts={accounts} categories={categories} />
 
-      <Card variant="featured">
-        <dl>
+      <Card variant="featured" className="reveal gap-5 p-6">
+        <h2 className="text-h4">مشخصات</h2>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Field label="وضعیت">
             {style && payment.nextStatus ? (
               <Badge variant={style.tone}>
@@ -101,7 +97,7 @@ export function RecurringDetail({
             )}
           </Field>
           <Field label="مالک">
-            <OwnerBadge owner={payment.owner} />
+            <OwnerBadge owner={payment.owner} always />
           </Field>
           <Field label="دوره">{cadenceLabel(payment)}</Field>
           {payment.paymentDay !== null ? (

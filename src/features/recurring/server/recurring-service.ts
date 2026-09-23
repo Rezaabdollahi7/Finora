@@ -26,6 +26,7 @@ import type {
   RecurringPaymentDetailDto,
   RecurringPaymentDto,
 } from "@/features/recurring/types";
+import { assertOwner } from "@/features/members/server/member-service";
 
 /**
  * Recurring payment data access and business rules (tasks 5.3–5.5).
@@ -238,6 +239,7 @@ export async function createRecurringPayment(
   input: CreateRecurringPaymentInput,
   now: Date = new Date(),
 ): Promise<RecurringPaymentDetailDto> {
+  await assertOwner(input.owner);
   const payment = await prisma.recurringPayment.create({
     data: {
       name: input.name,
@@ -272,6 +274,7 @@ export async function updateRecurringPayment(
   input: UpdateRecurringPaymentInput,
   now: Date = new Date(),
 ): Promise<RecurringPaymentDetailDto> {
+  if (input.owner !== undefined) await assertOwner(input.owner);
   const existing = await requirePayment(id);
 
   const frequency = input.frequency ?? existing.frequency;

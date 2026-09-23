@@ -46,3 +46,7 @@ next-env.d.ts
 
 # Prisma client is generated, not committed
 /src/generated
+
+# python caches (vendored skill scripts)
+__pycache__/
+*.pyc

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { formatJalaliDate } from "@/utils/date";
+import { CardLink } from "@/features/dashboard/components/bento";
 import { TransactionAmount } from "@/features/transactions/components/transaction-amount";
 import {
   TransactionIcon,
@@ -23,7 +24,8 @@ import {
  * definition of how an amount is coloured and signed (rule G.7).
  *
  * A server component: it only reads, and every row links into the page that
- * can act on it.
+ * can act on it. Rows are separated by space and a hover wash rather than a
+ * rule under every line.
  */
 export function RecentTransactions({
   transactions,
@@ -31,19 +33,14 @@ export function RecentTransactions({
   transactions: TransactionDto[];
 }) {
   return (
-    <Card variant="featured" className="gap-6">
+    <Card variant="featured" className="h-full gap-4 p-6">
       <CardHeader>
         <div className="space-y-1">
           <CardTitle>تراکنش‌های اخیر</CardTitle>
           <CardDescription>آخرین درآمدها، هزینه‌ها و انتقال‌ها</CardDescription>
         </div>
         {transactions.length > 0 ? (
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/transactions">
-              همه
-              <ArrowLeft />
-            </Link>
-          </Button>
+          <CardLink href="/transactions" label="همه تراکنش‌ها" />
         ) : null}
       </CardHeader>
 
@@ -59,12 +56,12 @@ export function RecentTransactions({
           }
         />
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="-mx-3 flex flex-col gap-1">
           {transactions.map((transaction) => (
             <li key={transaction.id}>
               <Link
                 href="/transactions"
-                className="flex items-center gap-3 py-3 transition-colors hover:bg-primary-subtle"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-muted"
               >
                 <TransactionIcon transaction={transaction} />
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -82,7 +79,7 @@ export function RecentTransactions({
                 </span>
                 <TransactionAmount
                   transaction={transaction}
-                  className="shrink-0 font-bold"
+                  className="shrink-0 font-medium"
                 />
               </Link>
             </li>

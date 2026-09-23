@@ -31,6 +31,7 @@ const ROUTES = [
   "/calendar",
   "/reports",
   "/settings",
+  "/guide",
 ];
 
 const VIEWPORTS = {
@@ -154,15 +155,19 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
       .waitFor({ timeout: 5000 });
   });
 
-  await check(name, `[${name}] document is RTL Persian with Vazirmatn`, async () => {
+  await check(name, `[${name}] document is RTL Persian in Dana`, async () => {
     const info = await page.evaluate(() => ({
       dir: document.documentElement.dir,
       lang: document.documentElement.lang,
       font: getComputedStyle(document.body).fontFamily,
+      // next/font renames the family, so ask the font set what loaded.
+      loaded: [...document.fonts].some(
+        (face) => face.status === "loaded" && /dana/i.test(face.family),
+      ),
     }));
     if (info.dir !== "rtl") throw new Error(`dir="${info.dir}"`);
     if (info.lang !== "fa") throw new Error(`lang="${info.lang}"`);
-    if (!info.font.includes("Vazirmatn")) throw new Error(`font: ${info.font}`);
+    if (!/dana/i.test(info.font) || !info.loaded) throw new Error(`font: ${info.font}`);
     return `dir=${info.dir} lang=${info.lang}`;
   });
 
@@ -221,9 +226,10 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
       const backgroundOf = () =>
         page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
+      // One click toggles: the page starts light (the browser's scheme), so
+      // the first click goes dark and the second comes back.
       await page.getByRole("button", { name: "تغییر پوسته" }).click();
-      await page.getByRole("menuitem", { name: "تیره" }).click();
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(900);
       const dark = await backgroundOf();
 
       await page.goto(`${BASE_URL}/accounts`, { waitUntil: "networkidle" });
@@ -236,8 +242,7 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
       }
 
       await page.getByRole("button", { name: "تغییر پوسته" }).click();
-      await page.getByRole("menuitem", { name: "روشن" }).click();
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(900);
       const light = await backgroundOf();
 
       if (dark === light) throw new Error(`both themes painted ${light}`);

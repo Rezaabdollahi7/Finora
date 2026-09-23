@@ -17,12 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OWNERS, OWNER_LABELS, type AccountDto } from "@/features/accounts/types";
+import { type AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import {
   TRANSACTION_TYPES,
   TRANSACTION_TYPE_LABELS,
 } from "@/features/transactions/types";
+import { useOwners } from "@/features/members/components/members-provider";
+import { MoneyInput } from "@/components/common/money-input";
 
 const ALL = "__all__";
 const UNCATEGORISED = "none";
@@ -44,6 +46,7 @@ export function TransactionFilters({
   categories: CategoryTreeNode[];
   total: number;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -162,26 +165,28 @@ export function TransactionFilters({
             </Select>
           </Field>
 
-          <Field label="مالک">
-            <Select
-              value={get("owner") || ALL}
-              onValueChange={(value) => {
-                apply({ owner: value });
-              }}
-            >
-              <SelectTrigger size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>همه</SelectItem>
-                {OWNERS.map((owner) => (
-                  <SelectItem key={owner} value={owner}>
-                    {OWNER_LABELS[owner]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+          {owners.enabled ? (
+            <Field label="مالک">
+              <Select
+                value={get("owner") || ALL}
+                onValueChange={(value) => {
+                  apply({ owner: value });
+                }}
+              >
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>همه</SelectItem>
+                  {owners.options.map(({ value: owner }) => (
+                    <SelectItem key={owner} value={owner}>
+                      {owners.label(owner)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          ) : null}
 
           <Field label="دسته‌بندی">
             <Select
@@ -212,24 +217,20 @@ export function TransactionFilters({
 
           <Field label="مبلغ (تومان)">
             <div className="flex gap-2" dir="ltr">
-              <Input
-                aria-label="حداقل مبلغ"
-                inputMode="numeric"
+              <AmountFilter
+                label="حداقل مبلغ"
                 placeholder="از"
-                className="h-9"
-                defaultValue={get("amountMin")}
-                onBlur={(event) => {
-                  apply({ amountMin: event.target.value });
+                initial={get("amountMin")}
+                onCommit={(value) => {
+                  apply({ amountMin: value });
                 }}
               />
-              <Input
-                aria-label="حداکثر مبلغ"
-                inputMode="numeric"
+              <AmountFilter
+                label="حداکثر مبلغ"
                 placeholder="تا"
-                className="h-9"
-                defaultValue={get("amountMax")}
-                onBlur={(event) => {
-                  apply({ amountMax: event.target.value });
+                initial={get("amountMax")}
+                onCommit={(value) => {
+                  apply({ amountMax: value });
                 }}
               />
             </div>
@@ -304,5 +305,36 @@ function SearchField({
         }}
       />
     </div>
+  );
+}
+
+/**
+ * One end of the amount range, grouped in threes like every amount field.
+ * It applies on blur, as before; the URL gets the bare digits.
+ */
+function AmountFilter({
+  label,
+  placeholder,
+  initial,
+  onCommit,
+}: {
+  label: string;
+  placeholder: string;
+  initial: string;
+  onCommit: (value: string) => void;
+}) {
+  const [value, setValue] = React.useState(initial);
+
+  return (
+    <MoneyInput
+      aria-label={label}
+      placeholder={placeholder}
+      className="h-9"
+      value={value}
+      onChange={setValue}
+      onBlur={() => {
+        onCommit(value.replace(/,/g, ""));
+      }}
+    />
   );
 }

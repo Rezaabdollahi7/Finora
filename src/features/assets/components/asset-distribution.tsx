@@ -28,10 +28,11 @@ import type { AssetTypeShare } from "@/features/assets/types";
  * accurately than a slice's angle. Horizontal, because "سرمایه‌گذاری" does
  * not fit under a vertical column.
  *
- * One hue at descending steps rather than a colour per type. The data's job
- * here is magnitude, not identity — the axis label already says which type
- * each bar is — and eight distinct hues is more than any reader with a colour
- * vision deficiency could separate (design system §59.2, §59.3).
+ * Each kind of asset is an identity, so it takes a categorical hue in the
+ * validated order (docs §0.6), the same palette as the dashboard's expense
+ * donut. Past six kinds the rest share the neutral rather than inventing
+ * hues no reader with colour vision deficiency could tell apart; the list
+ * under the chart names every row with its exact value either way.
  */
 
 /** `plot` is the chart's numeric axis value; `value` stays the exact Rial. */
@@ -41,8 +42,7 @@ function toPlot(shares: AssetTypeShare[]): Row[] {
   return shares.map((share, index) => ({
     ...share,
     plot: Number(share.value),
-    color:
-      CHART.sequential[Math.min(index, CHART.sequential.length - 1)] ?? CHART.neutral,
+    color: CHART.categorical[index] ?? CHART.neutral,
   }));
 }
 
@@ -52,7 +52,7 @@ export function AssetDistribution({ shares }: { shares: AssetTypeShare[] }) {
   if (data.length === 0) return null;
 
   return (
-    <Card variant="featured" className="gap-6">
+    <Card variant="featured" className="reveal gap-6 p-6">
       <CardHeader>
         <div className="space-y-1">
           <CardTitle>ترکیب دارایی‌ها</CardTitle>
@@ -115,8 +115,8 @@ export function AssetDistribution({ shares }: { shares: AssetTypeShare[] }) {
                 );
               }}
             />
-            {/* The rounded end is the data end, which is now on the left. */}
-            <Bar dataKey="plot" radius={[4, 0, 0, 4]} maxBarSize={24}>
+            {/* Pills, as on the dashboard: both ends rounded. */}
+            <Bar dataKey="plot" radius={9} maxBarSize={18}>
               {data.map((row) => (
                 <Cell key={row.type} fill={row.color} />
               ))}

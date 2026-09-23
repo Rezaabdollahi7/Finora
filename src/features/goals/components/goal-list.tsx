@@ -4,15 +4,17 @@ import * as React from "react";
 import { Plus, Target } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedList } from "@/components/common/animated-list";
+import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
-import { Money } from "@/components/common/money";
+import { HeroCard } from "@/components/common/hero-card";
 import { sumRial } from "@/utils/money";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import { GoalCard } from "@/features/goals/components/goal-card";
 import { GoalDialog } from "@/features/goals/components/goal-dialog";
 import type { GoalDto } from "@/features/goals/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The goals screen (task 6.5).
@@ -28,6 +30,7 @@ import type { GoalDto } from "@/features/goals/types";
  * a household has a handful of goals — a round trip per tab would flash.
  */
 export function GoalList({ goals }: { goals: GoalDto[] }) {
+  const owners = useOwners();
   const [owner, setOwner] = React.useState<Owner | "ALL">("ALL");
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -68,58 +71,49 @@ export function GoalList({ goals }: { goals: GoalDto[] }) {
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          {owner === "ALL"
+      <HeroCard
+        label={
+          owner === "ALL"
             ? "پس‌انداز ماهانه لازم"
-            : `پس‌انداز ماهانه ${OWNER_LABELS[owner]}`}
-        </span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money rial={totals.monthly} className="text-h1 sm:text-display" unit={false} />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex flex-wrap items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>{totals.activeCount.toLocaleString("fa-IR")} هدف در جریان</span>
-        </span>
-        <span className="mt-2 flex flex-wrap items-baseline gap-2 text-caption text-ink-surface-muted">
-          <span>باقی‌مانده تا همه اهداف</span>
-          <Money rial={totals.remaining} className="font-medium" />
-        </span>
+            : `پس‌انداز ماهانه ${owners.label(owner)}`
+        }
+        icon={Target}
+        value={totals.monthly}
+        meta={<span>{totals.activeCount.toLocaleString("fa-IR")} هدف در جریان</span>}
+        stats={[{ label: "باقی‌مانده تا همه اهداف", rial: totals.remaining }]}
+      >
         {totals.undatedCount > 0 ? (
-          <span className="flex flex-wrap items-center gap-2 text-caption text-ink-surface-subtle">
+          <span className="flex flex-wrap items-center gap-2 text-caption text-on-brand/70">
             <span className="tabular">
               {totals.undatedCount.toLocaleString("fa-IR")}
             </span>
             <span>هدف بدون مهلت، در رقم ماهانه شمرده نشده است</span>
           </span>
         ) : null}
-      </Card>
+      </HeroCard>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Tabs
-          value={owner}
-          onValueChange={(value) => {
-            setOwner(value as Owner | "ALL");
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">همه</TabsTrigger>
-            {OWNERS.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {OWNER_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+      <Toolbar>
+        {owners.enabled ? (
+          <Tabs
+            value={owner}
+            onValueChange={(value) => {
+              setOwner(value as Owner | "ALL");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">همه</TabsTrigger>
+              {owners.options.map(({ value: value }) => (
+                <TabsTrigger key={value} value={value}>
+                  {owners.label(value)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         {addButton}
-      </div>
+      </Toolbar>
 
       {visible.length === 0 ? (
         <EmptyState
@@ -133,13 +127,11 @@ export function GoalList({ goals }: { goals: GoalDto[] }) {
           action={addButton}
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatedList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((goal) => (
-            <li key={goal.id} className="contents">
-              <GoalCard goal={goal} />
-            </li>
+            <GoalCard key={goal.id} goal={goal} />
           ))}
-        </ul>
+        </AnimatedList>
       )}
 
       <GoalDialog open={dialogOpen} onOpenChange={setDialogOpen} />

@@ -16,13 +16,13 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/sonner";
 import { formatJalaliDate } from "@/utils/date";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import { TransactionAmount } from "@/features/transactions/components/transaction-amount";
 import { transactionTitle } from "@/features/transactions/components/transaction-badges";
 import {
   TRANSACTION_TYPE_LABELS,
   type TransactionDto,
 } from "@/features/transactions/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -49,6 +49,7 @@ export function TransactionDetailSheet({
   onEdit: (transaction: TransactionDto) => void;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const [confirming, setConfirming] = React.useState(false);
   const [pending, setPending] = React.useState(false);
@@ -100,7 +101,7 @@ export function TransactionDetailSheet({
 
             <TransactionAmount
               transaction={transaction}
-              className="text-h1 font-bold"
+              className="text-h1 font-light"
             />
 
             <dl>
@@ -115,7 +116,7 @@ export function TransactionDetailSheet({
               </Field>
               <Field label="مالک">
                 <Badge variant={transaction.owner === "SHARED" ? "default" : "neutral"}>
-                  {OWNER_LABELS[transaction.owner]}
+                  {owners.label(transaction.owner)}
                 </Badge>
               </Field>
               <Field label="تاریخ">

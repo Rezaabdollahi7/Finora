@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { parseTomanToRial } from "@/utils/money";
-import { OWNERS } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 
 /**
  * Validation for budget input.
@@ -48,7 +48,7 @@ const absoluteMonth = z.coerce
  * one person, which is what keeps a gadget someone bought for themselves out
  * of the household's food budget.
  */
-const budgetOwner = z.enum(OWNERS).default("SHARED");
+const budgetOwner = ownerSchema().default("SHARED");
 
 export const setBudgetSchema = z.object({
   categoryId: z.string().min(1, "دسته‌بندی را انتخاب کنید."),

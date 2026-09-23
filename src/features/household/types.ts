@@ -1,4 +1,4 @@
-import type { Owner } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 
 import type { HouseholdMember } from "@/features/household/contribution";
 
@@ -18,7 +18,9 @@ export type OwnerTotalsDto = {
 
 /** What one person put into the household (task 7.7). */
 export type ContributionDto = {
+  /** The member id. */
   owner: HouseholdMember;
+  name: string;
   /** Shared costs paid straight out of their own account. */
   direct: string;
   /** Money moved from their account into a shared one. */
@@ -28,7 +30,9 @@ export type ContributionDto = {
 
 /** One person's own picture (task 7.8). */
 export type MemberViewDto = {
+  /** The member id. */
   owner: HouseholdMember;
+  name: string;
   totals: OwnerTotalsDto;
   contribution: ContributionDto;
   /**

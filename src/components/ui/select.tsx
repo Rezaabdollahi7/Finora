@@ -25,7 +25,7 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         "flex w-full items-center justify-between gap-2 rounded-md border border-input",
-        "bg-card px-[14px] text-body text-foreground",
+        "bg-card-solid px-[14px] text-body text-foreground",
         "data-[size=md]:h-11 data-[size=sm]:h-9",
         "data-[placeholder]:text-text-muted",
         "transition-[border-color,box-shadow] duration-150 ease-out outline-none",

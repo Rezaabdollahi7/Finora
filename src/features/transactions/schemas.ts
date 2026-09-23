@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { parseTomanToRial } from "@/utils/money";
-import { OWNERS } from "@/features/accounts/types";
+import { ownerSchema } from "@/features/members/schemas";
 import { TRANSACTION_TYPES } from "@/features/transactions/types";
 
 /**
@@ -62,7 +62,7 @@ const descriptionSchema = z
 const baseFields = {
   amount: positiveTomanAmount,
   accountId: z.string().min(1, "حساب را انتخاب کنید."),
-  owner: z.enum(OWNERS, { message: "مالک تراکنش را انتخاب کنید." }),
+  owner: ownerSchema("مالک تراکنش را انتخاب کنید."),
   description: descriptionSchema,
   date: instant,
   /** The Category model arrives in 1.7; nothing sets this yet. */
@@ -179,7 +179,7 @@ export const transactionFiltersSchema = z
   .object({
     type: z.enum(TRANSACTION_TYPES).optional(),
     accountId: z.string().min(1).optional(),
-    owner: z.enum(OWNERS).optional(),
+    owner: ownerSchema().optional(),
     categoryId: z.string().min(1).optional(),
     dateFrom: optionalInstant,
     dateTo: optionalInstant,

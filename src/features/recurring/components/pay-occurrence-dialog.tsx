@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -44,6 +43,8 @@ import type {
   OccurrenceDto,
   RecurringPaymentDetailDto,
 } from "@/features/recurring/types";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   amount: string;
@@ -173,18 +174,8 @@ export function PayOccurrenceDialog({
                 <FormItem>
                   <FormLabel>مبلغ (تومان)</FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    اگر این ماه فرق داشت، مبلغ واقعی را وارد کنید.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -233,14 +224,24 @@ export function PayOccurrenceDialog({
                   <FormControl>
                     <Input placeholder="اختیاری" autoComplete="off" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    اگر خالی بماند، نام پرداخت دوره‌ای ثبت می‌شود.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "مبلغ",
+                  text: "اگر این ماه فرق داشت، مبلغ واقعی را وارد کنید.",
+                },
+                {
+                  label: "توضیح",
+                  text: "اگر خالی بماند، نام پرداخت دوره‌ای ثبت می‌شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "در حال ثبت…" : "ثبت پرداخت"}

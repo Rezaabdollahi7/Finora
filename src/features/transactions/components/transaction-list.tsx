@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
 import type { AccountDto } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
@@ -64,13 +65,13 @@ export function TransactionList({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <Toolbar>
         <TransactionFilters accounts={accounts} categories={categories} total={total} />
         <Button onClick={openNew} disabled={!canRecord}>
           <Plus />
           ثبت تراکنش
         </Button>
-      </div>
+      </Toolbar>
 
       {transactions.length === 0 ? (
         <EmptyState
@@ -103,7 +104,7 @@ export function TransactionList({
             ))}
           </div>
 
-          <Card padding="none" className="hidden md:block">
+          <Card padding="none" className="reveal hidden p-2 md:block">
             <Table>
               <TableHeader>
                 <TableRow>

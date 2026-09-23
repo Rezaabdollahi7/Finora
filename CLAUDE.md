@@ -1,7 +1,9 @@
 # Finora — Project Rules
 
-Finora is a Persian-first personal and household finance application for a
-two-person household (Reza, Yeganeh, and Shared).
+Finora is a Persian-first personal and household finance application. It
+ships with no people built in: the household adds its own members (Settings →
+اعضای خانوار), and every record belongs either to one of them or to the
+household as a whole (`owner: "SHARED"`).
 
 Companion documents:
 
@@ -23,6 +25,9 @@ Companion documents:
 | Database   | PostgreSQL via Prisma                    |
 | Charts     | Recharts (single charting library)       |
 | Icons      | Lucide (single icon library)             |
+| Motion     | Motion for layout, GSAP for the dashboard entrance, View Transitions for the theme |
+| 3D         | three.js (the dashboard balance card only) |
+| Typeface   | Dana, self-hosted via next/font/local     |
 | Runtime    | Docker Compose (app + postgres)          |
 
 ---

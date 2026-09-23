@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -39,7 +38,7 @@ import {
 } from "@/components/common/jalali-date-field";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import { formatQuantity, parseQuantity } from "@/utils/quantity";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import {
   ASSET_TYPES,
   ASSET_TYPE_LABELS,
@@ -48,6 +47,9 @@ import {
   type AssetDto,
   type AssetType,
 } from "@/features/assets/types";
+import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   name: string;
@@ -114,6 +116,7 @@ export function AssetDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = asset !== undefined;
 
@@ -259,42 +262,38 @@ export function AssetDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    {isEdit ? (
-                      <FormDescription>
-                        نوع دارایی پس از ثبت تغییر نمی‌کند؛ تاریخچهٔ قیمت‌ها بر اساس آن
-                        ثبت شده است.
-                      </FormDescription>
-                    ) : null}
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="owner"
-                rules={{ required: "مالک دارایی را انتخاب کنید." }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مالک</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب کنید" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {OWNERS.map((owner) => (
-                          <SelectItem key={owner} value={owner}>
-                            {OWNER_LABELS[owner]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {owners.enabled ? (
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  rules={{ required: "مالک دارایی را انتخاب کنید." }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مالک</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {owners.options.map(({ value: owner }) => (
+                            <SelectItem key={owner} value={owner}>
+                              {owners.label(owner)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
             </div>
 
             {perUnit ? (
@@ -355,16 +354,7 @@ export function AssetDialog({
                   <FormItem>
                     <FormLabel>{priceLabel}</FormLabel>
                     <FormControl>
-                      <Input
-                        // Not type="number": that rejects Persian digits and
-                        // the thousands separators people actually type.
-                        inputMode="numeric"
-                        dir="ltr"
-                        placeholder="0"
-                        className="text-start"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <MoneyInput placeholder="0" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -396,19 +386,8 @@ export function AssetDialog({
                       {perUnit ? "قیمت فعلی هر واحد (تومان)" : "ارزش فعلی (تومان)"}
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        inputMode="numeric"
-                        dir="ltr"
-                        placeholder="اختیاری"
-                        className="text-start"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <MoneyInput placeholder="اختیاری" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      اگر خالی بماند، ارزش فعلی همان مبلغ خرید در نظر گرفته می‌شود.
-                      بعداً می‌توانید قیمت روز را ثبت کنید.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -429,6 +408,21 @@ export function AssetDialog({
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "نوع دارایی",
+                  text: "نوع دارایی پس از ثبت تغییر نمی‌کند؛ تاریخچهٔ قیمت‌ها بر اساس آن ثبت شده است.",
+                  when: isEdit,
+                },
+                {
+                  label: perUnit ? "قیمت فعلی هر واحد" : "ارزش فعلی",
+                  text: "اگر خالی بماند، ارزش فعلی همان مبلغ خرید در نظر گرفته می‌شود. بعداً می‌توانید قیمت روز را ثبت کنید.",
+                  when: !isEdit,
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

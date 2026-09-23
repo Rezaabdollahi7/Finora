@@ -36,7 +36,7 @@ export function DayPanel({
   const unpaid = day ? BigInt(day.unpaidTotal) : 0n;
 
   return (
-    <Card variant="featured" className="gap-6">
+    <Card variant="featured" className="gap-6 p-6">
       <CardHeader>
         <div className="space-y-1">
           <CardTitle>{formatJalaliDate(date, { style: "full" })}</CardTitle>
@@ -56,7 +56,7 @@ export function DayPanel({
         />
       ) : (
         <>
-          <ul className="divide-y divide-border">
+          <ul className="-mx-3 flex flex-col gap-1">
             {events.map((event) => {
               const style = INSTALLMENT_STATUS_STYLE[event.status];
               const Icon = style.icon;
@@ -65,7 +65,7 @@ export function DayPanel({
                 <li key={event.id}>
                   <Link
                     href={event.href}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md py-3 transition-colors duration-150 ease-out hover:bg-muted"
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg px-3 py-3 transition-colors duration-150 ease-out hover:bg-muted"
                   >
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-body font-medium">
@@ -94,9 +94,13 @@ export function DayPanel({
             })}
           </ul>
 
-          <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-4">
-            <span className="text-body font-semibold">مجموع</span>
-            <Money rial={day!.total} className="text-h3 font-bold" />
+          <div className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg bg-highlight px-4 py-3 text-highlight-foreground">
+            <span className="text-body font-medium">مجموع</span>
+            <Money
+              rial={day!.total}
+              className="text-h3 font-light"
+              unitClassName="text-highlight-foreground/70"
+            />
           </div>
 
           {unpaid > 0n && unpaid !== BigInt(day!.total) ? (

@@ -4,18 +4,20 @@ import * as React from "react";
 import { Gem, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedList } from "@/components/common/animated-list";
+import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
-import { Money } from "@/components/common/money";
+import { HeroCard } from "@/components/common/hero-card";
 import { sumRial } from "@/utils/money";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import { AssetCard } from "@/features/assets/components/asset-card";
 import { AssetDialog } from "@/features/assets/components/asset-dialog";
 import { AssetDistribution } from "@/features/assets/components/asset-distribution";
 import { ProfitLoss } from "@/features/assets/components/profit-loss";
 import { ratioOf } from "@/features/assets/valuation";
 import type { AssetDto, PortfolioSummary } from "@/features/assets/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The portfolio screen (task 3.7): a total, the mix, an owner filter, the
@@ -36,6 +38,7 @@ export function AssetList({
   assets: AssetDto[];
   summary: PortfolioSummary;
 }) {
+  const owners = useOwners();
   const [owner, setOwner] = React.useState<Owner | "ALL">("ALL");
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -72,59 +75,51 @@ export function AssetList({
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          {owner === "ALL" ? "ارزش کل دارایی‌ها" : `دارایی‌های ${OWNER_LABELS[owner]}`}
-        </span>
-        {/*
-          The figure steps down on a phone. At the display size a
-          thirteen-digit total — which a portfolio in Toman reaches easily —
-          is wider than a 390px card and spills out of it.
-        */}
-        <Money rial={totals.value} className="text-h1 sm:text-display" unit={false} />
-        {/*
-          Each part is its own element rather than one interpolated string: a
-          neutral separator between Persian text and a number is reordered by
-          the bidi algorithm, which renders "تومان · ۲" as "تومان ۲ ·".
-        */}
-        <span className="flex items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>{totals.count.toLocaleString("fa-IR")} دارایی</span>
-        </span>
+      <HeroCard
+        label={
+          owner === "ALL" ? "ارزش کل دارایی‌ها" : `دارایی‌های ${owners.label(owner)}`
+        }
+        icon={Gem}
+        value={totals.value}
+        meta={<span>{totals.count.toLocaleString("fa-IR")} دارایی</span>}
+      >
         {/* Nothing held is not a profit of zero; it is no profit at all. */}
         {totals.count === 0 ? null : (
           <ProfitLoss
             rial={totals.profitLoss}
             ratio={totals.returnRatio}
-            className="mt-2"
+            className="mt-1"
             surface="ink"
           />
         )}
-      </Card>
+      </HeroCard>
 
       {owner === "ALL" && summary.byType.length > 0 ? (
         <AssetDistribution shares={summary.byType} />
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Tabs
-          value={owner}
-          onValueChange={(value) => {
-            setOwner(value as Owner | "ALL");
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">همه</TabsTrigger>
-            {OWNERS.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {OWNER_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+      <Toolbar>
+        {owners.enabled ? (
+          <Tabs
+            value={owner}
+            onValueChange={(value) => {
+              setOwner(value as Owner | "ALL");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">همه</TabsTrigger>
+              {owners.options.map(({ value: value }) => (
+                <TabsTrigger key={value} value={value}>
+                  {owners.label(value)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         {addButton}
-      </div>
+      </Toolbar>
 
       {visible.length === 0 ? (
         <EmptyState
@@ -142,13 +137,11 @@ export function AssetList({
           action={addButton}
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatedList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((asset) => (
-            <li key={asset.id} className="contents">
-              <AssetCard asset={asset} />
-            </li>
+            <AssetCard key={asset.id} asset={asset} />
           ))}
-        </ul>
+        </AnimatedList>
       )}
 
       <AssetDialog open={dialogOpen} onOpenChange={setDialogOpen} />

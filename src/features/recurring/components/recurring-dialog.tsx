@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -39,12 +38,7 @@ import {
 } from "@/components/common/jalali-date-field";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import { parseNumber } from "@/utils/number";
-import {
-  OWNERS,
-  OWNER_LABELS,
-  type AccountDto,
-  type Owner,
-} from "@/features/accounts/types";
+import { type AccountDto, type Owner } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import {
   RECURRENCE_FREQUENCIES,
@@ -53,6 +47,9 @@ import {
   type RecurrenceFrequency,
 } from "@/features/recurring/recurrence";
 import type { RecurringPaymentDto } from "@/features/recurring/types";
+import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 const NO_CATEGORY = "__none__";
 const NO_ACCOUNT = "__none__";
@@ -136,6 +133,7 @@ export function RecurringDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = payment !== undefined;
   const form = useForm<FormValues>({ defaultValues: defaultsFor(undefined) });
@@ -271,14 +269,7 @@ export function RecurringDialog({
                   <FormItem>
                     <FormLabel>مبلغ (تومان)</FormLabel>
                     <FormControl>
-                      <Input
-                        inputMode="numeric"
-                        dir="ltr"
-                        placeholder="0"
-                        className="text-start"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <MoneyInput placeholder="0" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -364,9 +355,6 @@ export function RecurringDialog({
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>
-                        خالی بگذارید تا روز شروع در نظر گرفته شود.
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -449,31 +437,33 @@ export function RecurringDialog({
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="owner"
-                rules={{ required: "مالک را انتخاب کنید." }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مالک</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب کنید" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {OWNERS.map((owner) => (
-                          <SelectItem key={owner} value={owner}>
-                            {OWNER_LABELS[owner]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {owners.enabled ? (
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  rules={{ required: "مالک را انتخاب کنید." }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مالک</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {owners.options.map(({ value: owner }) => (
+                            <SelectItem key={owner} value={owner}>
+                              {owners.label(owner)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
 
               <FormField
                 control={form.control}
@@ -490,6 +480,15 @@ export function RecurringDialog({
               />
             </div>
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "روز ماه",
+                  text: "خالی بگذارید تا روز شروع در نظر گرفته شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

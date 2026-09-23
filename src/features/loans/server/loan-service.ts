@@ -18,6 +18,7 @@ import {
   type UpdateLoanInput,
 } from "@/features/loans/schemas";
 import type { InstallmentDto, LoanDetailDto, LoanDto } from "@/features/loans/types";
+import { assertOwner } from "@/features/members/server/member-service";
 
 /**
  * Loan data access and business rules (tasks 4.2 and 4.4).
@@ -147,6 +148,7 @@ export async function createLoan(
   input: CreateLoanInput,
   now: Date = new Date(),
 ): Promise<LoanDetailDto> {
+  await assertOwner(input.owner);
   const schedule = buildSchedule(input);
   const endDate = scheduleEndDate(schedule);
 
@@ -198,6 +200,7 @@ export async function updateLoan(
   input: UpdateLoanInput,
   now: Date = new Date(),
 ): Promise<LoanDetailDto> {
+  if (input.owner !== undefined) await assertOwner(input.owner);
   const existing = await requireLoan(id);
 
   if (existing.status === "ARCHIVED") {

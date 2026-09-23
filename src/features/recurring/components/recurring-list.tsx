@@ -4,21 +4,18 @@ import * as React from "react";
 import { Plus, Repeat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedList } from "@/components/common/animated-list";
+import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
-import { Money } from "@/components/common/money";
-import {
-  OWNERS,
-  OWNER_LABELS,
-  type AccountDto,
-  type Owner,
-} from "@/features/accounts/types";
+import { HeroCard } from "@/components/common/hero-card";
+import { type AccountDto, type Owner } from "@/features/accounts/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
 import { RecurringCard } from "@/features/recurring/components/recurring-card";
 import { RecurringDialog } from "@/features/recurring/components/recurring-dialog";
 import { summariseRecurring } from "@/features/recurring/summary";
 import type { OccurrenceDto, RecurringPaymentDto } from "@/features/recurring/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The recurring payments screen (task 5.5).
@@ -52,6 +49,7 @@ export function RecurringList({
   /** The server's "now", so the client renders the same statuses it did. */
   nowIso: string;
 }) {
+  const owners = useOwners();
   const [owner, setOwner] = React.useState<Owner | "ALL">("ALL");
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const now = React.useMemo(() => new Date(nowIso), [nowIso]);
@@ -82,60 +80,51 @@ export function RecurringList({
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          {owner === "ALL"
+      <HeroCard
+        label={
+          owner === "ALL"
             ? "پرداخت‌های ۳۰ روز آینده"
-            : `پرداخت‌های ۳۰ روز آینده ${OWNER_LABELS[owner]}`}
-        </span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money
-          rial={totals.upcoming}
-          className="text-h1 sm:text-display"
-          unit={false}
-        />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>{totals.activeCount.toLocaleString("fa-IR")} پرداخت فعال</span>
-        </span>
-        {totals.overdueCount > 0 ? (
-          <span className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-danger">
-            <span className="tabular">
-              {totals.overdueCount.toLocaleString("fa-IR")}
-            </span>
-            <span>پرداخت معوق</span>
-            <span aria-hidden>·</span>
-            <Money rial={totals.overdueAmount} className="text-caption" />
-          </span>
-        ) : null}
-      </Card>
+            : `پرداخت‌های ۳۰ روز آینده ${owners.label(owner)}`
+        }
+        icon={Repeat}
+        value={totals.upcoming}
+        meta={<span>{totals.activeCount.toLocaleString("fa-IR")} پرداخت فعال</span>}
+        stats={
+          totals.overdueCount > 0
+            ? [
+                {
+                  label: "پرداخت معوق",
+                  content: totals.overdueCount.toLocaleString("fa-IR"),
+                  alert: true,
+                },
+                { label: "مبلغ معوق", rial: totals.overdueAmount, alert: true },
+              ]
+            : undefined
+        }
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Tabs
-          value={owner}
-          onValueChange={(value) => {
-            setOwner(value as Owner | "ALL");
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">همه</TabsTrigger>
-            {OWNERS.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {OWNER_LABELS[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+      <Toolbar>
+        {owners.enabled ? (
+          <Tabs
+            value={owner}
+            onValueChange={(value) => {
+              setOwner(value as Owner | "ALL");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">همه</TabsTrigger>
+              {owners.options.map(({ value: value }) => (
+                <TabsTrigger key={value} value={value}>
+                  {owners.label(value)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         {addButton}
-      </div>
+      </Toolbar>
 
       {visible.length === 0 ? (
         <EmptyState
@@ -153,13 +142,11 @@ export function RecurringList({
           action={addButton}
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatedList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((payment) => (
-            <li key={payment.id} className="contents">
-              <RecurringCard payment={payment} now={now} />
-            </li>
+            <RecurringCard key={payment.id} payment={payment} now={now} />
           ))}
-        </ul>
+        </AnimatedList>
       )}
 
       <RecurringDialog

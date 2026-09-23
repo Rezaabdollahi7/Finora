@@ -2,6 +2,7 @@ import { Archive } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
+import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
 import { formatJalaliDate } from "@/utils/date";
 import { formatQuantity } from "@/utils/quantity";
@@ -16,11 +17,15 @@ import {
   type AssetValuationDto,
 } from "@/features/assets/types";
 
+/**
+ * One fact of the record as a small tile (§0.13), the same shape as
+ * FactGrid's, kept local so the conditional rows above can stay inline.
+ */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border py-3 last:border-0">
-      <dt className="text-body text-muted-foreground">{label}</dt>
-      <dd className="text-body font-medium">{children}</dd>
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted px-4 py-3">
+      <dt className="truncate text-caption text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-body font-medium break-words">{children}</dd>
     </div>
   );
 }
@@ -49,32 +54,23 @@ export function AssetDetail({
         </Alert>
       ) : null}
 
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="flex items-center gap-3 text-body text-ink-surface-muted">
-          <Icon className="size-[18px]" />
-          ارزش فعلی
-        </span>
-        <Money
-          rial={asset.currentValue}
-          className="text-h1 sm:text-display"
-          unit={false}
-        />
-        <span className="text-caption text-ink-surface-subtle">تومان</span>
+      <HeroCard label="ارزش فعلی" icon={Icon} value={asset.currentValue}>
         <ProfitLoss
           rial={asset.profitLoss}
           ratio={asset.returnRatio}
-          className="mt-2"
+          className="mt-1"
           surface="ink"
         />
-      </Card>
+      </HeroCard>
 
       <AssetActions asset={asset} />
 
-      <Card variant="featured">
-        <dl>
+      <Card variant="featured" className="reveal gap-5 p-6">
+        <h2 className="text-h4">مشخصات</h2>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Field label="نوع دارایی">{ASSET_TYPE_LABELS[asset.type]}</Field>
           <Field label="مالک">
-            <OwnerBadge owner={asset.owner} />
+            <OwnerBadge owner={asset.owner} always />
           </Field>
           {perUnit ? (
             <>

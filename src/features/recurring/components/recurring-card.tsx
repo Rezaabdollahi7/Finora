@@ -45,20 +45,16 @@ export function RecurringCard({
 
   return (
     <Card
-      variant="compact"
       padding="none"
-      className={cn(
-        "transition-shadow duration-150 ease-out hover:shadow-md",
-        !payment.isActive && "opacity-70",
-      )}
+      className={cn("hover-lift h-full", !payment.isActive && "opacity-70")}
     >
       <Link
         href={`/recurring/${payment.id}`}
-        className="flex h-full flex-col gap-4 rounded-md p-5"
+        className="flex h-full flex-col gap-5 rounded-xl p-5"
       >
         <div className="flex items-start justify-between gap-3">
           <span className="flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
               <Repeat className="size-5" />
             </span>
             <span className="flex min-w-0 flex-col">
@@ -72,7 +68,7 @@ export function RecurringCard({
           <OwnerBadge owner={payment.owner} />
         </div>
 
-        <Money rial={payment.amount} className="text-h2 font-bold" />
+        <Money rial={payment.amount} className="text-h2 font-light tracking-tight" />
 
         <div className="mt-auto flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
           {!payment.isActive ? (

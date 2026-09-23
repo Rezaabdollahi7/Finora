@@ -194,6 +194,25 @@ a slice of the monthly forecast, because they answer different questions: a
 month can close comfortably and still have a week where the rent, an
 instalment and a bill all land before payday.
 
+## Household members
+
+The people in the household are rows in `members`, added, renamed and removed
+by the household itself in Settings. Nobody is built in: a fresh install has
+no members, every record is filed under `"SHARED"`, and owner pickers,
+owner filters and per-person views stay hidden until someone is added.
+
+`owner` on every model is a text column holding `"SHARED"` or a member id,
+not a foreign key: "shared" is not a person, and a nullable key would make
+every ownership question a null check. Integrity is kept in
+`features/members/server/member-service.ts` from both ends — every write that
+sets an owner calls `assertOwner`, and a member who still owns records cannot
+be deleted (rename instead). The layout reads the member list once per
+request and hands it to client components through `MembersProvider`.
+
+The migration that introduced this (`20260923090000_household_members`)
+converts the old enum values to text and creates a member for each former
+enum value that still owns something, so existing data keeps its owners.
+
 ## Two owners, and they mean different things
 
 A transaction carries **two** owners, and confusing them is the easiest
@@ -201,14 +220,14 @@ mistake in this codebase to make.
 
 `transaction.owner` says whose record it is: a household cost or one person's.
 The owner of the **account** says whose pocket the money came out of. A
-shared rent paid from Reza's account is `owner: SHARED` with a REZA account,
-and it takes both facts to say that the household spent it and Reza provided
-it.
+shared rent paid from one person's account is `owner: SHARED` on that
+person's account, and it takes both facts to say that the household spent it
+and they provided it.
 
 Every model carries an owner, Budget included since Sprint 7. A budget
 measures one owner's spending: the household's food budget counts household
-food and Reza's personal budget counts Reza's, which is what keeps a gadget
-he bought for himself out of the household's limit. The "one open window per
+food and a person's own budget counts theirs, which is what keeps a gadget
+someone bought for themselves out of the household's limit. The "one open window per
 category" rule is therefore per category **and** owner, so the household and
 a person can budget the same category at once.
 
@@ -346,7 +365,7 @@ src/
 ├── components/
 │   ├── ui/         # shadcn/ui primitives
 │   ├── layout/     # application chrome (sidebar, header, theme)
-│   ├── charts/     # Recharts wrappers
+│   ├── charts/     # Recharts wrappers and chart tokens
 │   ├── forms/      # form building blocks
 │   └── common/     # shared composites
 ├── features/       # one folder per domain: dashboard, accounts, ...
@@ -388,6 +407,35 @@ The domains match the roadmap: dashboard, accounts, transactions, assets,
 loans, budgets, goals, calendar, reports. Each exists as a folder from
 Sprint 0 so later sprints add files rather than invent placement.
 
+## Motion, 3D and the client boundary
+
+The redesign (docs/DESIGN_SYSTEM.md §0) adds three client-side libraries,
+each with one job, so they never fight over the same frame:
+
+| Library | Job |
+| --- | --- |
+| `motion` (`motion/react`) | Layout animation: the sliding active pill, the sidebar width, dock magnification. |
+| `gsap` + `@gsap/react` | The dashboard's one-time entrance choreography (`features/dashboard/components/bento.tsx`). |
+| `three` | The 3D balance card, imported with `import()` from inside an effect, so it is its own chunk. |
+
+The theme switch uses the browser's View Transitions API and the ambient
+background is CSS, so neither ships any JavaScript of its own.
+
+Every animation honours `prefers-reduced-motion`: Motion through
+`MotionConfig reducedMotion="user"`, GSAP through `gsap.matchMedia`, the 3D
+scene by rendering a single still frame, CSS through the global rule.
+
+Two boundary rules came out of the redesign:
+
+1. **A server component cannot read a value from a `"use client"` module.**
+   It receives a client reference instead, which is `undefined` when read.
+   Chart colours therefore live in `components/charts/chart-tokens.ts`, a
+   plain module; `chart-primitives.tsx` re-exports them for client charts.
+2. **Anything that animates is a client leaf.** Cards stay server
+   components and mark what should move with data attributes
+   (`data-bento-cell`, `data-grow`, `data-sweep`, `data-count`); the one
+   client wrapper around the grid animates them.
+
 ## Pages that read the database
 
 A Prisma call is not one of Next's dynamic APIs, so a page that only awaits a
@@ -409,6 +457,6 @@ that reads data and shows `○` is a bug.
 
 The roadmap lists authentication in the Sprint 8 audits but gives it no task of
 its own, and record ownership is modelled as an `owner` field
-(Reza / Yeganeh / Shared) rather than a user table. Finora is therefore built
+(a household member or Shared) rather than a user account. Finora is therefore built
 as a self-hosted household deployment, with authentication deferred to
 Sprint 8.

@@ -25,4 +25,19 @@ describe("cn", () => {
   it("keeps utilities that only look similar", () => {
     expect(cn("ps-4", "pe-6")).toBe("ps-4 pe-6");
   });
+
+  it("keeps a design-system font size and a text colour side by side", () => {
+    // Without the scale registered, tailwind-merge read text-caption as a
+    // colour and dropped whichever came first.
+    expect(cn("text-caption text-muted-foreground", "text-danger")).toBe(
+      "text-caption text-danger",
+    );
+    expect(cn("text-muted-foreground", "text-h3")).toBe(
+      "text-muted-foreground text-h3",
+    );
+  });
+
+  it("still lets a later design-system size replace an earlier one", () => {
+    expect(cn("text-body", "text-h1")).toBe("text-h1");
+  });
 });

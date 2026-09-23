@@ -1,8 +1,9 @@
-import { Archive, CheckCircle2 } from "lucide-react";
+import { Archive, CheckCircle2, Target } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
 import { formatJalaliDate } from "@/utils/date";
 import { OwnerBadge } from "@/features/accounts/components/owner-badge";
@@ -17,11 +18,15 @@ import {
   type GoalDetailDto,
 } from "@/features/goals/types";
 
+/**
+ * One fact of the record as a small tile (§0.13), the same shape as
+ * FactGrid's, kept local so the conditional rows above can stay inline.
+ */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-border py-3 last:border-0">
-      <dt className="text-body text-muted-foreground">{label}</dt>
-      <dd className="text-body font-medium">{children}</dd>
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted px-4 py-3">
+      <dt className="truncate text-caption text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-body font-medium break-words">{children}</dd>
     </div>
   );
 }
@@ -54,43 +59,34 @@ export function GoalDetail({ goal }: { goal: GoalDetailDto }) {
         </Alert>
       ) : null}
 
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">کنار گذاشته‌شده</span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money
-          rial={goal.progress.currentAmount}
-          className="text-h1 sm:text-display"
-          unit={false}
-        />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex flex-wrap items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>از</span>
-          <Money
-            rial={goal.progress.targetAmount}
-            className="text-caption"
-            unit={false}
-          />
-          <span>تومان</span>
-        </span>
+      <HeroCard
+        label="کنار گذاشته‌شده"
+        icon={Target}
+        value={goal.progress.currentAmount}
+        meta={
+          <>
+            <span>از</span>
+            <Money
+              rial={goal.progress.targetAmount}
+              className="text-caption"
+              unit={false}
+            />
+            <span>تومان</span>
+          </>
+        }
+      >
         <GoalProgressBar
           progress={goal.progress}
           showAmounts={false}
-          className="mt-4"
+          className="mt-2 max-w-xl"
         />
-      </Card>
+      </HeroCard>
 
       <GoalActions goal={goal} />
 
-      <Card variant="featured">
-        <dl>
+      <Card variant="featured" className="reveal gap-5 p-6">
+        <h2 className="text-h4">مشخصات</h2>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Field label="وضعیت">
             <span className="flex flex-wrap items-center gap-2">
               <Badge variant={style.badge}>
@@ -106,7 +102,7 @@ export function GoalDetail({ goal }: { goal: GoalDetailDto }) {
           </Field>
           <Field label="نوع">{GOAL_KIND_LABELS[goal.kind]}</Field>
           <Field label="مالک">
-            <OwnerBadge owner={goal.owner} />
+            <OwnerBadge owner={goal.owner} always />
           </Field>
           <Field label="مبلغ هدف">
             <Money rial={goal.progress.targetAmount} />

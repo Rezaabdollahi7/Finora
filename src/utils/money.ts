@@ -1,4 +1,5 @@
 import { siteConfig } from "@/config/site";
+import { toLatinDigits } from "@/utils/digits";
 import {
   applyDigitStyle,
   formatInteger,
@@ -159,4 +160,55 @@ export function sumRial(amounts: Iterable<bigint>): bigint {
  */
 export function tomanAriaLabel(rial: bigint): string {
   return formatToman(rial, { digits: "persian" });
+}
+
+/**
+ * An amount as the user is typing it, with its thousands grouped.
+ *
+ * `12500000` reads as `12,500,000` while it is being typed, which is what
+ * makes a missing or extra zero visible before the form is sent. Persian
+ * and Arabic digits become Latin ones, the digits the amount is displayed
+ * in everywhere else; anything that is not a digit, a leading minus or the
+ * first decimal mark is dropped. Only the whole part is grouped.
+ *
+ * Text, not arithmetic: nothing here passes through a `number` (rule G.2),
+ * and {@link parseTomanToRial} already ignores the separators, so the
+ * grouped string is what the form holds and sends.
+ */
+export function groupAmountInput(input: string): string {
+  const latin = toLatinDigits(input).replace(/[٫]/g, ".").trim();
+  const negative = /^[-−‐-―]/.test(latin);
+  const kept = latin.replace(/[^\d.]/g, "");
+
+  const dot = kept.indexOf(".");
+  const whole = dot === -1 ? kept : kept.slice(0, dot);
+  const fraction = dot === -1 ? null : kept.slice(dot + 1).replace(/\./g, "");
+
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  return (negative ? "-" : "") + grouped + (fraction === null ? "" : `.${fraction}`);
+}
+
+/**
+ * Where the caret belongs after {@link groupAmountInput} rewrote the text.
+ *
+ * Counted in the characters that survive grouping (digits, the minus, the
+ * decimal mark): the caret stays after the same digit it was after, so
+ * typing in the middle of `1,250,000` does not throw it to the end.
+ */
+export function caretAfterGrouping(
+  raw: string,
+  caret: number,
+  grouped: string,
+): number {
+  const significant = (text: string) => groupAmountInput(text).replace(/,/g, "").length;
+  const before = significant(raw.slice(0, caret));
+
+  let seen = 0;
+  for (let index = 0; index < grouped.length; index += 1) {
+    if (seen === before) return index;
+    if (grouped[index] !== ",") seen += 1;
+  }
+
+  return grouped.length;
 }

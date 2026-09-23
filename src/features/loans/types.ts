@@ -1,4 +1,5 @@
-import type { LoanStatus, Owner } from "@/generated/prisma/enums";
+import type { LoanStatus } from "@/generated/prisma/enums";
+import type { Owner } from "@/features/members/types";
 
 import type { LoanProgress } from "@/features/loans/progress";
 import type { InstallmentStatus } from "@/features/loans/schedule";

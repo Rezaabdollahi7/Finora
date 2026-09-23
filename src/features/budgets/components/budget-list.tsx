@@ -9,7 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedList } from "@/components/common/animated-list";
+import { Toolbar } from "@/components/common/toolbar";
 import { EmptyState } from "@/components/common/empty-state";
+import { HeroCard } from "@/components/common/hero-card";
 import { Money } from "@/components/common/money";
 import { toast } from "@/components/ui/sonner";
 import { BUDGET_STATE_LABELS } from "@/features/budgets/tracking";
@@ -19,7 +22,8 @@ import { BudgetDialog } from "@/features/budgets/components/budget-dialog";
 import { BudgetProgressBar } from "@/features/budgets/components/budget-progress";
 import type { BudgetLineDto, BudgetMonthDto } from "@/features/budgets/types";
 import type { CategoryTreeNode } from "@/features/categories/types";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /**
  * The budgets screen (task 5.8).
@@ -53,6 +57,7 @@ export function BudgetList({
   currentMonth: number;
   categories: CategoryTreeNode[];
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const [editing, setEditing] = React.useState<BudgetLineDto | null>(null);
   const [adding, setAdding] = React.useState(false);
@@ -107,69 +112,61 @@ export function BudgetList({
 
   return (
     <div className="space-y-6">
-      <Card variant="ink" padding="large" className="gap-2">
-        <span className="text-body text-ink-surface-muted">
-          {budget.owner === "SHARED"
+      <HeroCard
+        label={
+          budget.owner === "SHARED"
             ? `خرج مشترک در ${budget.label}`
-            : `خرج شخصی ${OWNER_LABELS[budget.owner]} در ${budget.label}`}
-        </span>
-        {/*
-          The figure steps down on a phone; at the display size a
-          thirteen-digit total spills out of a 390px card.
-        */}
-        <Money rial={totals.spent} className="text-h1 sm:text-display" unit={false} />
-        {/*
-          Each part is its own element: a neutral separator between Persian
-          text and a number is reordered by the bidi algorithm.
-        */}
-        <span className="flex flex-wrap items-center gap-2 text-caption text-ink-surface-subtle">
-          <span>تومان</span>
-          <span aria-hidden>·</span>
-          <span>از</span>
-          <Money rial={totals.available} className="text-caption" unit={false} />
-          <span>تومان بودجه</span>
-        </span>
+            : `خرج شخصی ${owners.label(budget.owner)} در ${budget.label}`
+        }
+        icon={PiggyBank}
+        value={totals.spent}
+        meta={
+          <>
+            <span>از</span>
+            <Money rial={totals.available} className="text-caption" unit={false} />
+            <span>تومان بودجه</span>
+          </>
+        }
+        stats={[
+          {
+            label: totals.state === "OVER" ? "بیش از بودجه" : "باقی‌مانده این ماه",
+            rial:
+              totals.state === "OVER"
+                ? (-BigInt(totals.remaining)).toString()
+                : totals.remaining,
+            alert: totals.state === "OVER",
+          },
+        ]}
+      >
         <BudgetProgressBar
           spent={totals.spent}
           available={totals.available}
           ratio={totals.ratio}
           state={totals.state}
           showAmounts={false}
-          className="mt-4"
+          className="mt-2 max-w-xl"
         />
-        <span
-          className={cn(
-            "mt-1 flex flex-wrap items-baseline gap-2 text-caption",
-            totals.state === "OVER" ? "text-danger" : "text-ink-surface-muted",
-          )}
-        >
-          <span>{totals.state === "OVER" ? "بیش از بودجه" : "باقی‌مانده این ماه"}</span>
-          <Money
-            rial={
-              totals.state === "OVER"
-                ? (-BigInt(totals.remaining)).toString()
-                : totals.remaining
-            }
-            className="font-medium"
-          />
-        </span>
-      </Card>
+      </HeroCard>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Tabs
-          value={budget.owner}
-          onValueChange={(value) => {
-            go({ owner: value as Owner });
-          }}
-        >
-          <TabsList>
-            {OWNERS.map((owner) => (
-              <TabsTrigger key={owner} value={owner}>
-                {owner === "SHARED" ? "خانواده" : OWNER_LABELS[owner]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+      <Toolbar>
+        {owners.enabled ? (
+          <Tabs
+            value={budget.owner}
+            onValueChange={(value) => {
+              go({ owner: value as Owner });
+            }}
+          >
+            <TabsList>
+              {owners.options.map(({ value: owner }) => (
+                <TabsTrigger key={owner} value={owner}>
+                  {owner === "SHARED" ? "خانواده" : owners.label(owner)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span aria-hidden />
+        )}
         <div className="flex items-center gap-1">
           {/* In RTL the earlier month is to the right, so the arrows swap. */}
           <Button
@@ -197,7 +194,7 @@ export function BudgetList({
           </Button>
         </div>
         {addButton}
-      </div>
+      </Toolbar>
 
       <BudgetAlerts alerts={budget.alerts} />
 
@@ -207,7 +204,7 @@ export function BudgetList({
           title={
             budget.owner === "SHARED"
               ? "برای این ماه بودجه‌ مشترکی تعیین نشده است"
-              : `${OWNER_LABELS[budget.owner]} برای این ماه بودجه‌ای ندارد`
+              : `${owners.label(budget.owner)} برای این ماه بودجه‌ای ندارد`
           }
           description={
             budget.owner === "SHARED"
@@ -217,20 +214,19 @@ export function BudgetList({
           action={addButton}
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatedList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {budget.lines.map((line) => (
-            <li key={line.categoryId} className="contents">
-              <BudgetCard
-                line={line}
-                pending={pending === line.categoryId}
-                onEdit={() => {
-                  setEditing(line);
-                }}
-                onRemove={() => void remove(line)}
-              />
-            </li>
+            <BudgetCard
+              key={line.categoryId}
+              line={line}
+              pending={pending === line.categoryId}
+              onEdit={() => {
+                setEditing(line);
+              }}
+              onRemove={() => void remove(line)}
+            />
           ))}
-        </ul>
+        </AnimatedList>
       )}
 
       <BudgetDialog
@@ -276,7 +272,7 @@ function BudgetCard({
   const over = line.state === "OVER";
 
   return (
-    <Card variant="compact" className="gap-4">
+    <Card className="h-full gap-4">
       <div className="flex items-start justify-between gap-3">
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-body font-semibold">{line.categoryName}</span>

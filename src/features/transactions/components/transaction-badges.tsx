@@ -28,7 +28,7 @@ export function TypeIcon({
   return (
     <span
       className={cn(
-        "flex size-10 shrink-0 items-center justify-center rounded-md",
+        "flex size-10 shrink-0 items-center justify-center rounded-full",
         type === "INCOME" && "bg-success-subtle text-success",
         type === "EXPENSE" && "bg-danger-subtle text-danger",
         type === "TRANSFER" && "bg-primary-soft text-primary",
@@ -55,7 +55,7 @@ export function TransactionIcon({ transaction }: { transaction: TransactionDto }
   return (
     <span
       className={cn(
-        "flex size-10 shrink-0 items-center justify-center rounded-md",
+        "flex size-10 shrink-0 items-center justify-center rounded-full",
         transaction.type === "INCOME"
           ? "bg-success-subtle text-success"
           : "bg-primary-soft text-primary",

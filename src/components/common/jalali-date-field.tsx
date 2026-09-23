@@ -19,6 +19,11 @@ import { toLatinDigits } from "@/utils/digits";
  * the spoken one; the isolate stops the bidi algorithm from reordering three
  * adjacent number fields, which is what puts the year first.
  *
+ * There is no "روز / ماه / سال" line under the fields: in a two-column
+ * form it pushed this field below its neighbour. The order is in each
+ * input's placeholder and label, and forms say it once in their notes
+ * (`DATE_NOTE` in form-notes.tsx).
+ *
  * Jalali never reaches the database: {@link readJalaliFields} converts to a
  * UTC instant at the form boundary (rule G.5).
  */
@@ -42,24 +47,26 @@ export function JalaliDateField<T extends FieldValues>({
         <Input
           id={id}
           aria-label="روز"
+          placeholder="روز"
           inputMode="numeric"
           className="text-center"
           {...register(names.day, { required: true })}
         />
         <Input
           aria-label="ماه"
+          placeholder="ماه"
           inputMode="numeric"
           className="text-center"
           {...register(names.month, { required: true })}
         />
         <Input
           aria-label="سال"
+          placeholder="سال"
           inputMode="numeric"
           className="text-center"
           {...register(names.year, { required: true })}
         />
       </div>
-      <p className="text-caption text-muted-foreground">روز / ماه / سال</p>
       {error ? <p className="text-caption text-danger">{error}</p> : null}
     </div>
   );

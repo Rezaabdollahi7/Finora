@@ -76,7 +76,14 @@ const eslintConfig = defineConfig([
   // Prettier last: it only turns formatting rules off.
   prettier,
 
-  globalIgnores([".next/**", "out/**", "build/**", "coverage/**", "next-env.d.ts"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "coverage/**",
+    "next-env.d.ts",
+    ".claude/**",
+  ]),
 ]);
 
 export default eslintConfig;

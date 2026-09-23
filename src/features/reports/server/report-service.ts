@@ -1,6 +1,7 @@
 import "server-only";
 
-import type { Owner } from "@/generated/prisma/enums";
+import { listMembers } from "@/features/members/server/member-service";
+import { ownerLabel, type MemberDto, type Owner } from "@/features/members/types";
 import { prisma } from "@/lib/prisma";
 import {
   absoluteJalaliMonth,
@@ -11,7 +12,6 @@ import {
 } from "@/utils/date";
 import { sumRial } from "@/utils/money";
 import { multiplyByQuantity } from "@/utils/quantity";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import { ASSET_TYPE_LABELS } from "@/features/assets/types";
 import { assetFiltersSchema } from "@/features/assets/schemas";
 import { listAssets } from "@/features/assets/server/asset-service";
@@ -81,6 +81,8 @@ type Naming = {
   categories: Map<string, string>;
   /** A child category's parent, for rolling a breakdown up one level. */
   parentOf: Map<string, string>;
+  /** Members by id, for the by-owner breakdown. */
+  members: MemberDto[];
 };
 
 function label(month: number): string {
@@ -393,12 +395,14 @@ async function loadCashByMonth(
 }
 
 async function loadNames(): Promise<Naming> {
-  const [accounts, categories] = await Promise.all([
+  const [accounts, categories, members] = await Promise.all([
     prisma.account.findMany({ select: { id: true, name: true } }),
     prisma.category.findMany({ select: { id: true, name: true, parentId: true } }),
+    listMembers(),
   ]);
 
   return {
+    members,
     accounts: new Map(accounts.map((row) => [row.id, row.name])),
     categories: new Map(categories.map((row) => [row.id, row.name])),
     parentOf: new Map(
@@ -487,7 +491,7 @@ function buildBreakdown(
       label: shortLabel(month),
       amount: (byMonth.get(month) ?? 0n).toString(),
     })),
-    byOwner: bucketsOf(byOwner, (key) => OWNER_LABELS[key as Owner] ?? key),
+    byOwner: bucketsOf(byOwner, (key) => ownerLabel(key, naming.members)),
     byCategory: bucketsOf(
       byCategory,
       (key) => naming.categories.get(key) ?? "بدون دسته",

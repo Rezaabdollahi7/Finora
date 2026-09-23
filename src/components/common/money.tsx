@@ -18,9 +18,12 @@ function Money({
   tone = "default",
   signed = false,
   unit = true,
+  unitClassName,
 }: {
   rial: string;
   className?: string;
+  /** For a surface where the muted unit would not read, like the gradient card. */
+  unitClassName?: string;
   tone?: "default" | "muted" | "positive" | "negative" | "auto";
   signed?: boolean;
   unit?: boolean;
@@ -61,7 +64,10 @@ function Money({
       {unit ? (
         <span
           aria-hidden
-          className="ms-1 text-caption font-normal text-muted-foreground"
+          className={cn(
+            "ms-1 text-caption font-normal text-muted-foreground",
+            unitClassName,
+          )}
         >
           تومان
         </span>

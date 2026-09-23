@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -35,12 +34,13 @@ import { formatToman, parseTomanToRial } from "@/utils/money";
 import {
   ACCOUNT_TYPES,
   ACCOUNT_TYPE_LABELS,
-  OWNERS,
-  OWNER_LABELS,
   type AccountDto,
   type AccountType,
   type Owner,
 } from "@/features/accounts/types";
+import { useOwners } from "@/features/members/components/members-provider";
+import { FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   name: string;
@@ -68,6 +68,7 @@ function AccountDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = account !== undefined;
 
@@ -198,31 +199,33 @@ function AccountDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="owner"
-                rules={{ required: "مالک حساب را انتخاب کنید." }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مالک</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب کنید" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {OWNERS.map((owner) => (
-                          <SelectItem key={owner} value={owner}>
-                            {OWNER_LABELS[owner]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {owners.enabled ? (
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  rules={{ required: "مالک حساب را انتخاب کنید." }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مالک</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {owners.options.map(({ value: owner }) => (
+                            <SelectItem key={owner} value={owner}>
+                              {owners.label(owner)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
             </div>
 
             <FormField
@@ -238,26 +241,21 @@ function AccountDialog({
                 <FormItem>
                   <FormLabel>موجودی اولیه (تومان)</FormLabel>
                   <FormControl>
-                    <Input
-                      // Not type="number": that would reject Persian digits
-                      // and the thousands separators people actually type.
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    موجودی حساب در لحظه‌ای که آن را اضافه می‌کنید. بعداً با تراکنش‌ها
-                    به‌روز می‌شود.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                {
+                  label: "موجودی اولیه",
+                  text: "موجودی حساب در لحظه‌ای که آن را اضافه می‌کنید. بعداً با تراکنش‌ها به‌روز می‌شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

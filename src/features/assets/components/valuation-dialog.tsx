@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -31,6 +30,8 @@ import {
 } from "@/components/common/jalali-date-field";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import { isQuantityAsset, type AssetDto } from "@/features/assets/types";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   unitPrice: string;
@@ -154,21 +155,8 @@ export function ValuationDialog({
                       : "ارزش فعلی (تومان)"}
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      autoFocus
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" autoFocus {...field} />
                   </FormControl>
-                  {perUnit ? (
-                    <FormDescription>
-                      ارزش کل از ضرب این مبلغ در مقدار نگهداری‌شده به دست می‌آید.
-                    </FormDescription>
-                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}
@@ -196,6 +184,16 @@ export function ValuationDialog({
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "قیمت هر واحد",
+                  text: "ارزش کل از ضرب این مبلغ در مقدار نگهداری‌شده به دست می‌آید.",
+                  when: perUnit,
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "در حال ذخیره…" : "ثبت قیمت"}

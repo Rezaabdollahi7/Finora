@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -41,6 +40,7 @@ import {
 import { formatJalaliDate } from "@/utils/date";
 import type { AccountDto } from "@/features/accounts/types";
 import type { InstallmentDto, LoanDetailDto } from "@/features/loans/types";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
 
 type FormValues = {
   accountId: string;
@@ -164,7 +164,7 @@ export function PayInstallmentDialog({
         {installment ? (
           <div className="flex items-baseline justify-between gap-4 rounded-lg bg-primary-soft px-4 py-3">
             <span className="text-body text-muted-foreground">مبلغ</span>
-            <Money rial={installment.amount} className="text-h3 font-bold" />
+            <Money rial={installment.amount} className="text-h3 font-light" />
           </div>
         ) : null}
 
@@ -213,14 +213,20 @@ export function PayInstallmentDialog({
                   <FormControl>
                     <Input placeholder="اختیاری" autoComplete="off" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    اگر خالی بماند، شماره قسط و نام وام ثبت می‌شود.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                {
+                  label: "توضیح",
+                  text: "اگر خالی بماند، شماره قسط و نام وام ثبت می‌شود.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "در حال ثبت…" : "ثبت پرداخت"}

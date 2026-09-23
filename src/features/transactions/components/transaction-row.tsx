@@ -3,7 +3,6 @@
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatJalaliDate } from "@/utils/date";
-import { OWNER_LABELS } from "@/features/accounts/types";
 import { TransactionAmount } from "@/features/transactions/components/transaction-amount";
 import {
   TransactionIcon,
@@ -13,6 +12,7 @@ import {
   TRANSACTION_TYPE_LABELS,
   type TransactionDto,
 } from "@/features/transactions/types";
+import { useOwners } from "@/features/members/components/members-provider";
 
 /** One transaction as a table row. Desktop and tablet; phones get cards. */
 export function TransactionRow({
@@ -22,6 +22,7 @@ export function TransactionRow({
   transaction: TransactionDto;
   onSelect: (transaction: TransactionDto) => void;
 }) {
+  const owners = useOwners();
   return (
     <TableRow
       tabIndex={0}
@@ -57,14 +58,14 @@ export function TransactionRow({
       </TableCell>
       <TableCell>
         <Badge variant={transaction.owner === "SHARED" ? "default" : "neutral"}>
-          {OWNER_LABELS[transaction.owner]}
+          {owners.label(transaction.owner)}
         </Badge>
       </TableCell>
       <TableCell className="whitespace-nowrap text-muted-foreground">
         {formatJalaliDate(new Date(transaction.date), { style: "medium" })}
       </TableCell>
       <TableCell className="text-end">
-        <TransactionAmount transaction={transaction} className="font-bold" />
+        <TransactionAmount transaction={transaction} className="font-medium" />
       </TableCell>
     </TableRow>
   );
@@ -84,7 +85,7 @@ export function TransactionCard({
       onClick={() => {
         onSelect(transaction);
       }}
-      className="flex w-full items-center gap-3 rounded-md border border-border bg-card p-4 text-start transition-colors hover:bg-primary-subtle"
+      className="reveal flex w-full items-center gap-3 rounded-xl border border-card-edge bg-card p-4 text-start glass-edge transition-colors hover:bg-card-solid dark:border-border"
     >
       <TransactionIcon transaction={transaction} />
       <span className="flex min-w-0 flex-1 flex-col">
@@ -95,7 +96,7 @@ export function TransactionCard({
           {formatJalaliDate(new Date(transaction.date), { style: "medium" })}
         </span>
       </span>
-      <TransactionAmount transaction={transaction} className="shrink-0 font-bold" />
+      <TransactionAmount transaction={transaction} className="shrink-0 font-medium" />
     </button>
   );
 }

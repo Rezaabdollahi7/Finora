@@ -16,13 +16,11 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -33,8 +31,11 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { formatToman, parseTomanToRial } from "@/utils/money";
 import type { CategoryTreeNode } from "@/features/categories/types";
-import { OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import type { BudgetLineDto } from "@/features/budgets/types";
+import { useOwners } from "@/features/members/components/members-provider";
+import { FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 const NO_CATEGORY = "";
 
@@ -88,6 +89,7 @@ export function BudgetDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = line !== undefined;
   const form = useForm<FormValues>({
@@ -156,7 +158,7 @@ export function BudgetDialog({
           <DialogDescription>
             {owner === "SHARED"
               ? `این بودجه مشترک از ${monthLabel} به بعد اعمال می‌شود و فقط خرج مشترک خانه را می‌سنجد.`
-              : `این بودجه شخصی ${OWNER_LABELS[owner]} از ${monthLabel} به بعد اعمال می‌شود و روی بودجه مشترک اثری ندارد.`}{" "}
+              : `این بودجه شخصی ${owners.label(owner)} از ${monthLabel} به بعد اعمال می‌شود و روی بودجه مشترک اثری ندارد.`}{" "}
             ماه‌های پیش از آن با همان سقف قبلی خود باقی می‌مانند.
           </DialogDescription>
         </DialogHeader>
@@ -188,9 +190,6 @@ export function BudgetDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    بودجه یک دسته والد، خرج زیرمجموعه‌هایش را هم در بر می‌گیرد.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -208,14 +207,7 @@ export function BudgetDialog({
                 <FormItem>
                   <FormLabel>سقف ماهانه (تومان)</FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      dir="ltr"
-                      placeholder="0"
-                      className="text-start"
-                      autoComplete="off"
-                      {...field}
-                    />
+                    <MoneyInput placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -239,15 +231,23 @@ export function BudgetDialog({
                       <SelectItem value="on">بله</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    تنها مانده استفاده‌نشده منتقل می‌شود؛ بیش‌ازحد خرج‌کردن به ماه بعد
-                    بدهی نمی‌برد.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormNotes
+              notes={[
+                {
+                  label: "دسته‌بندی",
+                  text: "بودجه یک دسته والد، خرج زیرمجموعه‌هایش را هم در بر می‌گیرد.",
+                },
+                {
+                  label: "انتقال مانده به ماه بعد",
+                  text: "تنها مانده استفاده‌نشده منتقل می‌شود؛ بیش‌ازحد خرج‌کردن به ماه بعد بدهی نمی‌برد.",
+                },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "در حال ذخیره…" : "ذخیره بودجه"}

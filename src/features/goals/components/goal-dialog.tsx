@@ -16,7 +16,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -37,13 +36,16 @@ import {
   toJalaliFields,
 } from "@/components/common/jalali-date-field";
 import { formatToman, parseTomanToRial } from "@/utils/money";
-import { OWNERS, OWNER_LABELS, type Owner } from "@/features/accounts/types";
+import { type Owner } from "@/features/accounts/types";
 import {
   GOAL_KINDS,
   GOAL_KIND_LABELS,
   type GoalDto,
   type GoalKind,
 } from "@/features/goals/types";
+import { useOwners } from "@/features/members/components/members-provider";
+import { DATE_NOTE, FormNotes } from "@/components/common/form-notes";
+import { MoneyInput } from "@/components/common/money-input";
 
 type FormValues = {
   name: string;
@@ -90,6 +92,7 @@ export function GoalDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const owners = useOwners();
   const router = useRouter();
   const isEdit = goal !== undefined;
   const form = useForm<FormValues>({ defaultValues: defaultsFor(undefined) });
@@ -228,14 +231,7 @@ export function GoalDialog({
                   <FormItem>
                     <FormLabel>مبلغ هدف (تومان)</FormLabel>
                     <FormControl>
-                      <Input
-                        inputMode="numeric"
-                        dir="ltr"
-                        placeholder="0"
-                        className="text-start"
-                        autoComplete="off"
-                        {...field}
-                      />
+                      <MoneyInput placeholder="0" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -256,31 +252,33 @@ export function GoalDialog({
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="owner"
-                rules={{ required: "مالک را انتخاب کنید." }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مالک</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب کنید" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {OWNERS.map((owner) => (
-                          <SelectItem key={owner} value={owner}>
-                            {OWNER_LABELS[owner]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {owners.enabled ? (
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  rules={{ required: "مالک را انتخاب کنید." }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مالک</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {owners.options.map(({ value: owner }) => (
+                            <SelectItem key={owner} value={owner}>
+                              {owners.label(owner)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
 
               <FormField
                 control={form.control}
@@ -291,15 +289,18 @@ export function GoalDialog({
                     <FormControl>
                       <Input placeholder="اختیاری" autoComplete="off" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      تاریخ را خالی بگذارید تا هدف بدون مهلت باشد.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
+            <FormNotes
+              notes={[
+                DATE_NOTE,
+                { label: "مهلت", text: "تاریخ را خالی بگذارید تا هدف بدون مهلت باشد." },
+              ]}
+            />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting

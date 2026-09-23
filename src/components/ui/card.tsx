@@ -4,7 +4,13 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * Card hierarchy from docs/DESIGN_SYSTEM.md §16-17.
+ * Card hierarchy from docs/DESIGN_SYSTEM.md §0.5 and §16-17.
+ *
+ * Cards are frosted glass over the ambient background: a translucent fill,
+ * a 1px light edge along the top and a soft blue-tinted shadow. None of
+ * them blur what is behind them — the background is soft gradients only, so
+ * translucency is enough, and a dozen backdrop filters re-blurring a moving
+ * background every frame would cost a phone its battery.
  *
  * A card never carries a strong border and a strong shadow at once, so the
  * `ink` and `primary` variants drop the border entirely.
@@ -12,15 +18,18 @@ import { cn } from "@/lib/utils";
 const cardVariants = cva("flex flex-col", {
   variants: {
     variant: {
-      default: "rounded-lg border border-border bg-card text-card-foreground shadow-sm",
-      compact: "rounded-md border border-border bg-card text-card-foreground shadow-sm",
+      default:
+        "rounded-xl border border-card-edge bg-card text-card-foreground glass-edge dark:border-border",
+      compact:
+        "rounded-lg border border-card-edge bg-card text-card-foreground shadow-sm dark:border-border",
       featured:
-        "rounded-xl border border-border bg-card text-card-foreground shadow-md",
-      /** The dark feature card of §7 — identical in light and dark themes. */
-      ink: "rounded-xl bg-ink-surface text-ink-surface-foreground shadow-md",
-      /** The purple highlight panel of §8. */
-      primary: "rounded-xl bg-primary text-primary-foreground shadow-md",
-      subtle: "rounded-lg bg-primary-soft text-foreground",
+        "rounded-2xl border border-card-edge bg-card text-card-foreground glass-edge dark:border-border",
+      /** The dark feature card of §7. */
+      ink: "rounded-2xl bg-ink-surface text-ink-surface-foreground shadow-lg",
+      /** The brand-gradient highlight panel of §8. */
+      primary:
+        "rounded-2xl bg-(image:--gradient-brand) text-primary-foreground shadow-floating",
+      subtle: "rounded-xl bg-primary-soft text-foreground",
     },
     padding: {
       none: "",
