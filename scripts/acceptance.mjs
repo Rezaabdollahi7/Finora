@@ -31,6 +31,7 @@ const ROUTES = [
   "/calendar",
   "/reports",
   "/settings",
+  "/guide",
 ];
 
 const VIEWPORTS = {

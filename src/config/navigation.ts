@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  BookOpen,
   CalendarDays,
   ChartColumn,
   Gem,
@@ -107,6 +108,12 @@ export const mainNavigation: readonly NavItem[] = [
     icon: ChartColumn,
   },
   {
+    href: "/guide",
+    label: "راهنما",
+    description: "امکانات برنامه و اینکه از کجا شروع کنید",
+    icon: BookOpen,
+  },
+  {
     href: "/settings",
     label: "تنظیمات",
     description: "تنظیمات برنامه و ترجیحات نمایش",
@@ -130,7 +137,7 @@ export const navigationGroups: readonly { label: string; hrefs: readonly string[
     },
     { label: "دارایی و بدهی", hrefs: ["/assets", "/loans", "/recurring"] },
     { label: "برنامه‌ریزی", hrefs: ["/budgets", "/goals", "/forecast", "/reports"] },
-    { label: "خانه", hrefs: ["/household", "/settings"] },
+    { label: "خانه", hrefs: ["/household", "/settings", "/guide"] },
   ] as const;
 
 /** {@link navigationGroups} resolved to their items, in order. */
