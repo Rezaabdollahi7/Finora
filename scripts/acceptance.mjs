@@ -225,9 +225,10 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
       const backgroundOf = () =>
         page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
+      // One click toggles: the page starts light (the browser's scheme), so
+      // the first click goes dark and the second comes back.
       await page.getByRole("button", { name: "تغییر پوسته" }).click();
-      await page.getByRole("menuitem", { name: "تیره" }).click();
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(900);
       const dark = await backgroundOf();
 
       await page.goto(`${BASE_URL}/accounts`, { waitUntil: "networkidle" });
@@ -240,8 +241,7 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
       }
 
       await page.getByRole("button", { name: "تغییر پوسته" }).click();
-      await page.getByRole("menuitem", { name: "روشن" }).click();
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(900);
       const light = await backgroundOf();
 
       if (dark === light) throw new Error(`both themes painted ${light}`);

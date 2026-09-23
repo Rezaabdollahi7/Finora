@@ -143,7 +143,7 @@ export function SettingsView({
         <CardHeader>
           <div className="space-y-1">
             <CardTitle>ظاهر</CardTitle>
-            <CardDescription>پوسته روشن، تیره یا هماهنگ با سیستم</CardDescription>
+            <CardDescription>پوسته روشن یا تیره</CardDescription>
           </div>
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
             <Palette className="size-5" />
@@ -151,8 +151,9 @@ export function SettingsView({
         </CardHeader>
 
         <p className="text-body text-muted-foreground">
-          کلید تغییر پوسته در نوار بالای صفحه است و انتخاب شما در همین مرورگر نگه داشته
-          می‌شود.
+          در ابتدا پوسته با تنظیم سیستم شما هماهنگ است. با هر کلیک روی دکمه خورشید و ماه
+          در نوار بالای صفحه، پوسته بین روشن و تیره عوض می‌شود و انتخاب شما در همین
+          مرورگر نگه داشته می‌شود.
         </p>
       </Card>
     </div>
