@@ -33,3 +33,611 @@ model AppSetting {
 
   @@map("app_settings")
 }
+
+/// Who a financial record belongs to.
+///
+/// The household is two people plus everything they share, so ownership is a
+/// fixed set rather than a user table: Finora is a self-hosted deployment for
+/// one household (see docs/ARCHITECTURE.md). Sprint 7 builds the household
+/// views on top of this.
+enum Owner {
+  SHARED
+  REZA
+  YEGANEH
+}
+
+enum AccountType {
+  BANK
+  CASH
+  WALLET
+  INVESTMENT
+  BUSINESS
+  OTHER
+}
+
+/// A place money sits: a bank account, cash, a wallet, a business account.
+///
+/// There is deliberately no `balance` column. A stored balance is a second
+/// source of truth that drifts the moment a transaction is edited, deleted or
+/// back-dated, and reconciling it is a class of bug this application cannot
+/// afford. The current balance is derived as
+///
+///     initialBalance + sum(transactions affecting this account)
+///
+/// which is always correct by construction.
+model Account {
+  id             String      @id @default(cuid())
+  name           String
+  type           AccountType
+  owner          Owner
+  /// ISO 4217 code. Only IRR is supported: all monetary values in the
+  /// application are Rial, and mixing currencies would make household totals
+  /// silently wrong. Foreign holdings are modelled as assets in Sprint 3.
+  currency       String      @default("IRR")
+  /// Opening balance in whole Rial (rule G.2). May be negative, for an
+  /// account that was already overdrawn when it was added.
+  initialBalance BigInt      @default(0)
+  /// Archived accounts keep their history but are hidden from active lists
+  /// and cannot receive new transactions.
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  /// Income, expenses, and transfers *out of* this account.
+  transactions      Transaction[]      @relation("TransactionAccount")
+  /// Transfers *into* this account.
+  incomingTransfers Transaction[]      @relation("TransactionToAccount")
+  /// Loans whose instalments are paid from this account.
+  loans             Loan[]
+  /// Recurring payments paid from this account.
+  recurringPayments RecurringPayment[]
+
+  @@index([isActive])
+  @@index([owner])
+  @@map("accounts")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+/// A movement of money.
+///
+/// Each type uses the account fields differently:
+///
+///   INCOME    accountId receives the amount.       toAccountId is null.
+///   EXPENSE   accountId pays the amount.           toAccountId is null.
+///   TRANSFER  accountId pays, toAccountId receives. Both are required.
+///
+/// A transfer is one row rather than a matched pair of expense and income
+/// rows. A pair can be half-deleted or half-edited, and every aggregate then
+/// has to remember to exclude both halves or it double-counts household
+/// spending — exactly what rule G.3 forbids. One row cannot fall out of step
+/// with itself.
+///
+/// The invariants are enforced by database CHECK constraints as well as by
+/// the API, so a bad row cannot be written by any path: amounts are always
+/// positive (rule G.2 keeps the sign in `type`, never in the number), a
+/// transfer always has a destination that differs from its source, and a
+/// non-transfer never has one.
+model Transaction {
+  id          String          @id @default(cuid())
+  type        TransactionType
+  /// Always positive, in whole Rial. The direction lives in `type`.
+  amount      BigInt
+  /// Income: the receiving account. Expense: the paying account.
+  /// Transfer: the source account.
+  accountId   String
+  account     Account         @relation("TransactionAccount", fields: [accountId], references: [id], onDelete: Restrict)
+  /// Transfers only: the destination account.
+  toAccountId String?
+  toAccount   Account?        @relation("TransactionToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+  /// Transfers are never categorised; the database enforces that.
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  owner       Owner
+  description String?
+  /// When the money actually moved, in UTC. Displayed as Jalali (rule G.5).
+  date        DateTime
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  /// Set when this expense was created by paying a loan instalment.
+  paidInstallment Installment?
+  /// Set when this expense was created by paying a recurring payment.
+  paidOccurrence  RecurringOccurrence?
+
+  @@index([date])
+  @@index([accountId, date])
+  @@index([toAccountId])
+  @@index([type, date])
+  @@index([owner])
+  @@index([categoryId])
+  @@map("transactions")
+}
+
+/// Whether a category describes money coming in or going out.
+///
+/// A category belongs to exactly one side. "Salary" is never an expense and
+/// "Rent" is never income, and keeping them apart means a transaction form
+/// can only ever offer categories that make sense for its type.
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+
+/// A spending or income category, one level of nesting deep.
+///
+/// The tree is deliberately shallow: a parent groups, a child classifies.
+/// Arbitrary depth would make every report decide how far to roll up, and
+/// the roadmap's own examples are two levels. The depth limit and the rule
+/// that a child shares its parent's kind are enforced in the service.
+///
+/// Categories are archived, never deleted. Renaming or retiring one must not
+/// touch the transactions already filed under it (rule G.4), which the
+/// RESTRICT foreign key on Transaction guarantees.
+model Category {
+  id        String       @id @default(cuid())
+  name      String
+  kind      CategoryKind
+  /// Null for a top-level category.
+  parentId  String?
+  parent    Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Category[]   @relation("CategoryTree")
+  /// Key into the icon map in the UI, not a component or a path.
+  icon      String?
+  isActive  Boolean      @default(true)
+  /// Display order among siblings; ties fall back to the name.
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  transactions      Transaction[]
+  loans             Loan[]
+  recurringPayments RecurringPayment[]
+  budgets           Budget[]
+
+  @@index([kind, isActive])
+  @@index([parentId])
+  @@map("categories")
+}
+
+/// What an asset is.
+///
+/// Notably absent: cash and bank balances. Money sitting in an account is
+/// already counted as a balance, and registering it again as an asset would
+/// double it inside net worth — exactly what task 3.9 forbids. Foreign
+/// currency belongs here rather than in an Account because the ledger is
+/// Rial-only (see the comment on Account.currency).
+enum AssetType {
+  GOLD
+  USD
+  EUR
+  CAR
+  STOCK
+  CRYPTO
+  PROPERTY
+  OTHER
+}
+
+/// How an asset's value is arrived at.
+///
+///   QUANTITY  a holding priced per unit: grams of gold, dollars, shares.
+///             Value is quantity × current unit price (task 3.3).
+///   FIXED     a single thing with a value of its own: a car, a flat.
+///             Quantity is exactly 1, so the same multiplication still holds
+///             and every valuation takes one code path (task 3.4).
+///
+/// Derived from the type rather than chosen by the user — a car is never a
+/// per-unit holding — but stored, so the database can enforce the shape of
+/// each row instead of trusting whoever wrote it.
+enum AssetKind {
+  QUANTITY
+  FIXED
+}
+
+/// Where a recorded value came from.
+///
+/// Only manual entry exists today. The column is here so that an automatic
+/// price feed later cannot be mistaken for something the user typed, and so
+/// the opening valuation is distinguishable from a later correction.
+enum ValuationSource {
+  INITIAL
+  MANUAL
+}
+
+/// Something the household owns that is not money in an account.
+///
+/// The row holds what was true at acquisition — how much, of what, bought at
+/// what price. What it is worth *now* is deliberately not a column: it lives
+/// in AssetValuation, so changing today's price appends a fact instead of
+/// overwriting one (rule G.4, task 3.8).
+model Asset {
+  id                String    @id @default(cuid())
+  name              String
+  type              AssetType
+  kind              AssetKind
+  owner             Owner
+  /// Scaled by 10^8, the same way money is scaled to Rial: an exact integer
+  /// rather than a float, because this number is multiplied by money
+  /// (rule G.2, see utils/quantity). FIXED assets hold exactly 100000000.
+  quantity          BigInt    @default(100000000)
+  /// What one unit is, for display: گرم, دلار, سهم. Null for FIXED assets,
+  /// which are not counted in units.
+  unit              String?
+  /// Rial paid per unit at acquisition. For a FIXED asset, quantity is 1, so
+  /// this is the purchase value itself (task 3.4).
+  purchaseUnitPrice BigInt
+  purchaseDate      DateTime
+  notes             String?
+  /// Archived assets keep their valuation history but leave net worth: the
+  /// household no longer owns them. Assets are never deleted (rule G.4).
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  valuations AssetValuation[]
+
+  @@index([isActive])
+  @@index([owner])
+  @@index([type])
+  @@map("assets")
+}
+
+/// What an asset was worth at one instant.
+///
+/// Rows are appended, never updated. That is the whole mechanism behind task
+/// 3.8: re-pricing gold today writes a new row for today, and last month's
+/// row still says what last month's portfolio was worth. The net-worth
+/// history in task 3.10 reads straight off this table, so it is a record of
+/// what actually happened rather than today's price projected backwards.
+///
+/// `quantity` and `value` are stored rather than recomputed from the asset.
+/// Selling half a holding tomorrow must not halve what the portfolio was
+/// worth yesterday.
+model AssetValuation {
+  id        String          @id @default(cuid())
+  assetId   String
+  /// Cascade because a valuation has no meaning without its asset. Assets
+  /// are archived rather than deleted, so this should never fire.
+  asset     Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  /// Rial per unit at `asOf`.
+  unitPrice BigInt
+  /// The holding at `asOf`, scaled like Asset.quantity.
+  quantity  BigInt
+  /// unitPrice × quantity in whole Rial, rounded once, at write time.
+  value     BigInt
+  /// When this valuation was true, in UTC. Displayed as Jalali (rule G.5).
+  asOf      DateTime
+  source    ValuationSource @default(MANUAL)
+  note      String?
+  createdAt DateTime        @default(now())
+
+  /// One valuation per asset per instant: re-pricing the same moment twice
+  /// is a correction, not a second data point.
+  @@unique([assetId, asOf])
+  @@index([assetId, asOf])
+  @@map("asset_valuations")
+}
+
+/// Where a loan is in its life.
+///
+/// SETTLED is maintained by the service, in the same transaction that pays
+/// the final instalment, rather than derived on read. It is the one
+/// denormalisation in the schema, and it earns its place: "show me the loans
+/// I still owe on" is the most common read in the feature, and deriving it
+/// would mean a join and an aggregate on every list. The service is the only
+/// writer, and a test asserts the stored value always agrees with the
+/// instalments.
+enum LoanStatus {
+  ACTIVE
+  SETTLED
+  ARCHIVED
+}
+
+/// A debt repaid in monthly instalments.
+///
+/// There is deliberately no `remainingDebt` column, and no `paidCount`. Both
+/// are sums over the instalments, and a stored copy drifts the moment a
+/// payment is recorded, undone or back-dated — the same reasoning that keeps
+/// Account without a balance (see docs/ARCHITECTURE.md).
+model Loan {
+  id                String     @id @default(cuid())
+  name              String
+  /// The bank or person the money is owed to.
+  provider          String
+  /// Amount borrowed, in whole Rial (rule G.2). Not the amount repaid: that
+  /// is instalmentAmount x installmentCount, which includes the interest.
+  principalAmount   BigInt
+  /// Annual rate in **basis points**: 2300 is 23%. An integer for the same
+  /// reason money is — it is multiplied by money to show the cost of the
+  /// loan, and a float rate would put that figure a Rial out.
+  interestRate      Int        @default(0)
+  /// What is owed each month, in whole Rial. Entered rather than derived:
+  /// an Iranian loan contract states the instalment, and recomputing it from
+  /// the rate would disagree with the paper the household is holding.
+  installmentAmount BigInt
+  installmentCount  Int
+  /// When the loan was taken out, in UTC. Displayed as Jalali (rule G.5).
+  startDate         DateTime
+  /// The last instalment's due date. Derived from the schedule at creation
+  /// and stored so a list can sort and filter by it without loading rows.
+  endDate           DateTime
+  /// Day of the **Jalali** month the instalment falls on, 1-31. A month
+  /// shorter than this takes its last day instead; see features/loans/schedule.
+  paymentDay        Int
+  owner             Owner
+  status            LoanStatus @default(ACTIVE)
+  /// Which category the instalment expenses are filed under. Optional, and
+  /// RESTRICT, so retiring a category cannot orphan a loan's history (G.4).
+  categoryId        String?
+  category          Category?  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// Which account instalments are paid from, by default.
+  accountId         String?
+  account           Account?   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  notes             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  installments Installment[]
+
+  @@index([status])
+  @@index([owner])
+  @@index([endDate])
+  @@map("loans")
+}
+
+/// One scheduled repayment.
+///
+/// The four statuses in the roadmap are deliberately **not** a column. Three
+/// of them change with nothing but the passage of time — an upcoming
+/// instalment becomes due and then overdue while the application sits idle,
+/// and no write happens to record it. A stored status would be wrong by
+/// morning and would need a scheduled job to keep honest. Only the fact that
+/// decides PAID is stored: when it was paid, and which transaction paid it.
+model Installment {
+  id                String       @id @default(cuid())
+  loanId            String
+  loan              Loan         @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  /// 1-based, in due-date order.
+  number            Int
+  /// Midnight Tehran of the Jalali due day, as a UTC instant (rule G.5).
+  dueDate           DateTime
+  /// What is owed, in whole Rial.
+  amount            BigInt
+  /// When it was paid, or null. This is what makes an instalment PAID.
+  paidAt            DateTime?
+  /// The expense this payment created. One transaction per instalment, and
+  /// the unique index is what makes a double payment impossible (task 4.4) —
+  /// not just a check the service happens to remember to run.
+  ///
+  /// RESTRICT, not SET NULL. Clearing the link while `paidAt` stood would
+  /// leave a row that reads as still owed with the money already gone, and
+  /// the CHECK constraint on this table would reject it anyway. Undoing the
+  /// payment is its own operation, which removes both together.
+  paidTransactionId String?      @unique
+  paidTransaction   Transaction? @relation(fields: [paidTransactionId], references: [id], onDelete: Restrict)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  /// Instalments are numbered within their loan, and the number is the
+  /// stable handle the UI and the API use.
+  @@unique([loanId, number])
+  @@index([dueDate])
+  @@index([loanId, dueDate])
+  @@map("installments")
+}
+
+/// How often a recurring payment falls due.
+///
+/// MONTHLY and YEARLY walk Jalali months and years; WEEKLY and CUSTOM are
+/// genuine day counts, because "every fortnight" means fourteen days
+/// wherever the month boundary lands (see features/recurring/recurrence).
+enum RecurrenceFrequency {
+  MONTHLY
+  WEEKLY
+  YEARLY
+  CUSTOM
+}
+
+/// A payment the household expects again and again: rent, a subscription, a
+/// server bill, insurance.
+///
+/// This is a **rule**, not a list of payments. Its future occurrences are
+/// derived from it on demand rather than materialised, because the sequence
+/// is open-ended — a rent with no end date has infinitely many of them — and
+/// because task 5.3 is explicit that a future event must not become a real
+/// expense before the money moves. Only an occurrence that has actually been
+/// paid becomes a row (see RecurringOccurrence).
+model RecurringPayment {
+  id         String              @id @default(cuid())
+  name       String
+  /// What is expected each time, in whole Rial (rule G.2).
+  amount     BigInt
+  frequency  RecurrenceFrequency @default(MONTHLY)
+  /// How many units of the frequency between payments: 2 with MONTHLY is
+  /// every other month, 14 with CUSTOM is every fortnight.
+  interval   Int                 @default(1)
+  /// When the rule starts, in UTC. Displayed as Jalali (rule G.5).
+  startDate  DateTime
+  /// When it stops, or null for an open-ended rule.
+  endDate    DateTime?
+  /// Day of the Jalali month, for MONTHLY. Null takes the start date's day.
+  /// A month too short for it uses its own last day, never the next month's.
+  paymentDay Int?
+  /// The expense's category. RESTRICT so retiring a category cannot orphan
+  /// a rule's history (rule G.4).
+  categoryId String?
+  category   Category?           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// Which account it is paid from, by default.
+  accountId  String?
+  account    Account?            @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  owner      Owner
+  /// An inactive rule stops producing expected payments but keeps every
+  /// occurrence already paid. Rules are never deleted (rule G.4).
+  isActive   Boolean             @default(true)
+  notes      String?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  occurrences RecurringOccurrence[]
+
+  @@index([isActive])
+  @@index([owner])
+  @@map("recurring_payments")
+}
+
+/// One occurrence of a recurring payment that has actually been paid.
+///
+/// Expected occurrences are **not** rows. Only the act of paying creates
+/// one, which is what task 5.3 asks for: an expected event is a projection
+/// of the rule, and a real expense exists only once the money has moved.
+/// That also means an edited rule cannot rewrite what was already paid — the
+/// rows here hold the date and the amount as they actually were (rule G.4).
+model RecurringOccurrence {
+  id                 String           @id @default(cuid())
+  recurringPaymentId String
+  recurringPayment   RecurringPayment @relation(fields: [recurringPaymentId], references: [id], onDelete: Cascade)
+  /// The date the rule produced, which is the identity of the occurrence.
+  dueDate            DateTime
+  /// What was actually paid, which may differ from the rule's amount: a
+  /// utility bill is "about" a figure, and the month it is not is exactly
+  /// the month worth recording faithfully.
+  amount             BigInt
+  paidAt             DateTime
+  /// The expense this payment created. RESTRICT, and unique, for the same
+  /// reasons as a loan instalment's: it makes a double payment impossible
+  /// and stops the transaction being deleted out from under the schedule.
+  paidTransactionId  String           @unique
+  paidTransaction    Transaction      @relation(fields: [paidTransactionId], references: [id], onDelete: Restrict)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  /// One payment per rule per due date. This is the constraint that makes
+  /// paying the same month twice impossible, rather than a check the service
+  /// has to remember to run.
+  @@unique([recurringPaymentId, dueDate])
+  @@index([dueDate])
+  @@map("recurring_occurrences")
+}
+
+/// A monthly spending limit for a category.
+///
+/// A budget is a **window**, not a figure per month. Changing the food
+/// budget from Mehr onward closes the old row and opens a new one, so Shahrivar
+/// still reports the limit that was actually in force then (rule G.4) —
+/// the same reasoning that keeps an asset's value in a history table rather
+/// than a column. It also makes "budget reset" free: a new month simply
+/// starts with the same limit and no spending against it.
+///
+/// Months are stored as a single integer, `year * 12 + (month - 1)`, so a
+/// window is a plain range query. See utils/date.
+model Budget {
+  id         String   @id @default(cuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// The limit for one month, in whole Rial (rule G.2).
+  amount     BigInt
+  /// Whose spending this limit measures (task 7.5).
+  ///
+  /// SHARED is the household's own budget and counts only household
+  /// expenses; a personal budget counts only that person's. Without this a
+  /// gadget Reza bought for himself would eat the household's food budget,
+  /// which is the whole of task 7.5.
+  owner      Owner    @default(SHARED)
+  /// Whether what is left over carries into the next month (task 5.9).
+  rollover   Boolean  @default(false)
+  /// First Jalali month this limit applies to, as an absolute month.
+  fromMonth  Int
+  /// Last month it applies to, or null while it is the one in force.
+  toMonth    Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([categoryId, owner, fromMonth])
+  @@map("budgets")
+}
+
+/// What a household is saving toward.
+///
+/// The roadmap's own examples: a car, an emergency fund, a trip, a laptop.
+/// The kind is a label for grouping and an icon, not a rule — nothing in the
+/// arithmetic behaves differently for a car than for a holiday.
+enum GoalKind {
+  EMERGENCY
+  PURCHASE
+  TRAVEL
+  INVESTMENT
+  EDUCATION
+  OTHER
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+/// A savings goal (task 6.1).
+///
+/// There is deliberately no `currentAmount` column. What has been put aside
+/// is the sum of the contributions, and a stored copy drifts the moment one
+/// is edited, removed or back-dated — the same reasoning that keeps Account
+/// without a balance and Loan without a remaining debt (docs/ARCHITECTURE.md).
+model Goal {
+  id           String     @id @default(cuid())
+  name         String
+  kind         GoalKind   @default(OTHER)
+  /// What the household is aiming for, in whole Rial (rule G.2).
+  targetAmount BigInt
+  /// When it should be reached, in UTC. Displayed as Jalali (rule G.5).
+  /// Optional: "an emergency fund of 100M" is a goal with no deadline.
+  targetDate   DateTime?
+  owner        Owner
+  status       GoalStatus @default(ACTIVE)
+  /// Key into the icon map in the UI, not a component or a path.
+  icon         String?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  contributions GoalContribution[]
+
+  @@index([status])
+  @@index([owner])
+  @@index([targetDate])
+  @@map("goals")
+}
+
+/// Money earmarked for a goal (task 6.4).
+///
+/// **Not a transaction, and that is the point.** A contribution does not
+/// move money: it says that some of what the household already has is spoken
+/// for. Recording it as an expense would make saving look like spending and
+/// would cut net worth every time the household put money aside, which rule
+/// G.3 forbids for the same reason it forbids counting transfers.
+///
+/// A household that also moves the money between accounts records that as a
+/// TRANSFER, separately. The two are independent on purpose: money can be
+/// earmarked without moving, and moved without being earmarked.
+model GoalContribution {
+  id           String   @id @default(cuid())
+  goalId       String
+  goal         Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  /// Always positive, in whole Rial. Taking money back out is its own row
+  /// with `isWithdrawal` set, so the history reads as what actually happened
+  /// rather than as a contribution that quietly shrank.
+  amount       BigInt
+  /// True when money came back out of the goal.
+  isWithdrawal Boolean  @default(false)
+  /// Midnight Tehran of the Jalali day, as a UTC instant (rule G.5).
+  date         DateTime
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([goalId, date])
+  @@map("goal_contributions")
+}

@@ -8,12 +8,24 @@ import { cn } from "@/lib/utils";
  *
  * The wrapper scrolls horizontally so a wide financial table stays usable on a
  * phone without forcing the user to zoom (rule G.10).
+ *
+ * That wrapper is `dir="ltr"` with the table itself back in `rtl`, which
+ * looks wrong and is not. In an RTL scroll container the overflow runs to the
+ * **left**, and left overflow is "unreachable": the container scrolls, but
+ * the overflowing width also propagates to the viewport, and the whole page
+ * gains a horizontal scrollbar. A 567px table on a 390px phone dragged the
+ * document 202px wide — measured, with every other candidate fix (clipping
+ * the card, clipping the wrapper, overflow-clip) leaving it at exactly 202.
+ * Flipping the container sends the overflow right, where it is scrollable and
+ * stays contained; the table's own `rtl` keeps the columns in their right
+ * order.
  */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div data-slot="table-container" className="w-full overflow-x-auto">
+    <div data-slot="table-container" className="w-full overflow-x-auto" dir="ltr">
       <table
         data-slot="table"
+        dir="rtl"
         className={cn("w-full caption-bottom border-collapse text-body", className)}
         {...props}
       />

@@ -8,6 +8,8 @@ Companion documents:
 - `SPRINTS.md` — the implementation roadmap, sprint by sprint.
 - `docs/DESIGN_SYSTEM.md` — the visual language and design tokens.
 - `docs/ARCHITECTURE.md` — technical decisions and folder layout.
+- `docs/OPERATIONS.md` — running it, backups, and what the Sprint 8 audits
+  found (including the fact that there is no authentication).
 
 ---
 

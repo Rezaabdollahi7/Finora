@@ -94,6 +94,33 @@
   --chart-grid: rgb(31 32 51 / 0.06);
   --chart-axis: rgb(31 32 51 / 0.5);
 
+  /*
+   * Cash-flow series.
+   *
+   * Deliberately not the semantic success/danger steps. Those are tuned for
+   * text and badges, where they appear alone beside an icon; side by side in
+   * a chart they are the classic red/green pair and separate by only ΔE 6.7
+   * under deuteranopia. These steps push the positive hue toward teal, which
+   * lifts the worst adjacent pair to ΔE 11.5. Verified with the palette
+   * validator; see docs/DESIGN_SYSTEM.md §59.
+   */
+  --chart-income: #0e9280;
+  --chart-expense: #e05038;
+  --chart-savings: var(--brand-primary);
+
+  /*
+   * Sequential purple ramp for magnitude, darkest = largest. One hue,
+   * monotone lightness, even steps of ~0.065 OKLCH L.
+   */
+  --chart-seq-1: #352aa1;
+  --chart-seq-2: #4436c9;
+  --chart-seq-3: #5346f0;
+  --chart-seq-4: #6e5ff3;
+  --chart-seq-5: #8579f5;
+  --chart-seq-6: #9c92f7;
+  /** For a slice that is an absence of data rather than a category. */
+  --chart-neutral: rgb(31 32 51 / 0.28);
+
   /* --- Skeleton ---------------------------------------------------------- */
   --skeleton: rgb(31 32 51 / 0.06);
 }
@@ -153,6 +180,23 @@
   --chart-5: #ff6369;
   --chart-grid: rgb(253 254 255 / 0.08);
   --chart-axis: rgb(253 254 255 / 0.5);
+
+  /* Re-stepped for the dark surface rather than reused from light: the light
+     steps fall outside the dark lightness band and drop to ΔE 5.6 under
+     deuteranopia, which fails outright. These reach ΔE 10.8. */
+  --chart-income: #0faa93;
+  --chart-expense: #e85f4a;
+  --chart-savings: #6d62f3;
+
+  /* The ramp runs the other way on a dark surface: the largest value takes
+     the lightest step, because that is the one with the most contrast. */
+  --chart-seq-1: #c9c4fb;
+  --chart-seq-2: #b3abf9;
+  --chart-seq-3: #9c92f7;
+  --chart-seq-4: #8579f5;
+  --chart-seq-5: #6e5ff3;
+  --chart-seq-6: #5346f0;
+  --chart-neutral: rgb(253 254 255 / 0.32);
 
   --skeleton: rgb(253 254 255 / 0.08);
 }
@@ -216,6 +260,10 @@
   --color-chart-5: var(--chart-5);
   --color-chart-grid: var(--chart-grid);
   --color-chart-axis: var(--chart-axis);
+  --color-chart-income: var(--chart-income);
+  --color-chart-expense: var(--chart-expense);
+  --color-chart-savings: var(--chart-savings);
+  --color-chart-neutral: var(--chart-neutral);
 
   /* Persian-first type stack. Vazirmatn is self-hosted, so neither the
      production build nor the Docker image needs network access for it. */
@@ -307,5 +355,65 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+/**
+ * Printing (task 8.10).
+ *
+ * The roadmap asks not to add a PDF dependency where the browser is enough,
+ * and for a report it is: every browser prints to PDF. What that needs is
+ * for the page to stop looking like an application — the navigation, the
+ * filter controls and the tab strip are not part of a report, and a printed
+ * page has nothing to click.
+ *
+ * Colours are forced to print rather than being dropped, because a report
+ * whose "over budget" row prints the same shade as every other row has lost
+ * the thing it was drawing attention to.
+ */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  :root {
+    /* Print in the light theme whatever the screen was showing: a dark
+       background wastes a cartridge and reads worse on paper. */
+    color-scheme: light;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* The application shell: sidebar, mobile bar, sticky header. */
+  aside,
+  nav,
+  header,
+  [data-slot="sonner-toaster"] {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  [data-slot="card"] {
+    box-shadow: none !important;
+    /* A card split across a page break loses the figure from its label. */
+    break-inside: avoid;
+  }
+
+  table {
+    break-inside: auto;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

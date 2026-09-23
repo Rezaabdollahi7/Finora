@@ -295,3 +295,178 @@ export function formatRelativeDay(
 
   return `${toPersianDigits(-days)} روز پیش`;
 }
+
+/* -------------------------------------------------------------------------
+ * Jalali month arithmetic
+ *
+ * "This month" in a Persian household means the Jalali month, not the
+ * Gregorian one. Reporting on Gregorian months would split every Persian
+ * month across two report rows and put Nowruz in the middle of one.
+ * ---------------------------------------------------------------------- */
+
+/** A Jalali year and month, without a day. */
+export type JalaliMonth = { year: number; month: number };
+
+/** The Jalali month an instant falls in. */
+export function jalaliMonthOf(
+  instant: Date,
+  timeZone: string = TIME_ZONE,
+): JalaliMonth {
+  const { year, month } = toJalaliDate(instant, timeZone);
+  return { year, month };
+}
+
+/**
+ * A Jalali month as a single comparable integer.
+ *
+ * `1405/06` becomes 16865. Two months then compare, sort and subtract with
+ * the operators rather than through a helper, and a database can index and
+ * range-query the column — which is what a budget window needs, since "which
+ * budget was in force in Mehr" becomes `fromMonth <= m AND (toMonth IS NULL
+ * OR m <= toMonth)` and nothing more.
+ */
+export function absoluteJalaliMonth({ year, month }: JalaliMonth): number {
+  return year * 12 + (month - 1);
+}
+
+/** The inverse of {@link absoluteJalaliMonth}. */
+export function fromAbsoluteJalaliMonth(absolute: number): JalaliMonth {
+  return { year: Math.floor(absolute / 12), month: (absolute % 12) + 1 };
+}
+
+/** Move a Jalali month by a whole number of months, in either direction. */
+export function addJalaliMonths(
+  { year, month }: JalaliMonth,
+  delta: number,
+): JalaliMonth {
+  // Work in absolute months so the year rolls over correctly in both
+  // directions, including past a negative remainder.
+  const absolute = year * 12 + (month - 1) + delta;
+
+  return { year: Math.floor(absolute / 12), month: (absolute % 12) + 1 };
+}
+
+/**
+ * The half-open UTC interval covering a Jalali month: `[start, end)`.
+ *
+ * Half-open rather than inclusive so consecutive months tile the timeline
+ * exactly — no instant belongs to two months, and none falls between them.
+ */
+export function jalaliMonthRange(
+  { year, month }: JalaliMonth,
+  timeZone: string = TIME_ZONE,
+): { start: Date; end: Date } {
+  const next = addJalaliMonths({ year, month }, 1);
+
+  return {
+    start: fromJalaliDate({ year, month, day: 1 }, timeZone),
+    end: fromJalaliDate({ year: next.year, month: next.month, day: 1 }, timeZone),
+  };
+}
+
+/** The last `count` Jalali months ending with `end`, oldest first. */
+export function recentJalaliMonths(end: JalaliMonth, count: number): JalaliMonth[] {
+  return Array.from({ length: count }, (_, index) =>
+    addJalaliMonths(end, index - (count - 1)),
+  );
+}
+
+/** A month label for a chart axis or a report header, e.g. شهریور ۱۴۰۵. */
+export function jalaliMonthLabel(
+  { year, month }: JalaliMonth,
+  {
+    digits = "persian",
+    withYear = true,
+  }: { digits?: DigitStyle; withYear?: boolean } = {},
+): string {
+  const name = JALALI_MONTHS[month - 1]!;
+  return withYear ? `${name} ${applyDigitStyle(String(year), digits)}` : name;
+}
+
+/* -------------------------------------------------------------------------
+ * Calendar grids (task 4.6)
+ * ---------------------------------------------------------------------- */
+
+/** One cell of a month grid. */
+export type JalaliCalendarDay = {
+  date: JalaliDate;
+  /** Midnight Tehran, as the UTC instant the database stores (rule G.5). */
+  instant: Date;
+  /** False for the days borrowed from the months on either side. */
+  inMonth: boolean;
+  isToday: boolean;
+  /** 0 = Saturday .. 6 = Friday. */
+  weekday: number;
+  /** Friday is the Persian weekend. */
+  isWeekend: boolean;
+};
+
+/**
+ * Six rows, always.
+ *
+ * A Jalali month needs five rows or six depending on which weekday it starts
+ * on. Letting the grid change height makes the whole page jump every time
+ * the user steps a month forward, and a calendar is a thing people page
+ * through quickly.
+ */
+const CALENDAR_ROWS = 6;
+const DAYS_IN_WEEK = 7;
+
+/**
+ * A Jalali month laid out as weeks, Saturday first (task 4.6).
+ *
+ * The leading and trailing cells come from the neighbouring months rather
+ * than being blank, so the week rows read as real weeks — a blank Saturday
+ * before the 1st of Mehr hides the fact that the 30th of Shahrivar was that
+ * Saturday. They are marked `inMonth: false` so the UI can mute them.
+ */
+export function jalaliMonthGrid(
+  { year, month }: JalaliMonth,
+  now: Date = new Date(),
+  timeZone: string = TIME_ZONE,
+): JalaliCalendarDay[][] {
+  const today = toJalaliDate(now, timeZone);
+  const previous = addJalaliMonths({ year, month }, -1);
+  const previousLength = jalaliMonthLength(previous.year, previous.month);
+  const lead = jalaliWeekday({ year, month, day: 1 }, timeZone);
+
+  const cells: JalaliCalendarDay[] = [];
+
+  for (let index = 0; index < CALENDAR_ROWS * DAYS_IN_WEEK; index += 1) {
+    // Days before the 1st count backwards into the previous month; days past
+    // the last count forwards into the next one.
+    const dayOfMonth = index - lead + 1;
+    let date: JalaliDate;
+    let inMonth = true;
+
+    if (dayOfMonth < 1) {
+      date = { ...previous, day: previousLength + dayOfMonth };
+      inMonth = false;
+    } else if (dayOfMonth > jalaliMonthLength(year, month)) {
+      const next = addJalaliMonths({ year, month }, 1);
+      date = { ...next, day: dayOfMonth - jalaliMonthLength(year, month) };
+      inMonth = false;
+    } else {
+      date = { year, month, day: dayOfMonth };
+    }
+
+    const weekday = index % DAYS_IN_WEEK;
+
+    cells.push({
+      date,
+      instant: fromJalaliDate(date, timeZone),
+      inMonth,
+      isToday:
+        date.year === today.year &&
+        date.month === today.month &&
+        date.day === today.day,
+      weekday,
+      // Friday is the sixth index in a Saturday-first week.
+      isWeekend: weekday === 6,
+    });
+  }
+
+  return Array.from({ length: CALENDAR_ROWS }, (_, row) =>
+    cells.slice(row * DAYS_IN_WEEK, (row + 1) * DAYS_IN_WEEK),
+  );
+}

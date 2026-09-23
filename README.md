@@ -24,10 +24,18 @@ docker compose up
 The application is served at <http://localhost:3000> and PostgreSQL at
 `localhost:5432`.
 
+`docker compose up` is also all that is needed **after pulling changes**. On
+every start the container reconciles dependencies, regenerates the Prisma
+client, applies any pending migrations and re-runs the seed. Each step is a
+no-op when there is nothing to do, and `prisma migrate deploy` only applies
+what is outstanding — it never resets, so it cannot take data with it.
+
 To run against a local Node toolchain instead:
 
 ```bash
 npm install
+npm run db:deploy   # apply pending migrations
+npm run db:seed     # reference data; idempotent
 npm run dev
 ```
 
@@ -42,6 +50,9 @@ npm run dev
 | `npm run typecheck` | TypeScript, no emit            |
 | `npm run format`    | Prettier                       |
 | `npm run test`      | Unit tests                     |
+| `npm run db:migrate`| Create a migration from schema changes |
+| `npm run db:deploy` | Apply pending migrations       |
+| `npm run db:seed`   | Seed the default categories    |
 | `npm run acceptance`| Foundation acceptance checks   |
 
 ## Verifying the foundation
@@ -59,6 +70,33 @@ npm run acceptance     # in another
 
 It reads `BASE_URL` (default `http://localhost:3000`) and `CHROMIUM_PATH` if
 the Playwright browser lives outside the default location.
+
+## Troubleshooting
+
+**`port is already allocated`** — something else on the machine is using 5432
+or 3000, usually a locally installed PostgreSQL. Change the host port in
+`.env` and bring the stack back up; only the published port moves, and the app
+still reaches the database as `db:5432` over the compose network.
+
+```bash
+POSTGRES_PORT=5433
+APP_PORT=3001
+```
+
+**`Can't resolve '@/generated/prisma/client'` or `tsx: not found` in Docker** —
+the container start-up reconciles both of these, so the first fix is simply to
+recreate the container:
+
+```bash
+docker compose up --build --force-recreate
+```
+
+If it persists, the anonymous volumes are stale; `docker compose down -v`
+removes them along with the database, so re-run the migration and the seed
+afterwards.
+
+**Outside Docker**, the Prisma client is created by `npm install`'s
+postinstall hook. After pulling a schema change, run `npm run db:generate`.
 
 ## Documentation
 

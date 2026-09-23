@@ -27,6 +27,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 EXPOSE 3000
+# The entrypoint re-reconciles node_modules and regenerates the Prisma client
+# against the mounted source before handing over; see docker/dev-entrypoint.sh.
+# Invoked through sh rather than relying on the executable bit, which a bind
+# mount from a Windows host does not preserve.
+ENTRYPOINT ["sh", "/app/docker/dev-entrypoint.sh"]
 CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]
 
 ###############################################################################

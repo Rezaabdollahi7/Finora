@@ -19,6 +19,27 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+/*
+ * Query counter.
+ *
+ * Off unless PRISMA_QUERY_COUNTER=1, so production pays nothing for it. It
+ * exists so "the dashboard aggregates efficiently" (task 2.10) can be a
+ * failing test rather than a claim in a comment: a test asserts the number
+ * of round trips is bounded and does not grow with the number of months or
+ * accounts, which is what an accidental N+1 would break.
+ */
+const countingEnabled = process.env["PRISMA_QUERY_COUNTER"] === "1";
+
+let queryCount = 0;
+
+export function readQueryCount(): number {
+  return queryCount;
+}
+
+export function resetQueryCount(): void {
+  queryCount = 0;
+}
+
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env["DATABASE_URL"];
 
@@ -28,13 +49,26 @@ function createPrismaClient(): PrismaClient {
     );
   }
 
-  return new PrismaClient({
+  const client = new PrismaClient({
     adapter: new PrismaPg({ connectionString }),
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "warn", "error"]
         : ["warn", "error"],
   });
+
+  if (!countingEnabled) return client;
+
+  // $extends returns a structurally different client; the extension only
+  // counts and delegates, so the surface the application uses is unchanged.
+  return client.$extends({
+    query: {
+      $allOperations({ query, args }) {
+        queryCount += 1;
+        return query(args);
+      },
+    },
+  }) as unknown as PrismaClient;
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();

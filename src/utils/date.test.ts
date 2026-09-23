@@ -1,18 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  absoluteJalaliMonth,
+  addJalaliMonths,
   calendarDaysBetween,
   formatJalaliDate,
   formatJalaliMonth,
   formatRelativeDay,
   formatTime,
+  fromAbsoluteJalaliMonth,
   fromJalaliDate,
   isValidJalaliDate,
+  jalaliMonthLabel,
   jalaliMonthLength,
+  jalaliMonthOf,
+  jalaliMonthRange,
   jalaliWeekday,
+  recentJalaliMonths,
   JALALI_WEEKDAYS,
   toJalaliDate,
   zonedTimeToUtc,
+  jalaliMonthGrid,
 } from "@/utils/date";
 
 /**
@@ -249,5 +257,237 @@ describe("formatRelativeDay", () => {
     // Matches the upcoming-payments widget in the roadmap (2.8).
     expect(formatRelativeDay(inDays(5), { now })).toBe("۵ روز دیگر");
     expect(formatRelativeDay(inDays(-3), { now })).toBe("۳ روز پیش");
+  });
+});
+
+describe("Jalali month arithmetic", () => {
+  it("reports the Jalali month an instant falls in", () => {
+    expect(jalaliMonthOf(new Date("2026-09-21T09:00:00Z"))).toEqual({
+      year: 1405,
+      month: 6,
+    });
+  });
+
+  it("adds and subtracts months, rolling the year over in both directions", () => {
+    expect(addJalaliMonths({ year: 1405, month: 6 }, 1)).toEqual({
+      year: 1405,
+      month: 7,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 12 }, 1)).toEqual({
+      year: 1406,
+      month: 1,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 1 }, -1)).toEqual({
+      year: 1404,
+      month: 12,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 6 }, -18)).toEqual({
+      year: 1403,
+      month: 12,
+    });
+    expect(addJalaliMonths({ year: 1405, month: 6 }, 0)).toEqual({
+      year: 1405,
+      month: 6,
+    });
+  });
+
+  it("gives a month range that starts at midnight Tehran on the first", () => {
+    const { start, end } = jalaliMonthRange({ year: 1405, month: 7 });
+
+    // 1 Mehr 1405 is 2026-09-23; midnight Tehran is 20:30Z the day before.
+    expect(start.toISOString()).toBe("2026-09-22T20:30:00.000Z");
+    expect(toJalaliDate(start)).toEqual({ year: 1405, month: 7, day: 1 });
+    expect(toJalaliDate(end)).toEqual({ year: 1405, month: 8, day: 1 });
+  });
+
+  it("tiles consecutive months exactly, with no gap and no overlap", () => {
+    for (let month = 1; month <= 11; month += 1) {
+      const current = jalaliMonthRange({ year: 1405, month });
+      const next = jalaliMonthRange({ year: 1405, month: month + 1 });
+
+      expect(current.end.getTime(), `month ${month}`).toBe(next.start.getTime());
+    }
+  });
+
+  it("covers every day of the month and nothing outside it", () => {
+    const { start, end } = jalaliMonthRange({ year: 1405, month: 6 });
+    const lastDay = fromJalaliDate({ year: 1405, month: 6, day: 31 });
+    const firstOfNext = fromJalaliDate({ year: 1405, month: 7, day: 1 });
+
+    expect(lastDay.getTime()).toBeGreaterThanOrEqual(start.getTime());
+    expect(lastDay.getTime()).toBeLessThan(end.getTime());
+    expect(firstOfNext.getTime()).toBe(end.getTime());
+  });
+
+  it("spans the year boundary at Nowruz", () => {
+    const esfand = jalaliMonthRange({ year: 1404, month: 12 });
+    const farvardin = jalaliMonthRange({ year: 1405, month: 1 });
+
+    expect(esfand.end.getTime()).toBe(farvardin.start.getTime());
+    expect(toJalaliDate(farvardin.start)).toEqual({ year: 1405, month: 1, day: 1 });
+  });
+
+  it("lists recent months oldest first, including the end month", () => {
+    expect(recentJalaliMonths({ year: 1405, month: 2 }, 4)).toEqual([
+      { year: 1404, month: 11 },
+      { year: 1404, month: 12 },
+      { year: 1405, month: 1 },
+      { year: 1405, month: 2 },
+    ]);
+  });
+
+  it("labels a month with and without its year", () => {
+    expect(jalaliMonthLabel({ year: 1405, month: 6 })).toBe("شهریور ۱۴۰۵");
+    expect(jalaliMonthLabel({ year: 1405, month: 6 }, { withYear: false })).toBe(
+      "شهریور",
+    );
+  });
+});
+
+describe("jalaliMonthGrid (task 4.6)", () => {
+  const NOW = fromJalaliDate({ year: 1405, month: 6, day: 20 });
+
+  const flatten = (grid: ReturnType<typeof jalaliMonthGrid>) => grid.flat();
+
+  it("always has six rows of seven, so the page does not jump between months", () => {
+    for (const month of [1, 2, 6, 7, 11, 12]) {
+      const grid = jalaliMonthGrid({ year: 1405, month }, NOW);
+
+      expect(grid).toHaveLength(6);
+      expect(grid.every((week) => week.length === 7)).toBe(true);
+    }
+  });
+
+  it("starts each week on Saturday", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 6 }, NOW);
+
+    for (const week of grid) {
+      expect(week.map((day) => day.weekday)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    }
+  });
+
+  it("contains every day of the month exactly once", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 6 }, NOW);
+    const own = flatten(grid).filter((day) => day.inMonth);
+
+    // Shahrivar has thirty-one days.
+    expect(own).toHaveLength(31);
+    expect(own.map((day) => day.date.day)).toEqual(
+      Array.from({ length: 31 }, (_, index) => index + 1),
+    );
+  });
+
+  it("fills the leading cells from the previous month rather than leaving blanks", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 7 }, NOW);
+    const lead = flatten(grid).filter((day) => !day.inMonth && day.date.month === 6);
+
+    expect(lead.length).toBeGreaterThan(0);
+    // The run ends on the last day of Shahrivar, which has thirty-one days.
+    expect(lead[lead.length - 1]!.date.day).toBe(31);
+  });
+
+  it("fills the trailing cells from the next month", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 6 }, NOW);
+    const tail = flatten(grid).filter((day) => !day.inMonth && day.date.month === 7);
+
+    expect(tail[0]!.date.day).toBe(1);
+  });
+
+  it("rolls the year over at Esfand", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 12 }, NOW);
+    const tail = flatten(grid).filter((day) => !day.inMonth && day.date.year === 1406);
+
+    expect(tail[0]!.date).toEqual({ year: 1406, month: 1, day: 1 });
+  });
+
+  it("rolls the year back at Farvardin", () => {
+    const grid = jalaliMonthGrid({ year: 1406, month: 1 }, NOW);
+    const lead = flatten(grid).filter((day) => !day.inMonth && day.date.year === 1405);
+
+    // Esfand 1405 is a common year: twenty-nine days.
+    expect(lead[lead.length - 1]!.date).toEqual({ year: 1405, month: 12, day: 29 });
+  });
+
+  it("borrows the right number of days from a leap-year Esfand", () => {
+    const grid = jalaliMonthGrid({ year: 1404, month: 1 }, NOW);
+    const lead = flatten(grid).filter((day) => !day.inMonth && day.date.year === 1403);
+
+    // Esfand 1403 is a leap year: thirty days.
+    expect(lead[lead.length - 1]!.date).toEqual({ year: 1403, month: 12, day: 30 });
+  });
+
+  it("marks exactly one day as today, and only in its own month", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 6 }, NOW);
+    const todays = flatten(grid).filter((day) => day.isToday);
+
+    expect(todays).toHaveLength(1);
+    expect(todays[0]!.date).toEqual({ year: 1405, month: 6, day: 20 });
+  });
+
+  it("marks no day as today in a month that is not the current one", () => {
+    const grid = jalaliMonthGrid({ year: 1404, month: 3 }, NOW);
+    expect(flatten(grid).some((day) => day.isToday)).toBe(false);
+  });
+
+  it("marks Friday as the weekend", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 6 }, NOW);
+    const weekend = flatten(grid).filter((day) => day.isWeekend);
+
+    expect(weekend).toHaveLength(6);
+    expect(weekend.every((day) => day.weekday === 6)).toBe(true);
+  });
+
+  it("gives each cell the instant the database would store", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 6 }, NOW);
+    const first = flatten(grid).find((day) => day.inMonth)!;
+
+    expect(first.instant.toISOString()).toBe(
+      fromJalaliDate({ year: 1405, month: 6, day: 1 }).toISOString(),
+    );
+  });
+
+  it("runs consecutively with no gaps or repeats", () => {
+    const grid = jalaliMonthGrid({ year: 1405, month: 12 }, NOW);
+    const days = flatten(grid);
+
+    for (let index = 1; index < days.length; index += 1) {
+      const gap = days[index]!.instant.getTime() - days[index - 1]!.instant.getTime();
+      // One calendar day apart, whatever the months and years in between.
+      expect(Math.round(gap / 86_400_000)).toBe(1);
+    }
+  });
+});
+
+describe("absoluteJalaliMonth", () => {
+  it("turns a month into one comparable integer", () => {
+    expect(absoluteJalaliMonth({ year: 1405, month: 6 })).toBe(1405 * 12 + 5);
+  });
+
+  it("orders months the way the calendar does", () => {
+    const a = absoluteJalaliMonth({ year: 1405, month: 12 });
+    const b = absoluteJalaliMonth({ year: 1406, month: 1 });
+
+    expect(b - a).toBe(1);
+  });
+
+  it("round-trips", () => {
+    for (const month of [
+      { year: 1400, month: 1 },
+      { year: 1405, month: 6 },
+      { year: 1405, month: 12 },
+      { year: 1412, month: 7 },
+    ]) {
+      expect(fromAbsoluteJalaliMonth(absoluteJalaliMonth(month))).toEqual(month);
+    }
+  });
+
+  it("agrees with addJalaliMonths across a year boundary", () => {
+    const start = { year: 1405, month: 11 };
+
+    for (let delta = 0; delta < 6; delta += 1) {
+      expect(absoluteJalaliMonth(addJalaliMonths(start, delta))).toBe(
+        absoluteJalaliMonth(start) + delta,
+      );
+    }
   });
 });

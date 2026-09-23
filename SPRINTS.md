@@ -218,7 +218,7 @@ Before completing Sprint 0:
 
 ---
 
-# Sprint 1 — Accounts & Transactions
+# Sprint 1 — Accounts & Transactions  `[x]`
 
 ## Goal
 
@@ -228,7 +228,7 @@ The application must be able to represent where money exists and how money moves
 
 ---
 
-## 1.1 — Account database model
+## [x] 1.1 — Account database model
 
 Create the `Account` model.
 
@@ -261,7 +261,7 @@ Do not duplicate current balance unnecessarily if it can be calculated safely fr
 
 ---
 
-## 1.2 — Account CRUD API
+## [x] 1.2 — Account CRUD API
 
 Implement:
 
@@ -275,7 +275,7 @@ Do not permanently delete accounts that already have financial transactions.
 
 ---
 
-## 1.3 — Account UI
+## [x] 1.3 — Account UI
 
 Create:
 
@@ -297,7 +297,7 @@ Yeganeh
 
 ---
 
-## 1.4 — Transaction database model
+## [x] 1.4 — Transaction database model
 
 Create the transaction model.
 
@@ -328,7 +328,7 @@ Transfers require a source account and destination account.
 
 ---
 
-## 1.5 — Transaction business rules
+## [x] 1.5 — Transaction business rules
 
 Implement:
 
@@ -342,7 +342,7 @@ Implement:
 
 ---
 
-## 1.6 — Transaction CRUD
+## [x] 1.6 — Transaction CRUD
 
 Implement:
 
@@ -356,7 +356,7 @@ Implement:
 
 ---
 
-## 1.7 — Categories
+## [x] 1.7 — Categories
 
 Create hierarchical categories.
 
@@ -400,7 +400,7 @@ Categories must support:
 
 ---
 
-## 1.8 — Transaction filters
+## [x] 1.8 — Transaction filters
 
 Support:
 
@@ -413,7 +413,7 @@ Support:
 
 ---
 
-## 1.9 — Transaction UI
+## [x] 1.9 — Transaction UI
 
 Create a modern transaction interface with:
 
@@ -428,7 +428,7 @@ Create a modern transaction interface with:
 
 ---
 
-## 1.10 — Transaction tests
+## [x] 1.10 — Transaction tests
 
 Test:
 
@@ -443,7 +443,7 @@ Test:
 
 ---
 
-# Sprint 2 — Dashboard & Visualization
+# Sprint 2 — Dashboard & Visualization  `[x]`
 
 ## Goal
 
@@ -457,7 +457,7 @@ without requiring the user to navigate through multiple pages.
 
 ---
 
-## 2.1 — Dashboard API
+## [x] 2.1 — Dashboard API
 
 Create aggregated endpoints/services for:
 
@@ -473,7 +473,7 @@ Create aggregated endpoints/services for:
 
 ---
 
-## 2.2 — Financial summary cards
+## [x] 2.2 — Financial summary cards
 
 Create cards for:
 
@@ -496,7 +496,7 @@ Cards must support:
 
 ---
 
-## 2.3 — Cash-flow chart
+## [x] 2.3 — Cash-flow chart
 
 Create an interactive chart showing:
 
@@ -512,7 +512,7 @@ Use a modern chart library such as Recharts.
 
 ---
 
-## 2.4 — Expense category chart
+## [x] 2.4 — Expense category chart
 
 Create a chart showing expense distribution.
 
@@ -532,13 +532,13 @@ Support interactive tooltips.
 
 ---
 
-## 2.5 — Account distribution chart
+## [x] 2.5 — Account distribution chart
 
 Show how current liquid money is distributed between accounts.
 
 ---
 
-## 2.6 — Net worth chart
+## [x] 2.6 — Net worth chart
 
 Create a line chart showing net worth history over time.
 
@@ -554,7 +554,7 @@ All time
 
 ---
 
-## 2.7 — Recent transactions widget
+## [x] 2.7 — Recent transactions widget
 
 Show the latest transactions on Dashboard.
 
@@ -568,7 +568,7 @@ Each item should display:
 
 ---
 
-## 2.8 — Upcoming payments widget
+## [x] 2.8 — Upcoming payments widget
 
 Show the next financial obligations.
 
@@ -587,7 +587,7 @@ Claude          5.5M
 
 ---
 
-## 2.9 — Dashboard responsive design
+## [x] 2.9 — Dashboard responsive design
 
 Dashboard must work properly on:
 
@@ -601,7 +601,7 @@ The mobile layout should be intentionally designed.
 
 ---
 
-## 2.10 — Dashboard performance
+## [x] 2.10 — Dashboard performance
 
 Dashboard aggregation should be performed efficiently.
 
@@ -609,7 +609,7 @@ Avoid loading all transactions into the browser just to calculate totals.
 
 ---
 
-# Sprint 3 — Assets & Net Worth
+# Sprint 3 — Assets & Net Worth  `[x]`
 
 ## Goal
 
@@ -617,7 +617,7 @@ Track everything the household owns and calculate real net worth.
 
 ---
 
-## 3.1 — Asset model
+## [x] 3.1 — Asset model
 
 Create an `Asset` model.
 
@@ -636,7 +636,7 @@ OTHER
 
 ---
 
-## 3.2 — Asset CRUD
+## [x] 3.2 — Asset CRUD
 
 Implement:
 
@@ -647,7 +647,7 @@ Implement:
 
 ---
 
-## 3.3 — Quantity-based assets
+## [x] 3.3 — Quantity-based assets
 
 Support assets such as:
 
@@ -670,7 +670,7 @@ currentPrice
 
 ---
 
-## 3.4 — Fixed-value assets
+## [x] 3.4 — Fixed-value assets
 
 Support assets such as:
 
@@ -689,7 +689,7 @@ currentValue
 
 ---
 
-## 3.5 — Asset valuation
+## [x] 3.5 — Asset valuation
 
 Calculate:
 
@@ -702,7 +702,7 @@ where applicable.
 
 ---
 
-## 3.6 — Profit & Loss
+## [x] 3.6 — Profit & Loss
 
 Calculate:
 
@@ -719,7 +719,7 @@ Display:
 
 ---
 
-## 3.7 — Asset portfolio UI
+## [x] 3.7 — Asset portfolio UI
 
 Create a modern portfolio page.
 
@@ -736,7 +736,7 @@ with visual distribution.
 
 ---
 
-## 3.8 — Asset history
+## [x] 3.8 — Asset history
 
 Support historical valuations.
 
@@ -744,7 +744,7 @@ The system must not overwrite historical values when the current price changes.
 
 ---
 
-## 3.9 — Net worth engine
+## [x] 3.9 — Net worth engine
 
 Calculate:
 
@@ -759,13 +759,13 @@ For example, money in a bank account must not also be registered as a separate a
 
 ---
 
-## 3.10 — Net worth history
+## [x] 3.10 — Net worth history
 
 Store or derive historical snapshots safely so the dashboard can show net worth over time.
 
 ---
 
-## 3.11 — Asset tests
+## [x] 3.11 — Asset tests
 
 Test:
 
@@ -779,7 +779,7 @@ Test:
 
 ---
 
-# Sprint 4 — Loans, Installments & Persian Calendar
+# Sprint 4 — Loans, Installments & Persian Calendar  `[x]`
 
 ## Goal
 
@@ -789,7 +789,7 @@ This is one of the core features of the application.
 
 ---
 
-## 4.1 — Loan model
+## [x] 4.1 — Loan model
 
 Create the `Loan` model.
 
@@ -811,7 +811,7 @@ status
 
 ---
 
-## 4.2 — Loan CRUD
+## [x] 4.2 — Loan CRUD
 
 Implement:
 
@@ -822,7 +822,7 @@ Implement:
 
 ---
 
-## 4.3 — Installment generation
+## [x] 4.3 — Installment generation
 
 When a loan is created, generate its installment schedule.
 
@@ -847,7 +847,7 @@ OVERDUE
 
 ---
 
-## 4.4 — Installment payment
+## [x] 4.4 — Installment payment
 
 Allow the user to mark an installment as paid.
 
@@ -860,7 +860,7 @@ When paid:
 
 ---
 
-## 4.5 — Loan progress
+## [x] 4.5 — Loan progress
 
 Display:
 
@@ -885,7 +885,7 @@ Remaining:
 
 ---
 
-## 4.6 — Persian/Jalali calendar
+## [x] 4.6 — Persian/Jalali calendar
 
 Implement a full Jalali calendar.
 
@@ -902,7 +902,7 @@ Requirements:
 
 ---
 
-## 4.7 — Financial calendar
+## [x] 4.7 — Financial calendar
 
 Calendar events should include:
 
@@ -917,7 +917,7 @@ Other financial events
 
 ---
 
-## 4.8 — Day detail panel
+## [x] 4.8 — Day detail panel
 
 When selecting a day:
 
@@ -936,7 +936,7 @@ Total:
 
 ---
 
-## 4.9 — Upcoming payment timeline
+## [x] 4.9 — Upcoming payment timeline
 
 Create a timeline for:
 
@@ -950,7 +950,7 @@ This month
 
 ---
 
-## 4.10 — Loan tests
+## [x] 4.10 — Loan tests
 
 Test:
 
@@ -972,7 +972,7 @@ Automate predictable expenses and introduce monthly budgeting.
 
 ---
 
-## 5.1 — Recurring payment model
+## [x] 5.1 — Recurring payment model
 
 Create recurring financial events.
 
@@ -1005,7 +1005,7 @@ active
 
 ---
 
-## 5.2 — Recurring payment frequencies
+## [x] 5.2 — Recurring payment frequencies
 
 Support:
 
@@ -1018,7 +1018,7 @@ Custom
 
 ---
 
-## 5.3 — Automatic future events
+## [x] 5.3 — Automatic future events
 
 Recurring payments should automatically generate future expected events.
 
@@ -1026,7 +1026,7 @@ Do not immediately create real expense transactions for future events.
 
 ---
 
-## 5.4 — Convert recurring event to transaction
+## [x] 5.4 — Convert recurring event to transaction
 
 When the payment is actually made:
 
@@ -1038,7 +1038,7 @@ and create the real transaction.
 
 ---
 
-## 5.5 — Recurring payment UI
+## [x] 5.5 — Recurring payment UI
 
 Create:
 
@@ -1052,7 +1052,7 @@ Create:
 
 ---
 
-## 5.6 — Budget model
+## [x] 5.6 — Budget model
 
 Create monthly budgets.
 
@@ -1068,7 +1068,7 @@ Personal         3M
 
 ---
 
-## 5.7 — Budget tracking
+## [x] 5.7 — Budget tracking
 
 Calculate:
 
@@ -1081,7 +1081,7 @@ Percentage
 
 ---
 
-## 5.8 — Budget progress UI
+## [x] 5.8 — Budget progress UI
 
 Example:
 
@@ -1103,7 +1103,7 @@ Over budget
 
 ---
 
-## 5.9 — Budget rollover
+## [x] 5.9 — Budget rollover
 
 Allow selected budget categories to carry unused money into the next month.
 
@@ -1111,7 +1111,7 @@ Rollover must be configurable per category.
 
 ---
 
-## 5.10 — Budget alerts
+## [x] 5.10 — Budget alerts
 
 Prepare the system to notify the user when:
 
@@ -1123,7 +1123,7 @@ Upcoming expenses exceed available balance
 
 ---
 
-## 5.11 — Budget tests
+## [x] 5.11 — Budget tests
 
 Test:
 
@@ -1144,7 +1144,7 @@ Turn the application from a tracker into a planning tool.
 
 ---
 
-## 6.1 — Goal model
+## [x] 6.1 — Goal model
 
 Create financial goals.
 
@@ -1161,7 +1161,7 @@ Other
 
 ---
 
-## 6.2 — Goal CRUD
+## [x] 6.2 — Goal CRUD
 
 Implement:
 
@@ -1172,7 +1172,7 @@ Implement:
 
 ---
 
-## 6.3 — Goal progress
+## [x] 6.3 — Goal progress
 
 Each goal should have:
 
@@ -1196,7 +1196,7 @@ Emergency Fund
 
 ---
 
-## 6.4 — Goal contributions
+## [x] 6.4 — Goal contributions
 
 Allow money to be allocated toward goals.
 
@@ -1204,7 +1204,7 @@ A goal contribution must be distinguishable from an actual expense.
 
 ---
 
-## 6.5 — Goal dashboard
+## [x] 6.5 — Goal dashboard
 
 Show:
 
@@ -1215,7 +1215,7 @@ Show:
 
 ---
 
-## 6.6 — Cash-flow forecasting engine
+## [x] 6.6 — Cash-flow forecasting engine
 
 Create a forecasting service.
 
@@ -1237,7 +1237,7 @@ Budgeted expenses
 
 ---
 
-## 6.7 — Forecast periods
+## [x] 6.7 — Forecast periods
 
 Support:
 
@@ -1250,7 +1250,7 @@ Support:
 
 ---
 
-## 6.8 — Forecast chart
+## [x] 6.8 — Forecast chart
 
 Create a line chart showing projected liquidity.
 
@@ -1268,7 +1268,7 @@ Month 3
 
 ---
 
-## 6.9 — Low-balance warning
+## [x] 6.9 — Low-balance warning
 
 Detect situations where expected future obligations exceed available liquid funds.
 
@@ -1288,7 +1288,7 @@ Example:
 
 ---
 
-## 6.10 — Forecast tests
+## [x] 6.10 — Forecast tests
 
 Test:
 
@@ -1309,7 +1309,7 @@ Support two people sharing one household while keeping personal and shared finan
 
 ---
 
-## 7.1 — Household model
+## [x] 7.1 — Household model
 
 Create:
 
@@ -1322,7 +1322,7 @@ Household
 
 ---
 
-## 7.2 — Ownership rules
+## [x] 7.2 — Ownership rules
 
 Financial records can belong to:
 
@@ -1334,7 +1334,7 @@ Shared
 
 ---
 
-## 7.3 — Income ownership
+## [x] 7.3 — Income ownership
 
 Track individual income separately.
 
@@ -1351,7 +1351,7 @@ Salary       30M
 
 ---
 
-## 7.4 — Shared expenses
+## [x] 7.4 — Shared expenses
 
 Shared household expenses should be clearly identified.
 
@@ -1367,13 +1367,13 @@ Travel
 
 ---
 
-## 7.5 — Personal expenses
+## [x] 7.5 — Personal expenses
 
 Allow each person to have personal spending that does not affect the shared budget incorrectly.
 
 ---
 
-## 7.6 — Household dashboard
+## [x] 7.6 — Household dashboard
 
 Show:
 
@@ -1387,7 +1387,7 @@ Shared Liabilities
 
 ---
 
-## 7.7 — Contribution overview
+## [x] 7.7 — Contribution overview
 
 Show how much each person contributed to the household.
 
@@ -1397,7 +1397,7 @@ Do not create competitive scoring or rankings between household members.
 
 ---
 
-## 7.8 — Personal views
+## [x] 7.8 — Personal views
 
 Each user should be able to see:
 
@@ -1411,7 +1411,7 @@ My Goals
 
 ---
 
-## 7.9 — Couple tests
+## [x] 7.9 — Couple tests
 
 Test:
 
@@ -1432,7 +1432,7 @@ Complete the financial reporting system and prepare the application for real dai
 
 ---
 
-## 8.1 — Monthly financial report
+## [x] 8.1 — Monthly financial report
 
 Create a monthly report containing:
 
@@ -1447,7 +1447,7 @@ Net worth change
 
 ---
 
-## 8.2 — Income report
+## [x] 8.2 — Income report
 
 Show income by:
 
@@ -1458,7 +1458,7 @@ Show income by:
 
 ---
 
-## 8.3 — Expense report
+## [x] 8.3 — Expense report
 
 Show expenses by:
 
@@ -1469,7 +1469,7 @@ Show expenses by:
 
 ---
 
-## 8.4 — Savings report
+## [x] 8.4 — Savings report
 
 Calculate:
 
@@ -1487,7 +1487,7 @@ Savings / Income × 100
 
 ---
 
-## 8.5 — Debt report
+## [x] 8.5 — Debt report
 
 Show:
 
@@ -1501,7 +1501,7 @@ Upcoming installments
 
 ---
 
-## 8.6 — Asset report
+## [x] 8.6 — Asset report
 
 Show:
 
@@ -1515,7 +1515,7 @@ Asset history
 
 ---
 
-## 8.7 — Net worth report
+## [x] 8.7 — Net worth report
 
 Show:
 
@@ -1530,7 +1530,7 @@ with historical charts.
 
 ---
 
-## 8.8 — Category analysis
+## [x] 8.8 — Category analysis
 
 Identify:
 
@@ -1543,7 +1543,7 @@ The system should present factual observations rather than subjective financial 
 
 ---
 
-## 8.9 — Report filters
+## [x] 8.9 — Report filters
 
 All reports should support:
 
@@ -1556,7 +1556,7 @@ Category
 
 ---
 
-## 8.10 — Export
+## [x] 8.10 — Export
 
 Support exporting reports/data where appropriate.
 
@@ -1572,7 +1572,7 @@ Do not introduce unnecessary dependencies if browser printing/export is sufficie
 
 ---
 
-## 8.11 — Notification center
+## [x] 8.11 — Notification center
 
 Create a central notification system for:
 
@@ -1588,7 +1588,7 @@ Goal milestone
 
 ---
 
-## 8.12 — Empty states
+## [x] 8.12 — Empty states
 
 Every major page must have a meaningful empty state.
 
@@ -1604,7 +1604,7 @@ Do not show blank screens.
 
 ---
 
-## 8.13 — Loading states
+## [x] 8.13 — Loading states
 
 Every asynchronous page/component must support:
 
@@ -1616,7 +1616,7 @@ Avoid layout jumping.
 
 ---
 
-## 8.14 — Error states
+## [x] 8.14 — Error states
 
 Implement consistent error handling for:
 
@@ -1629,7 +1629,7 @@ Never expose raw server/database errors to users.
 
 ---
 
-## 8.15 — Responsive audit
+## [x] 8.15 — Responsive audit
 
 Review the complete application on:
 
@@ -1651,7 +1651,7 @@ Check:
 
 ---
 
-## 8.16 — Accessibility audit
+## [x] 8.16 — Accessibility audit
 
 Check:
 
@@ -1665,7 +1665,7 @@ Check:
 
 ---
 
-## 8.17 — Performance audit
+## [x] 8.17 — Performance audit
 
 Review:
 
@@ -1679,7 +1679,7 @@ Review:
 
 ---
 
-## 8.18 — Security audit
+## [x] 8.18 — Security audit
 
 Review:
 
@@ -1694,7 +1694,7 @@ Review:
 
 ---
 
-## 8.19 — Database integrity audit
+## [x] 8.19 — Database integrity audit
 
 Verify:
 
@@ -1709,7 +1709,7 @@ Financial calculations must never use floating-point arithmetic where monetary p
 
 ---
 
-## 8.20 — Automated tests
+## [x] 8.20 — Automated tests
 
 Create tests for critical business logic:
 
@@ -1730,7 +1730,7 @@ Household calculations
 
 ---
 
-## 8.21 — Final build verification
+## [x] 8.21 — Final build verification
 
 The following must succeed:
 
@@ -1744,25 +1744,55 @@ npm run build
 
 ---
 
-## 8.22 — Production readiness checklist
+## [x] 8.22 — Production readiness checklist
+
+The checklist below has been worked through. **Thirteen of its fifteen items
+are met; two are not, deliberately and by the roadmap's own design** — Finora
+has no authentication and no authorization, because ownership is modelled as
+an `owner` field rather than a user table and no task asks for a login. Those
+two are left unticked rather than reinterpreted, and what protects the
+deployment instead is written down in `docs/OPERATIONS.md`.
 
 Before declaring the project complete:
 
-- [ ] Database migrations work from a clean database
-- [ ] Environment variables documented
-- [ ] Docker production build works
-- [ ] Database backup strategy documented
-- [ ] Error logging exists
-- [ ] Authentication works
-- [ ] Authorization works
-- [ ] Responsive UI verified
-- [ ] RTL verified
-- [ ] Persian calendar verified
-- [ ] Monetary calculations verified
-- [ ] Critical tests passing
-- [ ] No TypeScript errors
-- [ ] No ESLint errors
-- [ ] No console errors in production build
+- [x] Database migrations work from a clean database — `migrate deploy` into a
+      fresh database creates 14 tables; the seed then takes categories 0 → 30.
+- [x] Environment variables documented — `docs/OPERATIONS.md`. There are two
+      the application reads: `DATABASE_URL` and the optional
+      `PRISMA_QUERY_COUNTER`.
+- [x] Docker production build works — `docker-compose.prod.yml` builds and the
+      production image serves; migrations are applied explicitly with
+      `npm run db:deploy`, not on start.
+- [x] Database backup strategy documented — `docs/OPERATIONS.md`: `pg_dump`
+      in custom format, a cron entry, and the instruction to test the restore.
+- [x] Error logging exists — `handleApiError` logs the real error server-side
+      and returns a fixed Persian message; no stack trace or SQL reaches the
+      browser.
+- [ ] **Authentication works — there is none, deliberately.** Finora has no
+      login and no user table: ownership is an `owner` field, which is what
+      the roadmap specifies. Anyone who can reach the port has full access.
+      The boundary is the network — localhost, a VPN, or an authenticating
+      reverse proxy. See the first section of `docs/OPERATIONS.md`.
+- [ ] **Authorization works — there is none, for the same reason.** Both
+      people see everything; the owner field separates whose money it is, not
+      who may look at it.
+- [x] Responsive UI verified — 14 routes at 1440, 820 and 390: no page
+      overflow, no clipped card, no console error. Audited at 320 as well;
+      one accepted finding is recorded in `docs/OPERATIONS.md`.
+- [x] RTL verified — `dir="rtl"` on the document, logical properties
+      throughout, and the audit checks it on every page.
+- [x] Persian calendar verified — every user-facing date is Jalali, storage is
+      UTC, and the conversion is anchored to Asia/Tehran.
+- [x] Monetary calculations verified — every money column in the database is
+      `bigint`; there is no `numeric`, `real` or `double precision` column
+      anywhere. `Number()` appears only for chart coordinates and display
+      ratios, never for money that feeds back into money.
+- [x] Critical tests passing — 825 across 43 files, including integration
+      tests against a real PostgreSQL for every service.
+- [x] No TypeScript errors — `tsc --noEmit` clean.
+- [x] No ESLint errors — `eslint` clean.
+- [x] No console errors in production build — verified by the sweep above,
+      which fails on any console error.
 
 ---
 

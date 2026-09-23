@@ -53,3 +53,11 @@ describe("parseNumber", () => {
     expect(parseNumber("   ")).toBeNull();
   });
 });
+
+describe("formatPercent signDisplay", () => {
+  it("shows a plus on a gain but not on no change", () => {
+    expect(formatPercent(0.17, { signDisplay: "exceptZero" })).toBe("+17.0%");
+    expect(formatPercent(0, { signDisplay: "exceptZero" })).toBe("0.0%");
+    expect(formatPercent(-0.15, { signDisplay: "exceptZero" })).toBe("-15.0%");
+  });
+});

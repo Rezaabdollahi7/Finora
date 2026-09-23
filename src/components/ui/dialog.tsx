@@ -43,6 +43,14 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        /*
+          Radix traps focus and marks the rest of the page `aria-hidden`, but
+          does not emit `aria-modal`, and that is the attribute the WAI-ARIA
+          pattern asks a modal dialog to carry. Without it a screen reader is
+          told what is hidden, never that this is a dialog it must deal with
+          before anything else. A caller may still override it.
+        */
+        aria-modal="true"
         className={cn(
           // Centred with auto margins rather than a physical inset plus
           // translate, so the surface is direction-neutral (rule G.6).
